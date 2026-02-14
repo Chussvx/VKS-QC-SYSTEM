@@ -1,0 +1,481 @@
+<!-- Page_Overtime.html - Overtime Management -->
+<div id="page-overtime" class="page-content">
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid mb-4">
+        <div class="kpi-card kpi-blue">
+            <div class="kpi-header">
+                <span class="kpi-label" data-i18n="ot.total_hours">Total OT Hours</span>
+                <span class="kpi-icon bg-blue"><span class="material-symbols-outlined">schedule</span></span>
+            </div>
+            <div class="kpi-value" id="ot-total-hours">--</div>
+            <span class="kpi-sublabel text-success" id="ot-hours-change">+0% vs last period</span>
+        </div>
+        <div class="kpi-card kpi-orange">
+            <div class="kpi-header">
+                <span class="kpi-label" data-i18n="ot.pending">Pending Approval</span>
+                <span class="kpi-icon bg-orange"><span class="material-symbols-outlined">error</span></span>
+            </div>
+            <div class="kpi-value" id="ot-pending">--</div>
+            <span class="kpi-sublabel" data-i18n="ot.requests">Requests</span>
+        </div>
+        <div class="kpi-card kpi-green">
+            <div class="kpi-header">
+                <span class="kpi-label" data-i18n="ot.approved">Approved</span>
+                <span class="kpi-icon bg-green"><span class="material-symbols-outlined">check_circle</span></span>
+            </div>
+            <div class="kpi-value" id="ot-approved">--</div>
+            <span class="kpi-sublabel" data-i18n="ot.requests">Requests</span>
+        </div>
+        <div class="kpi-card kpi-red">
+            <div class="kpi-header">
+                <span class="kpi-label" data-i18n="ot.rejected">Rejected</span>
+                <span class="kpi-icon bg-red"><span class="material-symbols-outlined">cancel</span></span>
+            </div>
+            <div class="kpi-value" id="ot-rejected">--</div>
+            <span class="kpi-sublabel" data-i18n="ot.requests">Requests</span>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="filter-group">
+            <div class="custom-select w-48" data-select-id="ot-site" data-onchange="filterOvertime">
+                <button class="custom-select-trigger" onclick="toggleSelect('ot-site')">
+                    <span class="custom-select-value">All Sites</span>
+                    <span class="material-symbols-outlined">expand_more</span>
+                </button>
+                <div class="custom-select-menu" id="ot-site-menu">
+                    <div class="custom-select-item selected" data-value=""
+                        onclick="selectOption('ot-site', '', 'All Sites')">All Sites</div>
+                </div>
+                <input type="hidden" name="ot-site" value="">
+            </div>
+            <div class="custom-select w-40" data-select-id="ot-status" data-onchange="filterOvertime">
+                <button class="custom-select-trigger" onclick="toggleSelect('ot-status')">
+                    <span class="custom-select-value">Status: Any</span>
+                    <span class="material-symbols-outlined">expand_more</span>
+                </button>
+                <div class="custom-select-menu">
+                    <div class="custom-select-item selected" data-value=""
+                        onclick="selectOption('ot-status', '', 'Status: Any')">Any</div>
+                    <div class="custom-select-item" data-value="pending"
+                        onclick="selectOption('ot-status', 'pending', 'Pending')">Pending</div>
+                    <div class="custom-select-item" data-value="approved"
+                        onclick="selectOption('ot-status', 'approved', 'Approved')">Approved</div>
+                    <div class="custom-select-item" data-value="rejected"
+                        onclick="selectOption('ot-status', 'rejected', 'Rejected')">Rejected</div>
+                </div>
+                <input type="hidden" name="ot-status" value="">
+            </div>
+            <div class="custom-select w-48" data-select-id="ot-guard" data-onchange="filterOvertime">
+                <button class="custom-select-trigger" onclick="toggleSelect('ot-guard')">
+                    <span class="custom-select-value">All Guards</span>
+                    <span class="material-symbols-outlined">expand_more</span>
+                </button>
+                <div class="custom-select-menu" id="ot-guard-menu">
+                    <div class="custom-select-item selected" data-value=""
+                        onclick="selectOption('ot-guard', '', 'All Guards')">All Guards</div>
+                </div>
+                <input type="hidden" name="ot-guard" value="">
+            </div>
+        </div>
+        <div class="flex items-center gap-3 ml-auto">
+            <!-- Date Range -->
+            <button id="ot-date-trigger" class="date-range-picker-btn">
+                <span class="material-symbols-outlined">calendar_today</span>
+                <span id="ot-date-label">Pick a date</span>
+            </button>
+            <input type="hidden" id="ot-start-date">
+            <input type="hidden" id="ot-end-date">
+            </button>
+        </div>
+    </div>
+
+    <!-- Overtime Table -->
+    <div class="card p-0 overflow-hidden">
+        <div class="table-container">
+            <table class="data-table" id="overtime-table">
+                <thead>
+                    <tr>
+                        <th data-i18n="ot.col.date">Date</th>
+                        <th data-i18n="ot.col.guard">Guard</th>
+                        <th data-i18n="ot.col.site">Site</th>
+                        <th class="text-right" data-i18n="ot.col.scheduled">Scheduled</th>
+                        <th class="text-right" data-i18n="ot.col.actual">Actual</th>
+                        <th class="text-right" data-i18n="ot.col.ot_hours">OT Hours</th>
+                        <th data-i18n="ot.col.reason">Reason</th>
+                        <th data-i18n="ot.col.status">Status</th>
+                        <th class="text-right" data-i18n="ot.col.actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="overtime-tbody">
+                    <tr class="skeleton-row">
+                        <td>
+                            <div class="skeleton-text" style="width:85%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:60%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:70%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:50%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:45%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:90%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:55%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:40%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:65%"></div>
+                        </td>
+                    </tr>
+                    <tr class="skeleton-row">
+                        <td>
+                            <div class="skeleton-text" style="width:60%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:70%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:50%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:45%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:90%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:55%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:40%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:65%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:85%"></div>
+                        </td>
+                    </tr>
+                    <tr class="skeleton-row">
+                        <td>
+                            <div class="skeleton-text" style="width:70%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:50%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:45%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:90%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:55%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:40%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:65%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:85%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:60%"></div>
+                        </td>
+                    </tr>
+                    <tr class="skeleton-row">
+                        <td>
+                            <div class="skeleton-text" style="width:50%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:45%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:90%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:55%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:40%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:65%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:85%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:60%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:70%"></div>
+                        </td>
+                    </tr>
+                    <tr class="skeleton-row">
+                        <td>
+                            <div class="skeleton-text" style="width:45%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:90%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:55%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:40%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:65%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:85%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:60%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:70%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:50%"></div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Overtime state
+    let overtimeData = [];
+    let overtimeFiltered = [];
+
+    // OvertimeCache - In-memory cache for faster page revisits (Amazon-style)
+    const OvertimeCache = {
+        data: null,
+        timestamp: 0,
+        maxAge: 60000,
+
+        get: function () {
+            if (this.data && (Date.now() - this.timestamp) < this.maxAge) {
+                console.log('[OvertimeCache] HIT');
+                return this.data;
+            }
+            return null;
+        },
+
+        set: function (data) {
+            this.data = data;
+            this.timestamp = Date.now();
+            console.log('[OvertimeCache] SET');
+        }
+    };
+
+    // Initialize Overtime page (Layer 3: memory cache guard)
+    function init_overtime() {
+        // If cache has valid data, render instantly and skip network call
+        var cached = OvertimeCache.get();
+        if (cached && overtimeData.length > 0) {
+            console.log('[Overtime] Memory cache hit — instant render');
+            processOvertimeData(cached);
+            return;
+        }
+        loadOvertimeFilters();
+        loadOvertime();
+    }
+
+    // Load filters
+    function loadOvertimeFilters() {
+        google.script.run.withSuccessHandler(function (opts) {
+            var menu = document.getElementById('ot-site-menu');
+            if (!menu) return;
+            var html = '<div class="custom-select-item selected" data-value="" onclick="selectOption(\'ot-site\', \'\', \'All Sites\')">All Sites</div>';
+            (opts || []).forEach(function (o) {
+                html += '<div class="custom-select-item" data-value="' + o.value + '" onclick="selectOption(\'ot-site\', \'' + o.value + '\', \'' + escapeHtml(o.label) + '\')">' + escapeHtml(o.label) + '</div>';
+            });
+            menu.innerHTML = html;
+        }).getSiteOptions();
+
+        google.script.run.withSuccessHandler(function (opts) {
+            var menu = document.getElementById('ot-guard-menu');
+            if (!menu) return;
+            var html = '<div class="custom-select-item selected" data-value="" onclick="selectOption(\'ot-guard\', \'\', \'All Guards\')">All Guards</div>';
+            (opts || []).forEach(function (o) {
+                html += '<div class="custom-select-item" data-value="' + o.value + '" onclick="selectOption(\'ot-guard\', \'' + o.value + '\', \'' + escapeHtml(o.label) + '\')">' + escapeHtml(o.label) + '</div>';
+            });
+            menu.innerHTML = html;
+        }).getGuardOptions();
+    }
+
+    // Process overtime data (reusable for cache hits)
+    function processOvertimeData(data) {
+        // Guard against null/undefined data
+        if (!data) {
+            console.warn('[Overtime] Null data received');
+            overtimeData = [];
+            overtimeFiltered = [];
+            renderOvertimeTable();
+            return;
+        }
+
+        overtimeData = data.records || [];
+        overtimeFiltered = [...overtimeData];
+
+        // Update KPIs with safe access
+        const stats = data.stats || {};
+        document.getElementById('ot-total-hours').textContent = (stats.totalHours || 0) + 'h';
+        document.getElementById('ot-pending').textContent = stats.pending || 0;
+        document.getElementById('ot-approved').textContent = stats.approved || 0;
+        document.getElementById('ot-rejected').textContent = stats.rejected || 0;
+        document.getElementById('ot-hours-change').textContent = `+${stats.changePercent || 0}%`;
+
+        renderOvertimeTable();
+    }
+
+    // Load overtime data
+    function loadOvertime() {
+        // Check cache first (Amazon-style instant loading)
+        const cached = OvertimeCache.get();
+        if (cached) {
+            processOvertimeData(cached);
+            return;
+        }
+
+        showTableLoading('overtime-tbody', 9);
+
+        google.script.run
+            .withSuccessHandler(function (data) {
+                OvertimeCache.set(data);
+                processOvertimeData(data);
+            })
+            .withFailureHandler(function (error) {
+                showTableError('overtime-tbody', 9, 'Failed to load: ' + error.message);
+            })
+            .getOvertimeRecords({});
+    }
+
+    // Filter overtime
+    function filterOvertime() {
+        const site = document.getElementById('ot-site').value;
+        const status = document.getElementById('ot-status').value;
+        const guard = document.getElementById('ot-guard').value;
+
+        overtimeFiltered = overtimeData.filter(r => {
+            return (!site || r.siteId === site) &&
+                (!status || r.status === status) &&
+                (!guard || r.guardId === guard);
+        });
+
+        renderOvertimeTable();
+    }
+
+    // Render table
+    function renderOvertimeTable() {
+        const tbody = document.getElementById('overtime-tbody');
+
+        if (overtimeFiltered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-muted">
+      <span class="material-symbols-outlined text-5xl mb-2">more_time</span>
+      <p>No overtime records found</p>
+    </td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = overtimeFiltered.map(r => `
+    <tr class="${r.status === 'pending' ? 'row-pending' : ''}">
+      <td class="font-medium">${r.dateDisplay}</td>
+      <td>
+        <div class="flex items-center gap-2">
+          <div class="avatar avatar-xs" style="background-color: ${getAvatarColor(r.guardName)}">
+            ${getInitials(r.guardName)}
+          </div>
+          <div>
+            <p class="font-medium">${escapeHtml(r.guardName)}</p>
+            <p class="text-xs text-muted">ID: #${r.guardId}</p>
+          </div>
+        </div>
+      </td>
+      <td>${escapeHtml(r.siteName)}</td>
+      <td class="text-right font-mono text-muted">${r.scheduledHours}h</td>
+      <td class="text-right font-mono font-medium">${r.actualHours}h</td>
+      <td class="text-right font-mono font-bold text-info">+${r.otHours}h</td>
+      <td class="text-muted max-w-[150px] truncate">${escapeHtml(r.reason || '-')}</td>
+      <td>${getOTStatusBadge(r.status)}</td>
+      <td class="text-right">
+        ${r.status === 'pending' ? `
+          <div class="flex items-center justify-end gap-2">
+            <button class="ot-action-btn approve" onclick="approveOT('${r.id}')" title="Approve">
+              <span class="material-symbols-outlined">check</span>
+            </button>
+            <button class="ot-action-btn reject" onclick="rejectOT('${r.id}')" title="Reject">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+        ` : '<span class="text-xs text-muted italic">No actions</span>'}
+      </td>
+    </tr>
+  `).join('');
+    }
+
+    // Status badge
+    function getOTStatusBadge(status) {
+        const badges = {
+            'pending': '<span class="badge badge-warning">Pending</span>',
+            'approved': '<span class="badge badge-success">Approved</span>',
+            'rejected': '<span class="badge badge-danger">Rejected</span>'
+        };
+        return badges[status] || badges['pending'];
+    }
+
+    // Approve OT
+    function approveOT(recordId) {
+        if (!confirm('Approve this overtime request?')) return;
+
+        google.script.run
+            .withSuccessHandler(function () {
+                showToast('Overtime approved', 'success');
+                loadOvertime();
+            })
+            .updateOvertimeStatus(recordId, 'approved');
+    }
+
+    // Reject OT
+    function rejectOT(recordId) {
+        const reason = prompt('Reason for rejection (optional):');
+
+        google.script.run
+            .withSuccessHandler(function () {
+                showToast('Overtime rejected', 'info');
+                loadOvertime();
+            })
+            .updateOvertimeStatus(recordId, 'rejected', reason);
+    }
+
+    // Export report
+    function exportOvertimeReport() {
+        showToast('Generating report...', 'info');
+        google.script.run
+            .withSuccessHandler(function (url) { window.open(url, '_blank'); })
+            .exportOvertimeReport({});
+    }
+
+
+</script>

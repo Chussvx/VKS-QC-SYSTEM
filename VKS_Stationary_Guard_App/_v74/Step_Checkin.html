@@ -1,0 +1,202 @@
+<div class="flex flex-col h-full space-y-6 pb-32">
+    <!-- Header -->
+    <header class="text-center space-y-2">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-emerald-50 text-emerald-600 mb-2">
+            <span class="material-symbols-outlined text-4xl">verified_user</span>
+        </div>
+        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">ຢືນຢັນການເຂົ້າວຽກ</h2>
+        <p class="text-sm text-slate-500 font-medium">ກະລຸນາກວດສອບຂໍ້ມູນກ່ອນເລີ່ມປະຕິບັດງານ</p>
+    </header>
+
+    <!-- Location Card -->
+    <section class="glass-card rounded-[2rem] p-6 text-center bg-emerald-50/50 border-emerald-100">
+        <div
+            class="w-14 h-14 bg-emerald-500 rounded-2xl flex items-center justify-center text-white mx-auto mb-4 shadow-lg shadow-emerald-500/20">
+            <span class="material-symbols-outlined text-3xl">location_on</span>
+        </div>
+        <div class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">
+            ສະຖານທີ່ປະຕິບັດງານ</div>
+        <div class="text-xl font-extrabold text-slate-900" id="ci-location">Loading Site...</div>
+        <div class="flex items-center justify-center gap-2 mt-3">
+            <span class="material-symbols-outlined text-sm text-slate-400">schedule</span>
+            <div class="text-xs font-bold text-slate-500 uppercase tracking-widest" id="ci-shift-timing">--:--
+            </div>
+        </div>
+        <div class="text-[10px] font-medium text-slate-400 mt-2 italic" id="ci-time">--:--</div>
+    </section>
+
+    <!-- Work Type Selection -->
+    <section class="space-y-3">
+        <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">ປະເພດວຽກ</label>
+        <div class="grid grid-cols-2 gap-3">
+            <button id="type-reg" onclick="selectType('reg')"
+                class="tactile-btn glass-card rounded-[2rem] p-5 flex flex-col items-center gap-3 border-2 border-emerald-500 ring-4 ring-emerald-500/10 bg-white">
+                <div
+                    class="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 glow-emerald">
+                    <span class="material-symbols-outlined text-3xl">schedule</span>
+                </div>
+                <div class="text-center">
+                    <span class="block text-base font-bold text-slate-900">ວຽກປົກກະຕິ</span>
+                    <span class="block text-[10px] text-slate-500 font-medium">Regular</span>
+                </div>
+            </button>
+            <button id="type-ot" onclick="selectType('ot')"
+                class="tactile-btn glass-card rounded-[2rem] p-5 flex flex-col items-center gap-3 border-2 border-slate-200 bg-white">
+                <div class="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-500">
+                    <span class="material-symbols-outlined text-3xl">payments</span>
+                </div>
+                <div class="text-center">
+                    <span class="block text-base font-bold text-slate-900">ວຽກໂອທີ</span>
+                    <span class="block text-[10px] text-slate-500 font-medium">OT Shift</span>
+                </div>
+            </button>
+        </div>
+    </section>
+
+    <div class="flex-grow"></div>
+
+    <!-- Fixed Bottom Action - INSIDE wrapper -->
+    <div
+        class="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#f8fafc] via-[#f8fafc] to-transparent pt-8 z-50 space-y-4">
+        <div class="max-w-md mx-auto">
+            <div
+                class="flex items-center justify-center gap-2 text-[10px] font-bold text-emerald-600 uppercase tracking-widest bg-emerald-50/80 py-2 px-4 rounded-full mb-4">
+                <span class="material-symbols-outlined text-sm animate-pulse">my_location</span>
+                ຢືນຢັນ GPS ສຳເລັດ
+            </div>
+            <button onclick="confirmCheckin()"
+                class="tactile-btn w-full bg-slate-900 py-5 rounded-[2rem] flex items-center justify-center gap-3 shadow-xl shadow-slate-200">
+                <span class="material-symbols-outlined text-white text-2xl">login</span>
+                <div>
+                    <span class="block text-white font-extrabold text-lg uppercase tracking-wide">ຢືນຢັນເຂົ້າວຽກ</span>
+                </div>
+            </button>
+            <button onclick="navigateTo('home')"
+                class="w-full py-3 text-slate-400 font-bold text-xs uppercase tracking-[0.2em] text-center mt-2">
+                ຍົກເລີກ
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let selectedType = 'reg';
+
+    function selectType(type) {
+        selectedType = type;
+        const reg = document.getElementById('type-reg');
+        const ot = document.getElementById('type-ot');
+
+        if (type === 'reg') {
+            reg.className = "tactile-btn glass-card rounded-[2rem] p-5 flex flex-col items-center gap-3 border-2 border-emerald-500 ring-4 ring-emerald-500/10 bg-white";
+            ot.className = "tactile-btn glass-card rounded-[2rem] p-5 flex flex-col items-center gap-3 border-2 border-slate-200 bg-white";
+        } else {
+            ot.className = "tactile-btn glass-card rounded-[2rem] p-5 flex flex-col items-center gap-3 border-2 border-amber-500 ring-4 ring-amber-500/10 bg-white";
+            reg.className = "tactile-btn glass-card rounded-[2rem] p-5 flex flex-col items-center gap-3 border-2 border-slate-200 bg-white";
+        }
+    }
+
+    function initCheckinData() {
+        if (State.checkinData) {
+            const displayEl = document.getElementById('ci-location');
+
+            // UI FLICKER FIX: Show loading state if we are about to resolve the name
+            if (State.lastScanCode) {
+                displayEl.innerHTML = '<span class="animate-pulse">Loading Site Info...</span>';
+            } else {
+                // Formatting for legacy or direct codes
+                displayEl.innerText = State.checkinData.locationName || 'Unknown Site';
+            }
+
+            document.getElementById('ci-time').innerText = State.checkinData.serverTime || '--:--';
+            if (State.checkinData.shiftTiming) {
+                document.getElementById('ci-shift-timing').innerText = State.checkinData.shiftTiming;
+            }
+
+            // Fetch Real Site Name if available (since QR only has Point name)
+            // We use the ID/Code captured during scan
+            if (State.lastScanCode) {
+                google.script.run
+                    .withSuccessHandler(function (siteName) {
+                        if (siteName) {
+                            displayEl.innerText = siteName;
+                            displayEl.classList.remove('animate-pulse');
+                            // Update state too so it persists
+                            State.checkinData.locationName = siteName;
+                        }
+                    })
+                    .resolveSiteName(State.lastScanCode);
+            }
+        }
+    }
+
+    setTimeout(initCheckinData, 100);
+
+    function confirmCheckin() {
+        showLoading('ກຳລັງຢືນຢັນການເຂົ້າວຽກ...');
+
+        // Construct full profile for auto-registration
+        const guardProfile = {
+            empId: State.currentGuardId,
+            name: State.guardName,
+            surname: State.guardSurname,
+            phone: State.guardPhone
+        };
+
+        const scanPayload = {
+            qrString: State.lastScannedQR,
+            guardId: guardProfile, // Pass object for CHECKIN to trigger auto-registration
+            locationId: null,
+            scanType: 'CHECKIN',
+            meta: {
+                workType: selectedType,
+                isOT: selectedType === 'ot',
+                lat: State.gps?.lat,
+                lng: State.gps?.lng
+            }
+        };
+
+        submitScanData(scanPayload)
+            .then(result => {
+                hideLoading();
+                if (result.success) {
+                    State.isOnDuty = true;
+                    State.checkinData = {
+                        locationName: result.locationName || result.locationId,
+                        shift: result.shift,
+                        shiftTiming: result.shiftTiming,
+                        isOT: result.isOT,
+                        checkinTime: new Date().toISOString()
+                    };
+
+                    // GAMIFICATION: CHECK BADGES
+                    if (typeof BadgeManager !== 'undefined') BadgeManager.checkCheckin();
+
+                    // DEBUG: Explicit Alert if Config is Missing
+                    console.log('Checkin Result:', result);
+                    if (!result.roundsTarget || !result.checkpointTarget) {
+                        alert(`WARNING: Config Missing! Got Rounds: ${result.roundsTarget}, Checkpoints: ${result.checkpointTarget}`);
+                    } else {
+                        // showToast(`Verified Config: ${result.roundsTarget} Rounds`, 'success');
+                    }
+
+                    // Sync Patrol Targets from Backend
+                    if (result.checkpointTarget) State.pointsPerRound = result.checkpointTarget;
+                    if (result.roundsTarget) State.totalPatrols = result.roundsTarget;
+
+                    updateDutyStatusUI();
+                    saveSessionState(); // Persist session state
+
+                    if (result.offline) showToast("ບັນທຶກແບບ Offline", "info");
+
+                    navigateTo('home');
+                } else {
+                    showError("ຂໍ້ຜິດພາດ", result.message);
+                }
+            })
+            .catch(err => {
+                hideLoading();
+                showError("ເຄືອຂ່າຍມີບັນຫາ", err);
+            });
+    }
+</script>

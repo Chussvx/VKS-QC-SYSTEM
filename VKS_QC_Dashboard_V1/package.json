@@ -1,0 +1,23 @@
+{
+    "name": "vks-qc-dashboard-v1",
+    "version": "1.0.0",
+    "description": "VKS Quality Control Dashboard - GAS Web App",
+    "scripts": {
+        "deploy": "powershell -ExecutionPolicy Bypass -File ./deploy.ps1",
+        "deploy:force": "powershell -ExecutionPolicy Bypass -File ./deploy.ps1 -Force",
+        "deploy:status": "powershell -ExecutionPolicy Bypass -File ./deploy.ps1 -StatusOnly -Verbose",
+        "deploy:prod": "clasp deploy --description 'Production'",
+        "deploy:test": "clasp push --force && clasp deploy -i AKfycbz89Z7UA_cdEZXb4Fp02Us8w_5PHiJVTEuiMZ_NRjj71ix6gLvpLzoKlORRUa9rPiwOdQ --description 'Test Update'",
+        "open": "clasp open",
+        "pull": "clasp pull",
+        "logs": "clasp logs"
+    },
+    "keywords": [
+        "vks",
+        "qc",
+        "dashboard",
+        "gas"
+    ],
+    "author": "VKS Company",
+    "license": "UNLICENSED"
+}

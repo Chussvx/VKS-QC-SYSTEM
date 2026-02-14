@@ -1,0 +1,418 @@
+<!-- Modal_GuardStats.html - Premium Guard/Inspector Activity Stats Popup (Stitch-Inspired) -->
+<template id="modal-guard-stats">
+    <div class="modal-card-solid guard-stats-modal">
+        <!-- Header with Avatar -->
+        <div class="guard-stats-header">
+            <div class="guard-stats-profile">
+                <div class="guard-stats-avatar-wrap">
+                    <div id="guard-stats-avatar" class="guard-stats-avatar">SP</div>
+                    <div id="guard-stats-status-dot" class="guard-stats-status-dot"></div>
+                </div>
+                <div class="guard-stats-info">
+                    <h2 id="guard-stats-name" class="guard-stats-name">Somsack Phomvihane</h2>
+                    <div class="guard-stats-badges">
+                        <span id="guard-stats-type-badge" class="badge badge-success text-xs">Guard</span>
+                    </div>
+                </div>
+            </div>
+            <button class="btn-close" onclick="backToSiteDetail()">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <!-- Site Context Bar -->
+        <div class="guard-stats-context-bar">
+            <span class="material-symbols-outlined">location_on</span>
+            <span id="guard-stats-site">ສູນພາສາຈີນ ມັງກອນ (VKS25-061)</span>
+        </div>
+
+        <!-- Stats Grid 2x2 -->
+        <div class="guard-stats-grid">
+            <!-- On-Time Rate with Sparkline -->
+            <div class="guard-stat-card card-sparkline">
+                <p class="guard-stat-label" data-i18n="guard_stats.ontime_rate">On-Time Rate</p>
+                <div class="guard-stat-value-row">
+                    <span id="guard-stats-ontime" class="guard-stat-value">98%</span>
+                    <span id="guard-stats-trend" class="guard-stat-trend"></span>
+                </div>
+                <svg class="guard-stat-sparkline" viewBox="0 0 100 40" preserveAspectRatio="none">
+                    <defs>
+                        <linearGradient id="sparkGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#10b981;stop-opacity:0.2" />
+                            <stop offset="100%" style="stop-color:#10b981;stop-opacity:0" />
+                        </linearGradient>
+                    </defs>
+                    <path d="M0 35 Q10 32 20 25 T40 20 T60 15 T80 8 L100 5 V 40 H 0 Z" fill="url(#sparkGradient)"
+                        stroke="none" />
+                    <path d="M0 35 Q10 32 20 25 T40 20 T60 15 T80 8 L100 5" fill="none" stroke="#10b981"
+                        stroke-width="2" stroke-linecap="round" />
+                </svg>
+            </div>
+
+            <!-- Total Check-ins -->
+            <div class="guard-stat-card">
+                <p class="guard-stat-label" data-i18n="guard_stats.total_checkins">Total Check-ins</p>
+                <div class="guard-stat-value-row">
+                    <span id="guard-stats-total" class="guard-stat-value">42</span>
+                </div>
+                <p id="guard-stats-target" class="guard-stat-target"></p>
+            </div>
+
+            <!-- This Week -->
+            <div class="guard-stat-card card-info">
+                <p class="guard-stat-label" data-i18n="guard_stats.this_week">This Week</p>
+                <span id="guard-stats-weekly" class="guard-stat-value text-info">7</span>
+            </div>
+
+            <!-- This Month -->
+            <div class="guard-stat-card card-warning">
+                <p class="guard-stat-label" data-i18n="guard_stats.this_month">This Month</p>
+                <span id="guard-stats-monthly" class="guard-stat-value text-warning">24</span>
+            </div>
+        </div>
+
+        <!-- Last Check-in Row -->
+        <div class="guard-stats-last-row">
+            <span class="material-symbols-outlined">schedule</span>
+            <span data-i18n="guard_stats.last_checkin">Last Check-in:</span>
+            <span id="guard-stats-last" class="font-semibold">2 hours ago</span>
+        </div>
+
+        <!-- Other Sites Section -->
+        <div id="guard-stats-other-sites-section" class="guard-stats-sites-section">
+            <h3 class="guard-stats-sites-header">
+                <span data-i18n="guard_stats.other_sites">Other Sites Visited</span>
+                <span class="guard-stats-sites-lao">ສະຖານທີ່ອື່ນໆ</span>
+            </h3>
+            <div id="guard-stats-other-sites" class="guard-stats-sites-list">
+                <!-- Dynamic list items -->
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="guard-stats-footer">
+            <button class="btn btn-primary flex-1" onclick="viewGuardFullProfile()">
+                <span data-i18n="guard_stats.view_profile">View Full Profile</span>
+                <span class="btn-lao-text">(ເບິ່ງປະຫວັດ)</span>
+            </button>
+            <button class="btn btn-ghost" onclick="backToSiteDetail()">
+                <span data-i18n="common.close">Close</span>
+            </button>
+        </div>
+    </div>
+</template>
+
+<style>
+    /* Guard Stats Modal - Premium Stitch-Inspired Design */
+    .guard-stats-modal {
+        max-width: 420px;
+        width: 100%;
+        border-radius: 1rem;
+        overflow: hidden;
+    }
+
+    .guard-stats-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        padding: 1.5rem;
+        padding-bottom: 0.5rem;
+    }
+
+    .guard-stats-profile {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .guard-stats-avatar-wrap {
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    .guard-stats-avatar {
+        width: 4rem;
+        height: 4rem;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.25rem;
+        box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+        border: 2px solid white;
+    }
+
+    .guard-stats-avatar.inspector {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    }
+
+    .guard-stats-status-dot {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 1rem;
+        height: 1rem;
+        background: #10b981;
+        border: 2px solid white;
+        border-radius: 50%;
+    }
+
+    .guard-stats-info {
+        display: flex;
+        flex-direction: column;
+        padding-top: 0.25rem;
+    }
+
+    .guard-stats-name {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: #1e293b;
+        line-height: 1.25;
+        margin: 0;
+    }
+
+    .guard-stats-badges {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.375rem;
+    }
+
+    .guard-stats-context-bar {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: #f9fafb;
+        border-top: 1px solid #f1f5f9;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.875rem;
+        color: #64748b;
+    }
+
+    .guard-stats-context-bar .material-symbols-outlined {
+        font-size: 1.125rem;
+        color: #10b981;
+    }
+
+    .guard-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        padding: 1rem 1.5rem;
+    }
+
+    .guard-stat-card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        padding: 1rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.75rem;
+        overflow: hidden;
+    }
+
+    .guard-stat-card.card-sparkline {
+        background: white;
+    }
+
+    .guard-stat-card.card-info {
+        background: #eff6ff;
+        border-color: rgba(59, 130, 246, 0.2);
+    }
+
+    .guard-stat-card.card-warning {
+        background: #fffbeb;
+        border-color: rgba(245, 158, 11, 0.2);
+    }
+
+    .guard-stat-label {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #64748b;
+        margin-bottom: 0.25rem;
+    }
+
+    .guard-stat-value-row {
+        display: flex;
+        align-items: flex-end;
+        gap: 0.5rem;
+        z-index: 1;
+    }
+
+    .guard-stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+        line-height: 1.2;
+    }
+
+    .guard-stat-value.text-info {
+        color: #3b82f6;
+    }
+
+    .guard-stat-value.text-warning {
+        color: #f59e0b;
+    }
+
+    .guard-stat-trend {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #10b981;
+        margin-bottom: 0.375rem;
+    }
+
+    .guard-stat-target {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        margin-top: 0.25rem;
+    }
+
+    .guard-stat-sparkline {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 6rem;
+        height: 3rem;
+        opacity: 0.8;
+        transform: translate(0.5rem, 0.25rem);
+    }
+
+    .guard-stats-last-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0 1.5rem;
+        font-size: 0.875rem;
+        color: #64748b;
+    }
+
+    .guard-stats-last-row .material-symbols-outlined {
+        font-size: 1.125rem;
+        color: #94a3b8;
+    }
+
+    .guard-stats-sites-section {
+        padding: 1rem 1.5rem;
+    }
+
+    .guard-stats-sites-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0.75rem;
+    }
+
+    .guard-stats-sites-lao {
+        font-size: 0.75rem;
+        font-weight: 400;
+        color: #94a3b8;
+    }
+
+    .guard-stats-sites-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        max-height: 160px;
+        overflow-y: auto;
+    }
+
+    .guard-stats-site-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: background 0.15s ease;
+    }
+
+    .guard-stats-site-item:hover {
+        background: #f8fafc;
+    }
+
+    .guard-stats-site-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 0.5rem;
+        background: #f1f5f9;
+        color: #64748b;
+        flex-shrink: 0;
+        transition: all 0.15s ease;
+    }
+
+    .guard-stats-site-item:hover .guard-stats-site-icon {
+        background: rgba(34, 197, 94, 0.1);
+        color: #10b981;
+    }
+
+    .guard-stats-site-icon .material-symbols-outlined {
+        font-size: 1.125rem;
+    }
+
+    .guard-stats-site-info {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        flex: 1;
+    }
+
+    .guard-stats-site-name {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #475569;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .guard-stats-site-visits {
+        font-size: 0.75rem;
+        color: #94a3b8;
+    }
+
+    .guard-stats-site-arrow {
+        color: #cbd5e1;
+        font-size: 1.125rem;
+    }
+
+    .guard-stats-footer {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1.5rem;
+        background: #f9fafb;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .guard-stats-footer .btn-primary {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        flex: 1;
+    }
+
+    .btn-lao-text {
+        font-weight: 400;
+        opacity: 0.8;
+        font-size: 0.75rem;
+    }
+
+    @media (max-width: 420px) {
+        .btn-lao-text {
+            display: none;
+        }
+    }
+</style>

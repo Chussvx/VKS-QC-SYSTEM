@@ -1,0 +1,913 @@
+<!-- Page_PatrolStatus.html - Live Patrol Status Monitoring -->
+<div id="page-patrol-status" class="page-content">
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="filter-group">
+            <!-- Search -->
+            <div class="search-input w-60">
+                <span class="material-symbols-outlined">search</span>
+                <input type="text" id="patrol-search" data-i18n-placeholder="patrol.search"
+                    placeholder="Search site, guard..." onkeyup="filterPatrolStatus()">
+            </div>
+
+            <div class="divider-v h-6"></div>
+
+            <!-- Site Filter -->
+            <div class="custom-select w-40" data-select-id="patrol-site" data-onchange="filterPatrolStatus">
+                <button class="custom-select-trigger" onclick="toggleSelect('patrol-site')">
+                    <span class="custom-select-value" data-i18n="patrol.all_sites">All Sites</span>
+                    <span class="material-symbols-outlined">expand_more</span>
+                </button>
+                <div class="custom-select-menu" id="patrol-site-menu">
+                    <div class="custom-select-item selected" data-value=""
+                        onclick="selectOption('patrol-site', '', 'All Sites')">All Sites</div>
+                </div>
+                <input type="hidden" name="patrol-site" value="">
+            </div>
+
+            <!-- Shift Filter -->
+            <div class="custom-select w-44" data-select-id="patrol-shift">
+                <button class="custom-select-trigger" onclick="toggleSelect('patrol-shift')">
+                    <span class="custom-select-value" data-i18n="patrol.all_shifts">All Shifts</span>
+                    <span class="material-symbols-outlined">expand_more</span>
+                </button>
+                <div class="custom-select-menu">
+                    <div class="custom-select-item selected" data-value=""
+                        onclick="selectOption('patrol-shift', '', 'All Shifts'); filterPatrolStatus()">All Shifts</div>
+                    <div class="custom-select-item" data-value="morning"
+                        onclick="selectOption('patrol-shift', 'morning', '🌅 Morning'); filterPatrolStatus()">🌅 Morning
+                        (06:00 - 14:00)</div>
+                    <div class="custom-select-item" data-value="evening"
+                        onclick="selectOption('patrol-shift', 'evening', '🌆 Evening'); filterPatrolStatus()">🌆 Evening
+                        (14:00 - 22:00)</div>
+                    <div class="custom-select-item" data-value="night"
+                        onclick="selectOption('patrol-shift', 'night', '🌙 Night'); filterPatrolStatus()">🌙 Night
+                        (22:00 - 06:00)</div>
+                </div>
+                <input type="hidden" name="patrol-shift" value="">
+            </div>
+
+            <!-- Status Filter -->
+            <div class="custom-select w-32" data-select-id="patrol-status-filter">
+                <button class="custom-select-trigger" onclick="toggleSelect('patrol-status-filter')">
+                    <span class="custom-select-value" data-i18n="patrol.status">Status</span>
+                    <span class="material-symbols-outlined">expand_more</span>
+                </button>
+                <div class="custom-select-menu">
+                    <div class="custom-select-item selected" data-value=""
+                        onclick="selectOption('patrol-status-filter', '', 'Status'); filterPatrolStatus()">All Status
+                    </div>
+                    <div class="custom-select-item" data-value="active"
+                        onclick="selectOption('patrol-status-filter', 'active', 'Active'); filterPatrolStatus()">Active
+                    </div>
+                    <div class="custom-select-item" data-value="late"
+                        onclick="selectOption('patrol-status-filter', 'late', 'Late'); filterPatrolStatus()">Late</div>
+                    <div class="custom-select-item" data-value="complete"
+                        onclick="selectOption('patrol-status-filter', 'complete', 'Complete'); filterPatrolStatus()">
+                        Complete</div>
+                    <div class="custom-select-item" data-value="offline"
+                        onclick="selectOption('patrol-status-filter', 'offline', 'Offline'); filterPatrolStatus()">
+                        Offline</div>
+                </div>
+                <input type="hidden" name="patrol-status-filter" value="">
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3 ml-auto">
+            <span class="text-muted text-sm" id="patrol-last-update">Last updated: --:--:--</span>
+            <button class="btn-icon" onclick="loadPatrolStatus()" title="Refresh">
+                <span class="material-symbols-outlined">refresh</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Patrol Status Table -->
+    <div class="card p-0 overflow-hidden">
+        <div class="table-container">
+            <table class="data-table" id="patrol-table">
+                <thead>
+                    <tr>
+                        <th data-i18n="patrol.col.site">Site</th>
+                        <th data-i18n="patrol.col.guard">Guard</th>
+                        <th data-i18n="patrol.col.shift">Shift</th>
+                        <th data-i18n="patrol.col.checkin">Check-in</th>
+                        <th style="width: 160px;" data-i18n="patrol.col.progress">Progress</th>
+                        <th data-i18n="patrol.col.round">Round</th>
+                        <th data-i18n="patrol.col.last_scan">Last Scan</th>
+                        <th data-i18n="patrol.col.status">Status</th>
+                        <th class="text-right" data-i18n="patrol.col.actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="patrol-tbody">
+                    <tr class="skeleton-row">
+                        <td>
+                            <div class="skeleton-text" style="width:85%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:60%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:70%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:50%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:45%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:90%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:55%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:40%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:65%"></div>
+                        </td>
+                    </tr>
+                    <tr class="skeleton-row">
+                        <td>
+                            <div class="skeleton-text" style="width:60%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:70%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:50%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:45%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:90%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:55%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:40%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:65%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:85%"></div>
+                        </td>
+                    </tr>
+                    <tr class="skeleton-row">
+                        <td>
+                            <div class="skeleton-text" style="width:70%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:50%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:45%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:90%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:55%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:40%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:65%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:85%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:60%"></div>
+                        </td>
+                    </tr>
+                    <tr class="skeleton-row">
+                        <td>
+                            <div class="skeleton-text" style="width:50%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:45%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:90%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:55%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:40%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:65%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:85%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:60%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:70%"></div>
+                        </td>
+                    </tr>
+                    <tr class="skeleton-row">
+                        <td>
+                            <div class="skeleton-text" style="width:45%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:90%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:55%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:40%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:65%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:85%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:60%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:70%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:50%"></div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex items-center justify-between mt-4">
+        <p class="text-sm text-muted">
+            Showing <strong id="patrol-showing">0</strong> of <strong id="patrol-total">0</strong> entries
+        </p>
+    </div>
+
+</div>
+
+<script>
+    // Patrol Status page state
+    let patrolData = [];
+    let patrolFiltered = [];
+    let expandedGroups = new Set();
+    let siteOptions = [];
+    let pLastScanSignal = 0; // Track the latest scan signal we've processed
+    let pSignalPoller = null;
+
+    // Initialize Patrol page
+    function init_patrol_status() {
+        console.log('init_patrol_status called');
+
+        // Load initial data
+        loadPatrolSites();
+        loadPatrolStatus();
+
+        // Start signaling listener instead of heavy interval
+        startSignalListener();
+    }
+
+    /**
+     * Polling Signal Listener
+     * Checks for LAST_SCAN_SIGNAL every 5 seconds.
+     * This is very lightweight on the server.
+     */
+    function startSignalListener() {
+        // Clear existing poller if any
+        if (pSignalPoller) clearInterval(pSignalPoller);
+
+        pSignalPoller = setInterval(() => {
+            // Only poll if we are on the patrol-status page
+            if (currentPage !== 'patrol-status') return;
+
+            google.script.run
+                .withSuccessHandler(function (signals) {
+                    if (signals && signals.lastScan > pLastScanSignal) {
+                        console.log('[Signal] New scan detected! Refreshing...', signals.lastScan);
+
+                        // If this is the FIRST fetch, just set the signal and don't refresh 
+                        // (prevents double-load on init)
+                        if (pLastScanSignal === 0) {
+                            pLastScanSignal = signals.lastScan;
+                            return;
+                        }
+
+                        pLastScanSignal = signals.lastScan;
+                        loadPatrolStatus(); // Trigger the actual data fetch
+                    }
+                })
+                .getUpdateSignals();
+        }, 5000); // Check every 5 seconds
+    }
+
+    // Load site options
+    function loadPatrolSites() {
+        console.log('[Patrol] Loading site options...');
+        google.script.run
+            .withSuccessHandler(function (options) {
+                if (!options || !Array.isArray(options)) {
+                    console.error('[Page_PatrolStatus] Invalid options received:', options);
+                    options = [];
+                }
+
+                const menu = document.getElementById('patrol-site-menu');
+                if (menu) {
+                    // Mimic Inspection Logs: Add default option first
+                    let html = `
+                        <div class="custom-select-item selected" data-value="" 
+                             onclick="selectOption('patrol-site', '', 'All Sites'); filterPatrolStatus()">
+                            All Sites
+                        </div>
+                    `;
+
+                    // Add backend options
+                    // Use escaped label for display, value for ID
+                    options.forEach(opt => {
+                        html += `
+                            <div class="custom-select-item" data-value="${opt.value}" 
+                                 onclick="selectOption('patrol-site', '${opt.value}', this); filterPatrolStatus()">
+                                ${escapeHtml(opt.label)}
+                            </div>
+                        `;
+                    });
+
+                    menu.innerHTML = html;
+                    console.log(`[Patrol] Populated ${options.length} site options.`);
+                } else {
+                    console.error('[Patrol] Menu element #patrol-site-menu not found');
+                }
+            })
+            .withFailureHandler(function (err) {
+                console.error('[Patrol] Failed to load sites:', err);
+                const menu = document.getElementById('patrol-site-menu');
+                if (menu) menu.innerHTML = '<div class="p-2 text-danger text-sm">Failed to load sites</div>';
+            })
+            .getSiteOptions();
+    }
+
+    // Load patrol status from backend
+    function loadPatrolStatus() {
+        if (!patrolData || patrolData.length === 0) {
+            showTableLoading('patrol-tbody', 9);
+        }
+
+        google.script.run
+            .withSuccessHandler(function (data) {
+                patrolData = data || [];
+                // Re-apply current filters
+                filterPatrolStatus();
+                updateLastRefresh();
+            })
+            .withFailureHandler(function (error) {
+                showTableError('patrol-tbody', 9, 'Failed to load: ' + error.message);
+            })
+            .getPatrolStatus();
+    }
+
+    // Update last refresh time
+    function updateLastRefresh() {
+        const now = new Date();
+        const time = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        document.getElementById('patrol-last-update').textContent = 'Last updated: ' + time;
+    }
+
+    // Filter patrol status
+    function filterPatrolStatus() {
+        const search = (document.getElementById('patrol-search').value || '').toLowerCase();
+        // Safe getters for hidden inputs
+        const siteInput = document.querySelector('input[name="patrol-site"]');
+        const shiftInput = document.querySelector('input[name="patrol-shift"]');
+        const statusInput = document.querySelector('input[name="patrol-status-filter"]');
+
+        const site = siteInput ? siteInput.value : '';
+        const shift = shiftInput ? shiftInput.value.toLowerCase() : ''; // Normalize Filter
+        const status = statusInput ? statusInput.value.toLowerCase() : ''; // Normalize Filter
+
+        if (!patrolData) return;
+
+        patrolFiltered = patrolData.filter(patrol => {
+            // Robust Search
+            const pSiteName = (patrol.siteName || '').toLowerCase();
+            const pGuardName = (patrol.guardName || '').toLowerCase();
+            const matchSearch = !search || pSiteName.includes(search) || pGuardName.includes(search);
+
+            // Site ID Match (Dropdown value is now ID)
+            const matchSite = !site || String(patrol.siteId) === site;
+
+            // Robust Shift Match (Morning vs morning)
+            const pShift = (patrol.shiftType || '').toLowerCase();
+            const matchShift = !shift || pShift === shift;
+
+            // Robust Status Match
+            const pStatus = (patrol.status || '').toLowerCase();
+            const matchStatus = !status || pStatus === status;
+
+            return matchSearch && matchSite && matchShift && matchStatus;
+        });
+
+        renderPatrolTable();
+        updatePatrolCount();
+    }
+
+    // Update count display
+    function updatePatrolCount() {
+        document.getElementById('patrol-showing').textContent = patrolFiltered.length;
+        document.getElementById('patrol-total').textContent = patrolData.length;
+    }
+
+    // State for expanded groups is handled at top of script
+
+    function toggleGroup(siteId) {
+        if (expandedGroups.has(siteId)) {
+            expandedGroups.delete(siteId);
+        } else {
+            expandedGroups.add(siteId);
+        }
+        renderPatrolTable();
+    }
+
+    // Render patrol table with grouping
+    function renderPatrolTable() {
+        const tbody = document.getElementById('patrol-tbody');
+
+        if (patrolFiltered.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9" class="text-center py-12 text-muted">
+                        <span class="material-symbols-outlined text-6xl mb-4 opacity-20">assignment_late</span>
+                        <p class="font-medium text-lg">No patrol records found</p>
+                        <p class="text-sm mt-2">There might be no active shifts right now, or your filters are too restrictive. Check the "All Sites" view if you're looking for a specific guard.</p>
+                    </td>
+                </tr>`;
+            return;
+        }
+
+        // Group by Site ID
+        const groups = {};
+        patrolFiltered.forEach(p => {
+            if (!groups[p.siteId]) groups[p.siteId] = [];
+            groups[p.siteId].push(p);
+        });
+
+        const displayItems = [];
+        Object.values(groups).forEach(group => {
+            if (group.length === 1) {
+                displayItems.push({ type: 'single', data: group[0] });
+            } else {
+                // Determine aggregate status for header
+                const anyLate = group.some(p => p.status === 'late');
+                const allComplete = group.every(p => p.status === 'complete');
+                const aggStatus = anyLate ? 'late' : (allComplete ? 'complete' : 'active');
+
+                displayItems.push({
+                    type: 'group-header',
+                    data: group,
+                    siteId: group[0].siteId,
+                    status: aggStatus
+                });
+
+                if (expandedGroups.has(group[0].siteId)) {
+                    group.forEach(p => displayItems.push({ type: 'group-child', data: p }));
+                }
+            }
+        });
+
+        DiffRenderer.render(tbody, displayItems, {
+            keyFn: item => {
+                if (item.type === 'single') return `s-${item.data.siteId}-${item.data.guardId}`;
+                if (item.type === 'group-header') return `grp-${item.siteId}`;
+                return `ch-${item.data.siteId}-${item.data.guardId}`;
+            },
+            renderFn: item => {
+                if (item.type === 'single') return renderRowHtml(item.data, 'single');
+                if (item.type === 'group-header') return renderGroupHeaderHtml(item);
+                if (item.type === 'group-child') return renderRowHtml(item.data, 'child');
+            },
+            onUpdate: (el, item, changed) => {
+                if (changed) {
+                    el.classList.add('row-update-flash');
+                    setTimeout(() => el.classList.remove('row-update-flash'), 2000);
+                }
+            }
+        });
+    }
+
+    // HTML Generator for Standard/Child Row
+    function renderRowHtml(p, type) {
+        const isChild = type === 'child';
+        // Child rows get a subtle background and indentation to sit "inside" the group
+        const rowClass = getPatrolRowClass(p.status) + (isChild ? ' child-row bg-slate-50' : '');
+        // For alignment, we indent the CONTENT of the first cell, not the cell itself
+        const indentStyle = isChild ? 'padding-left: 3rem;' : '';
+        const treeConnector = isChild ? `<span class="material-symbols-outlined text-slate-300 absolute" style="left: 1rem; top: 50%; transform: translateY(-50%); font-size: 20px; pointer-events: none;">subdirectory_arrow_right</span>` : '';
+        const cellStyle = isChild ? 'position: relative;' : '';
+
+        const progressPercent = p.totalCheckpoints > 0
+            ? Math.round((p.scannedCheckpoints / p.totalCheckpoints) * 100)
+            : 0;
+        const progressClass = getProgressClass(p.status, progressPercent);
+
+        return `
+            <tr class="${rowClass}" onclick="openPatrolDetail('${p.siteId}', '${p.guardId}')">
+                <td style="${cellStyle} ${indentStyle}">
+                    ${treeConnector}
+                    ${!isChild ? `
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl" title="${escapeHtml(p.siteType)}">${getSiteTypeIcon(p.siteType)}</span>
+                        <span class="font-medium text-slate-700">${escapeHtml(p.siteName)}</span>
+                    </div>` : ''}
+                    ${isChild ? `<span class="text-xs text-muted font-mono select-none">ID: ${escapeHtml(p.guardId)}</span>` : ''}
+                </td>
+                <td>
+                    ${p.guardName ? `
+                        <div class="flex items-center gap-2">
+                            <div class="avatar avatar-xs" style="background-color: ${getAvatarColor(p.guardName)}">
+                                ${getInitials(p.guardName)}
+                            </div>
+                            <span class="font-medium text-slate-700">${escapeHtml(p.guardName)}</span>
+                        </div>
+                    ` : '<span class="text-muted italic">Unassigned</span>'}
+                </td>
+                <td class="text-muted">${p.shiftDisplay || '-'}</td>
+                <td class="font-medium text-emerald-600">${p.checkinTime || '-'}</td>
+                <td>
+                    <div class="progress-bar">
+                        <div class="progress-fill ${progressClass}" style="width: ${progressPercent}%"></div>
+                    </div>
+                    <div class="flex justify-between mt-1">
+                        <span class="text-xs text-muted">${progressPercent}%</span>
+                        ${p.status === 'late' ? '<span class="text-xs text-danger font-medium">Delayed</span>' : ''}
+                    </div>
+                </td>
+                <td>
+                    <div class="flex flex-col">
+                        <span class="font-medium">${p.currentRound || 0} / ${p.totalRounds}</span>
+                        <span class="text-xs text-muted">${p.roundProgress || '0/0'} pts</span>
+                    </div>
+                </td>
+                <td class="${p.status === 'late' ? 'text-danger font-medium' : 'text-muted'}">${p.lastScan || '-'}</td>
+                <td>${getPatrolStatusBadge(p.status)}</td>
+                <td class="text-right">
+                    <button class="btn-icon" onclick="event.stopPropagation(); openPatrolDetail('${p.siteId}', '${p.guardId}')" title="View Details">
+                        <span class="material-symbols-outlined">info</span>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }
+
+    // HTML Generator for Group Header
+    function renderGroupHeaderHtml(item) {
+        const group = item.data;
+        const p = group[0]; // Representative for static site data
+        const isExpanded = expandedGroups.has(item.siteId);
+        const toggleIcon = isExpanded ? 'expand_less' : 'expand_more';
+
+        // --- LOGIC ---
+        // 1. Shift Logic: Take from first guard (User Requirement)
+        const activeShift = (group[0] && group[0].shiftDisplay) ? group[0].shiftDisplay : '-';
+
+        // 2. Status Logic: Any Late => Late (Warning), All Complete => Complete, Else Active
+        const anyLate = group.some(g => g.status === 'late');
+        const allComplete = group.every(g => g.status === 'complete');
+        const overallStatus = anyLate ? 'late' : (allComplete ? 'complete' : 'active');
+        const statusBadge = getPatrolStatusBadge(overallStatus);
+
+        // 3. Summary Text
+        // "3 Guards • Morning Check • Avg 45%"
+        const avgProgress = Math.round(group.reduce((acc, g) => {
+            const pct = g.totalCheckpoints > 0 ? (g.scannedCheckpoints / g.totalCheckpoints) : 0;
+            return acc + pct;
+        }, 0) / group.length * 100);
+
+        const summaryText = `
+            <div class="flex items-center gap-3 text-sm text-slate-500">
+                <span class="font-medium text-slate-700">${group.length} Guards</span>
+                <span class="text-slate-300">•</span>
+                <span>${activeShift}</span>
+                <span class="text-slate-300">•</span>
+                <span>Avg ${avgProgress}%</span>
+            </div>
+        `;
+
+        return `
+            <tr class="clickable-row bg-white border-b border-slate-100 shadow-sm hover:bg-slate-50 transition-colors" onclick="toggleGroup('${item.siteId}')">
+                <td>
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl" title="${escapeHtml(p.siteType)}">${getSiteTypeIcon(p.siteType)}</span>
+                        <div class="flex flex-col">
+                            <span class="font-bold text-slate-800 text-base">${escapeHtml(p.siteName)}</span>
+                        </div>
+                    </div>
+                </td>
+                
+                <!-- MERGED SUMMARY COLUMN (Spans Guard, Shift, Checkin, Progress, Rounds, LastScan) -->
+                <td colspan="6">
+                    ${summaryText}
+                </td>
+
+                <td>${statusBadge}</td>
+                <td class="text-right">
+                    <button class="btn-icon bg-white border border-slate-200 shadow-sm text-indigo-600" onclick="event.stopPropagation(); toggleGroup('${item.siteId}')">
+                        <span class="material-symbols-outlined">${toggleIcon}</span>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }
+
+    // Get progress bar class
+    function getProgressClass(status, percent) {
+        if (status === 'late') return 'bg-danger';
+        if (status === 'complete') return 'bg-info';
+        return 'bg-primary';
+    }
+
+    // Get row class based on status
+    function getPatrolRowClass(status) {
+        if (status === 'late') return 'row-danger clickable-row';
+        if (status === 'complete') return 'row-info clickable-row';
+        return 'clickable-row';
+    }
+
+    // Get patrol status badge
+    function getPatrolStatusBadge(status) {
+        const badges = {
+            'active': '<span class="badge badge-success">Active</span>',
+            'late': '<span class="badge badge-danger">Late</span>',
+            'complete': '<span class="badge badge-info">Complete</span>',
+            'offline': '<span class="badge badge-default">Offline</span>'
+        };
+        return badges[status] || badges['offline'];
+    }
+
+    // Open comprehensive patrol detail modal
+    function openPatrolDetail(siteId, guardId) {
+        const patrol = patrolData.find(p => p.siteId === siteId && p.guardId === guardId);
+        if (!patrol) return;
+
+        openModal('patrol-detail');
+
+        // Populate Static/Immediate Info
+        const siteIcon = document.getElementById('det-site-icon');
+        const siteName = document.getElementById('det-site-name');
+        const category = document.getElementById('det-category');
+        const lateBadge = document.getElementById('det-late-badge');
+
+        const avatarEl = document.getElementById('det-guard-avatar');
+        const guardNameEl = document.getElementById('det-guard-name');
+        const guardIdDisplay = document.getElementById('det-guard-id-display');
+        const guardPhoneEl = document.getElementById('det-guard-phone-text');
+        const onlineDot = document.getElementById('det-online-dot');
+
+        const progressCircle = document.getElementById('det-progress-circle');
+        const progressText = document.getElementById('det-progress-val');
+        const roundsText = document.getElementById('det-rounds-val');
+        const pointsLabel = document.getElementById('det-points-label');
+
+        const lastScanText = document.getElementById('det-last-scan');
+        const checkinText = document.getElementById('det-checkin');
+        const shiftText = document.getElementById('det-shift');
+
+        const viewActivityBtn = document.getElementById('det-view-activity-btn');
+
+        // Site Info
+        if (siteIcon) siteIcon.textContent = getSiteTypeIcon(patrol.siteType) === 'shopping_cart' ? 'storefront' : 'corporate_fare';
+        if (siteName) siteName.textContent = `${patrol.siteName} ${patrol.siteCode || patrol.siteId || ''}`;
+        if (category) category.textContent = (patrol.siteType || 'Retail').toUpperCase();
+        if (lateBadge) {
+            lateBadge.style.display = patrol.status === 'late' ? 'flex' : 'none';
+        }
+
+        // Circular Progress Calculation
+        const progressPercent = patrol.totalCheckpoints > 0
+            ? Math.round((patrol.scannedCheckpoints / patrol.totalCheckpoints) * 100)
+            : 0;
+
+        if (progressCircle) {
+            const radius = 34;
+            const circumference = 2 * Math.PI * radius;
+            const offset = circumference - (progressPercent / 100) * circumference;
+            progressCircle.style.strokeDasharray = `${circumference}`;
+            progressCircle.style.strokeDashoffset = offset;
+
+            // Standard CSS Color Update
+            if (patrol.status === 'late') {
+                progressCircle.style.stroke = '#ef4444';
+            } else {
+                progressCircle.style.stroke = '#10b981';
+            }
+        }
+        if (progressText) progressText.textContent = progressPercent + '%';
+        if (roundsText) roundsText.innerHTML = `${patrol.currentRound || 0} / ${patrol.totalRounds} <span style="font-weight: 400; color: #94a3b8;">rounds</span>`;
+        if (pointsLabel) pointsLabel.innerHTML = `<span class="material-icons-round" style="font-size: 14px; vertical-align: middle;">stars</span> ${patrol.roundProgress || '0/0'} pts collected`;
+
+        // Timing Info
+        if (lastScanText) {
+            const timeVal = patrol.lastScan || 'No scans';
+            lastScanText.innerHTML = `<span class="material-icons-round" style="font-size: 14px;">schedule</span> ${timeVal}`;
+
+            if (patrol.status === 'late') {
+                lastScanText.style.color = '#ef4444';
+            } else {
+                lastScanText.style.color = '#10b981';
+            }
+        }
+        if (checkinText) checkinText.textContent = patrol.checkinTime || 'N/A';
+        if (shiftText) shiftText.textContent = patrol.shiftDisplay || 'No shift';
+
+        // Guard Info
+        if (guardNameEl) guardNameEl.textContent = patrol.guardName || 'Unassigned';
+        if (avatarEl) {
+            avatarEl.textContent = patrol.guardName ? getInitials(patrol.guardName) : '?';
+            avatarEl.style.backgroundColor = getAvatarColor(patrol.guardName || 'Unassigned');
+        }
+        if (onlineDot) {
+            onlineDot.style.backgroundColor = patrol.status === 'active' ? '#10b981' : '#cbd5e1';
+        }
+
+        // View Activity Bridge
+        if (viewActivityBtn) {
+            viewActivityBtn.onclick = () => {
+                closeModal();
+                navigateTo('guard-activity', { siteId: patrol.siteId, guardId: patrol.guardId });
+            };
+        }
+
+        // PRE-FETCHED Display (Instant)
+        if (guardIdDisplay) {
+            guardIdDisplay.textContent = 'ID: ' + (patrol.guardEmpId || patrol.guardId || 'N/A');
+        }
+        if (guardPhoneEl) {
+            if (patrol.guardPhone) {
+                guardPhoneEl.textContent = 'Phone: ' + patrol.guardPhone;
+                guardPhoneEl.style.display = 'block';
+            } else {
+                guardPhoneEl.style.display = 'none';
+            }
+        }
+    }
+</script>
+
+<!-- Patrol Detail Modal Template (Standard VKS Layout - Converted from Elite Design) -->
+<template id="modal-patrol-detail">
+    <div class="card p-0"
+        style="max-width: 672px; margin: 0 auto; border-radius: 16px; overflow: hidden; background: #ffffff; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 1px solid #e2e8f0;">
+
+        <!-- Header -->
+        <div
+            style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f1f5f9;">
+            <h2 style="font-size: 20px; font-weight: 700; color: #1e293b; margin: 0;">Live Patrol Insights</h2>
+            <button onclick="closeModal()"
+                style="padding: 8px; background: transparent; border-radius: 9999px; cursor: pointer; display: flex; align-items: center; justify-content: center; border: none; transition: background 0.2s;">
+                <span class="material-icons-round" style="color: #94a3b8; font-size: 24px;">close</span>
+            </button>
+        </div>
+
+        <div style="padding: 24px; display: flex; flex-direction: column; gap: 32px;">
+            <!-- Branding Section -->
+            <div style="display: flex; align-items: start; gap: 16px;">
+                <div
+                    style="padding: 12px; background: #eff6ff; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <span id="det-site-icon" class="material-icons-round"
+                        style="color: #2563eb; font-size: 30px;">storefront</span>
+                </div>
+                <div style="flex: 1;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
+                        <h3 id="det-site-name"
+                            style="font-size: 18px; font-weight: 700; color: #1e293b; margin: 0; line-height: 1.25;">...
+                        </h3>
+                        <span
+                            style="padding: 2px 8px; font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; background: #f1f5f9; color: #64748b; border-radius: 4px;">
+                            <span id="det-category-label">RETAIL</span>
+                        </span>
+                    </div>
+                    <!-- Late Badge -->
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span id="det-late-badge"
+                            style="display: none; align-items: center; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; background: #fef2f2; color: #b91c1c;">
+                            <span
+                                style="width: 6px; height: 6px; border-radius: 50%; background: #ef4444; margin-right: 6px;"></span>
+                            Late
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Guard & Progress Grid -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+
+                <!-- Guard Column -->
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <h4
+                        style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; margin: 0;">
+                        Guard on Duty</h4>
+                    <div
+                        style="padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #f1f5f9; display: flex; align-items: center; gap: 16px;">
+                        <div style="position: relative;">
+                            <div id="det-guard-avatar"
+                                style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(to top right, #f43f5e, #fb923c); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 20px; box-shadow: 0 10px 15px -3px rgba(244, 63, 94, 0.2);">
+                                ?</div>
+                            <div id="det-online-dot"
+                                style="position: absolute; bottom: 0; right: 0; width: 16px; height: 16px; background: #10b981; border: 2px solid white; border-radius: 50%;">
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <p id="det-guard-name" style="font-weight: 700; color: #1e293b; margin: 0;">...</p>
+                            <p id="det-guard-id-display" style="font-size: 12px; color: #64748b; margin: 0;">ID: ...</p>
+                            <p id="det-guard-phone-text" style="font-size: 12px; color: #64748b; margin: 0;">
+                                Phone: ---
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Column -->
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <h4
+                        style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; margin: 0;">
+                        Current Progress</h4>
+                    <div
+                        style="padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between;">
+                        <div
+                            style="position: relative; display: inline-flex; align-items: center; justify-content: center;">
+                            <svg width="80" height="80" viewBox="0 0 80 80" style="transform: rotate(-90deg);">
+                                <circle cx="40" cy="40" r="34" stroke="#e2e8f0" stroke-width="6" fill="none"></circle>
+                                <circle id="det-progress-circle" cx="40" cy="40" r="34" stroke="#10b981"
+                                    stroke-width="6" fill="none" stroke-dasharray="213.6" stroke-dashoffset="213.6"
+                                    stroke-linecap="round" style="transition: stroke-dashoffset 0.5s ease;"></circle>
+                            </svg>
+                            <span id="det-progress-val"
+                                style="position: absolute; font-size: 20px; font-weight: 700; color: #1e293b;">0%</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <p id="det-rounds-val"
+                                style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;">0 / 0 <span
+                                    style="font-size: 14px; font-weight: 400; color: #94a3b8;">rounds</span></p>
+                            <p id="det-points-label"
+                                style="font-size: 12px; font-weight: 600; color: #2563eb; margin-top: 4px;">
+                                <span class="material-icons-round"
+                                    style="font-size: 12px; vertical-align: middle; margin-right: 4px;">stars</span>
+                                0/0 pts collected
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div
+                style="background: #f8fafc; border-radius: 12px; border: 1px solid #f1f5f9; display: grid; grid-template-columns: 1fr 1fr 1fr; overflow: hidden;">
+                <div style="padding: 16px; text-align: center; border-right: 1px solid #f1f5f9;">
+                    <p
+                        style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 4px;">
+                        Shift Schedule</p>
+                    <p id="det-shift" style="font-weight: 700; color: #334155;">---</p>
+                </div>
+                <div style="padding: 16px; text-align: center; border-right: 1px solid #f1f5f9;">
+                    <p
+                        style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 4px;">
+                        Check-in Time</p>
+                    <p id="det-checkin" style="font-weight: 700; color: #334155;">---</p>
+                </div>
+                <div style="padding: 16px; text-align: center;">
+                    <p
+                        style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 4px;">
+                        Last Scan</p>
+                    <p id="det-last-scan"
+                        style="font-weight: 700; color: #059669; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                        <span class="material-icons-round" style="font-size: 14px;">schedule</span> ---
+                    </p>
+                </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div
+                style="padding: 16px 24px; background: #f8fafc; border-top: 1px solid #f1f5f9; margin: 0 -24px -24px -24px; display: flex; gap: 12px; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
+                <button onclick="closeModal()"
+                    style="flex: 1; padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 12px; font-weight: 700; color: #475569; background: white; cursor: pointer; transition: background 0.2s;">
+                    Close
+                </button>
+                <button id="det-view-activity-btn"
+                    style="flex: 1.5; padding: 12px 16px; background: #10b981; color: white; border: none; border-radius: 12px; font-weight: 700; box-shadow: 0 10px 15px -3px rgba(34, 197, 94, 0.2); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span class="material-icons-round">insights</span>
+                    Full Timeline
+                </button>
+            </div>
+
+        </div>
+    </div>
+</template>

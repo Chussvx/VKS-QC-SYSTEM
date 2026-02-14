@@ -1,0 +1,279 @@
+<!-- Page_UserManagement.html - Admin User Management -->
+<div id="page-user-management" class="page-content">
+
+    <!-- Header -->
+    <div class="mb-6 flex items-center justify-between">
+        <div>
+            <h2 class="text-2xl font-bold" data-i18n="users.title">User Management</h2>
+            <p class="text-muted" data-i18n="users.subtitle">Create and manage user accounts</p>
+        </div>
+        <button class="btn btn-primary" onclick="openUserCreateForm()">
+            <span class="material-symbols-outlined">person_add</span>
+            <span data-i18n="users.create">Create User</span>
+        </button>
+    </div>
+
+    <!-- Create User Form (hidden by default) -->
+    <div id="user-create-form" class="card mb-6 p-6" style="display: none;">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
+                <span class="material-symbols-outlined">person_add</span>
+            </div>
+            <div>
+                <h3 class="font-semibold text-lg" data-i18n="users.create.title">New User Account</h3>
+                <p class="text-xs text-muted" data-i18n="users.create.desc">Password will be auto-generated</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 mb-4">
+            <div class="form-group">
+                <label class="form-label" data-i18n="users.field.name">First Name</label>
+                <input type="text" id="user-new-name" class="form-input w-full" placeholder="e.g. John" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label" data-i18n="users.field.surname">Surname</label>
+                <input type="text" id="user-new-surname" class="form-input w-full" placeholder="e.g. Doe" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label" data-i18n="users.field.email">Email (optional)</label>
+                <input type="email" id="user-new-email" class="form-input w-full" placeholder="john@example.com">
+            </div>
+        </div>
+
+        <div class="flex gap-3 justify-end">
+            <button class="btn btn-secondary" onclick="closeUserCreateForm()" data-i18n="common.cancel">Cancel</button>
+            <button class="btn btn-primary" id="btn-create-user" onclick="submitCreateUser()">
+                <span class="material-symbols-outlined" style="font-size: 18px;">person_add</span>
+                <span data-i18n="users.create.submit">Generate Account</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card">
+        <div class="p-4 border-b flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-muted">group</span>
+                <span class="font-semibold" data-i18n="users.list.title">All Users</span>
+                <span class="badge badge-info" id="user-count">0</span>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="loadUserList()">
+                <span class="material-symbols-outlined" style="font-size: 16px;">refresh</span>
+                <span data-i18n="common.refresh">Refresh</span>
+            </button>
+        </div>
+
+        <!-- Skeleton / Loading -->
+        <div id="users-loading" class="p-6 text-center text-muted">
+            <span class="material-symbols-outlined animate-spin" style="font-size: 24px;">progress_activity</span>
+            <p class="mt-2 text-sm" data-i18n="common.loading">Loading...</p>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto" id="users-table-wrapper" style="display: none;">
+            <table class="table w-full">
+                <thead>
+                    <tr>
+                        <th data-i18n="users.col.name">Name</th>
+                        <th data-i18n="users.col.email">Email</th>
+                        <th data-i18n="users.col.role">Role</th>
+                        <th data-i18n="users.col.status">Status</th>
+                        <th data-i18n="users.col.last_login">Last Login</th>
+                        <th data-i18n="users.col.actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="users-table-body">
+                    <!-- Rows injected dynamically -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Empty State -->
+        <div id="users-empty" class="p-8 text-center text-muted" style="display: none;">
+            <span class="material-symbols-outlined" style="font-size: 48px; opacity: 0.3;">group_off</span>
+            <p class="mt-2" data-i18n="users.empty">No users found</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    var _usersList = [];
+
+    function init_user_management() {
+        // Admin check
+        if (typeof SessionManager !== 'undefined' && !SessionManager.isAdmin()) {
+            showToast('Access denied. Admin only.', 'error');
+            navigateTo('dashboard');
+            return;
+        }
+        loadUserList();
+    }
+
+    function loadUserList() {
+        var loading = document.getElementById('users-loading');
+        var tableWrapper = document.getElementById('users-table-wrapper');
+        var emptyState = document.getElementById('users-empty');
+
+        if (loading) loading.style.display = '';
+        if (tableWrapper) tableWrapper.style.display = 'none';
+        if (emptyState) emptyState.style.display = 'none';
+
+        var userId = SessionManager.getUserId();
+        google.script.run
+            .withSuccessHandler(function (result) {
+                if (loading) loading.style.display = 'none';
+
+                if (result && result.success && result.users.length > 0) {
+                    _usersList = result.users;
+                    renderUsersTable(result.users);
+                    if (tableWrapper) tableWrapper.style.display = '';
+                    document.getElementById('user-count').textContent = result.users.length;
+                } else {
+                    if (emptyState) emptyState.style.display = '';
+                }
+            })
+            .withFailureHandler(function (error) {
+                if (loading) loading.style.display = 'none';
+                if (emptyState) emptyState.style.display = '';
+                showToast('Failed to load users.', 'error');
+            })
+            .getUsers(userId);
+    }
+
+    function renderUsersTable(users) {
+        var tbody = document.getElementById('users-table-body');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        users.forEach(function (user) {
+            var roleBadge = user.role === 'admin'
+                ? '<span class="badge badge-warning">Admin</span>'
+                : '<span class="badge badge-info">User</span>';
+            var statusBadge = user.status === 'active'
+                ? '<span class="badge badge-success">Active</span>'
+                : '<span class="badge badge-danger">Inactive</span>';
+            var lastLogin = user.lastLogin
+                ? new Date(user.lastLogin).toLocaleDateString() + ' ' + new Date(user.lastLogin).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : '<span class="text-muted">Never</span>';
+
+            var row = document.createElement('tr');
+            row.innerHTML =
+                '<td><div class="flex items-center gap-2"><div class="avatar avatar-sm bg-emerald-100 text-emerald-600" style="width:32px;height:32px;font-size:14px;">' +
+                user.name.charAt(0) + user.surname.charAt(0) +
+                '</div><div><span class="font-medium">' + user.name + ' ' + user.surname + '</span></div></div></td>' +
+                '<td class="text-sm text-muted">' + user.email + '</td>' +
+                '<td>' + roleBadge + '</td>' +
+                '<td>' + statusBadge + '</td>' +
+                '<td class="text-sm">' + lastLogin + '</td>' +
+                '<td><div class="flex gap-2">' +
+                '<button class="btn btn-secondary btn-sm" onclick="resetUserPwd(\'' + user.userId + '\')" title="Reset Password">' +
+                '<span class="material-symbols-outlined" style="font-size:16px;">lock_reset</span></button>' +
+                (user.role !== 'admin' ? '<button class="btn btn-secondary btn-sm" onclick="toggleUserStatus(\'' + user.userId + '\', \'' + user.status + '\')" title="' + (user.status === 'active' ? 'Deactivate' : 'Activate') + '">' +
+                    '<span class="material-symbols-outlined" style="font-size:16px;">' + (user.status === 'active' ? 'person_off' : 'person') + '</span></button>' : '') +
+                '</div></td>';
+            tbody.appendChild(row);
+        });
+    }
+
+    function openUserCreateForm() {
+        var form = document.getElementById('user-create-form');
+        if (form) {
+            form.style.display = '';
+            form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
+    function closeUserCreateForm() {
+        var form = document.getElementById('user-create-form');
+        if (form) form.style.display = 'none';
+        document.getElementById('user-new-name').value = '';
+        document.getElementById('user-new-surname').value = '';
+        document.getElementById('user-new-email').value = '';
+    }
+
+    function submitCreateUser() {
+        var name = document.getElementById('user-new-name').value.trim();
+        var surname = document.getElementById('user-new-surname').value.trim();
+        var email = document.getElementById('user-new-email').value.trim();
+        var btn = document.getElementById('btn-create-user');
+
+        if (!name || !surname) {
+            showToast('Name and Surname are required.', 'warning');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="material-symbols-outlined animate-spin" style="font-size:18px;">progress_activity</span> Creating...';
+
+        var adminId = SessionManager.getUserId();
+        google.script.run
+            .withSuccessHandler(function (result) {
+                btn.disabled = false;
+                btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;">person_add</span> <span>Generate Account</span>';
+
+                if (result && result.success) {
+                    closeUserCreateForm();
+                    showCredentials(result.credentials.loginEmail, result.credentials.password, 'New User Created');
+                    loadUserList();
+                } else {
+                    showToast(result ? result.message : 'Failed to create user.', 'error');
+                }
+            })
+            .withFailureHandler(function (error) {
+                btn.disabled = false;
+                btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;">person_add</span> <span>Generate Account</span>';
+                showToast('Connection error.', 'error');
+            })
+            .createUser(adminId, { name: name, surname: surname, email: email });
+    }
+
+    function resetUserPwd(userId) {
+        showConfirm(
+            'Reset Password',
+            'Generate a new password for this user? Their current password will stop working.',
+            function () {
+                var adminId = SessionManager.getUserId();
+                google.script.run
+                    .withSuccessHandler(function (result) {
+                        if (result && result.success) {
+                            // Find user email for display
+                            var user = _usersList.find(function (u) { return u.userId === userId; });
+                            showCredentials(user ? user.email : '', result.password, 'Password Reset');
+                        } else {
+                            showToast(result ? result.message : 'Failed to reset password.', 'error');
+                        }
+                    })
+                    .withFailureHandler(function (error) {
+                        showToast('Connection error.', 'error');
+                    })
+                    .resetUserPassword(adminId, userId);
+            }
+        );
+    }
+
+    function toggleUserStatus(userId, currentStatus) {
+        var newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+        var action = newStatus === 'inactive' ? 'Deactivate' : 'Activate';
+
+        showConfirm(
+            action + ' User',
+            action + ' this user? They ' + (newStatus === 'inactive' ? 'will not be able to log in.' : 'will be able to log in again.'),
+            function () {
+                var adminId = SessionManager.getUserId();
+                google.script.run
+                    .withSuccessHandler(function (result) {
+                        if (result && result.success) {
+                            showToast('User ' + action.toLowerCase() + 'd.', 'success');
+                            loadUserList();
+                        } else {
+                            showToast(result ? result.message : 'Failed to update user.', 'error');
+                        }
+                    })
+                    .withFailureHandler(function (error) {
+                        showToast('Connection error.', 'error');
+                    })
+                    .updateUser(adminId, userId, { status: newStatus });
+            }
+        );
+    }
+</script>

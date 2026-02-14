@@ -1,0 +1,664 @@
+<!-- Page_Guards.html - Guards Management page content -->
+<div id="page-guards" class="page-content">
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="filter-group">
+            <!-- Search -->
+            <div class="input-group">
+                <span class="material-symbols-outlined input-icon">search</span>
+                <input type="text" id="guards-search" class="form-input" data-i18n-placeholder="guards.search"
+                    placeholder="Search name or ID..." onkeyup="filterGuards()">
+            </div>
+
+            <div class="divider-v h-6 mx-2"></div>
+
+            <!-- Site Filter -->
+            <div class="custom-select w-52" data-select-id="guards-site" data-onchange="filterGuards">
+                <button class="custom-select-trigger" onclick="toggleSelect('guards-site')">
+                    <span class="custom-select-value" data-i18n="filter.all_sites">All Sites</span>
+                    <span class="material-symbols-outlined">expand_more</span>
+                </button>
+                <div class="custom-select-menu" id="guards-site-menu">
+                    <div class="custom-select-item selected" data-value=""
+                        onclick="selectOption('guards-site', '', 'All Sites'); filterGuards()">All Sites</div>
+                </div>
+                <input type="hidden" id="guards-site-input" name="guards-site" value="">
+            </div>
+
+            <!-- Status Filter -->
+            <div class="custom-select w-40" data-select-id="guards-status" data-onchange="filterGuards">
+                <button class="custom-select-trigger" onclick="toggleSelect('guards-status')">
+                    <span class="custom-select-value" data-i18n="filter.all_status">All Status</span>
+                    <span class="material-symbols-outlined">expand_more</span>
+                </button>
+                <div class="custom-select-menu">
+                    <div class="custom-select-item selected" data-value=""
+                        onclick="selectOption('guards-status', '', t('filter.all_status')); filterGuards()"><span
+                            data-i18n="filter.all_status">All Status</span></div>
+                    <div class="custom-select-item" data-value="active"
+                        onclick="selectOption('guards-status', 'active', t('guards.status.active')); filterGuards()">
+                        <span data-i18n="guards.status.active">Active</span>
+                    </div>
+                    <div class="custom-select-item" data-value="on_leave"
+                        onclick="selectOption('guards-status', 'on_leave', t('guards.status.on_leave')); filterGuards()">
+                        <span data-i18n="guards.status.on_leave">On Leave</span>
+                    </div>
+                    <div class="custom-select-item" data-value="off_duty"
+                        onclick="selectOption('guards-status', 'off_duty', t('guards.status.off_duty')); filterGuards()">
+                        <span data-i18n="guards.status.off_duty">Off-Duty</span>
+                    </div>
+                    <div class="custom-select-item" data-value="terminated"
+                        onclick="selectOption('guards-status', 'terminated', t('guards.status.terminated')); filterGuards()">
+                        <span data-i18n="guards.status.terminated">Terminated</span>
+                    </div>
+                </div>
+                <input type="hidden" id="guards-status-input" name="guards-status" value="">
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3 ml-auto">
+            <span class="text-muted text-sm font-medium"><strong id="guards-count">0</strong> <span
+                    data-i18n="nav.guards">Guards</span></span>
+        </div>
+    </div>
+
+    <!-- Guards Table -->
+    <div class="card p-0 overflow-hidden">
+        <div class="table-container">
+            <table class="data-table" id="guards-table">
+                <thead>
+                    <tr>
+                        <th data-i18n="guards.col.guard">Guard</th>
+                        <th data-i18n="guards.col.employee_id">Employee ID</th>
+                        <th data-i18n="guards.col.contact">Contact</th>
+                        <th data-i18n="guards.col.assigned_site">Assigned Site</th>
+                        <th data-i18n="guards.col.status">Status</th>
+                        <th class="text-right" data-i18n="guards.col.actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="guards-tbody">
+                    <!-- Data loaded dynamically -->
+                    <tr class="skeleton-row">
+                        <td>
+                            <div class="skeleton-text" style="width:85%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:60%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:70%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:50%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:45%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:90%"></div>
+                        </td>
+                    </tr>
+                    <tr class="skeleton-row">
+                        <td>
+                            <div class="skeleton-text" style="width:60%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:70%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:50%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:45%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:90%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:55%"></div>
+                        </td>
+                    </tr>
+                    <tr class="skeleton-row">
+                        <td>
+                            <div class="skeleton-text" style="width:70%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:50%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:45%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:90%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:55%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:40%"></div>
+                        </td>
+                    </tr>
+                    <tr class="skeleton-row">
+                        <td>
+                            <div class="skeleton-text" style="width:50%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:45%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:90%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:55%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:40%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:65%"></div>
+                        </td>
+                    </tr>
+                    <tr class="skeleton-row">
+                        <td>
+                            <div class="skeleton-text" style="width:45%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:90%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:55%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:40%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:65%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:85%"></div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Guards page state
+    let guardsData = [];
+    let guardsFiltered = [];
+    let sitesForGuards = [];
+
+    // GuardCache - In-memory cache for faster page loads (Amazon-style)
+    // Extended TTL: Guard data is stable, 3 min cache reduces redundant calls
+    const GuardCache = {
+        list: { data: null, timestamp: 0 },
+        details: {},  // guardId → { data, timestamp }
+        maxAge: 180000, // 3 minutes (was 60s) - guards change infrequently
+
+        getList: function () {
+            if (this.list.data && (Date.now() - this.list.timestamp) < this.maxAge) {
+                console.log('[GuardCache] LIST HIT');
+                return this.list.data;
+            }
+            return null;
+        },
+
+        setList: function (data) {
+            this.list = { data: data, timestamp: Date.now() };
+            console.log('[GuardCache] LIST SET');
+        },
+
+        getDetail: function (id) {
+            const cached = this.details[id];
+            if (cached && (Date.now() - cached.timestamp) < this.maxAge) {
+                console.log('[GuardCache] DETAIL HIT:', id);
+                return cached.data;
+            }
+            return null;
+        },
+
+        setDetail: function (id, data) {
+            this.details[id] = { data: data, timestamp: Date.now() };
+            console.log('[GuardCache] DETAIL SET:', id);
+        }
+    };
+
+    // Initialize Guards page (Layer 3: memory cache guard)
+    function init_guards() {
+        // If cache has valid data, render instantly and skip network call
+        var cached = GuardCache.getList();
+        if (cached && guardsData.length > 0) {
+            console.log('[Guards] Memory cache hit — instant render');
+            guardsFiltered = [...guardsData];
+            renderGuardsTable();
+            updateGuardsCount();
+            startGuardsSignalListener();
+            return;
+        }
+        loadSiteOptionsForGuards();
+        loadGuards();
+        startGuardsSignalListener();
+    }
+
+    /**
+     * Real-time Signal Listener for Guards
+     * Checks for LAST_GUARD_SIGNAL every 5 seconds.
+     */
+    let gLastGuardSignal = 0;
+    let guardPoller = null;
+    function startGuardsSignalListener() {
+        if (guardPoller) clearInterval(guardPoller);
+        guardPoller = setInterval(function () {
+            if (currentPage !== 'guards') return;
+            google.script.run
+                .withSuccessHandler(function (signals) {
+                    if (signals && signals.lastGuard > gLastGuardSignal) {
+                        console.log('[Signal] Guards data changed! Refreshing...', signals.lastGuard);
+                        if (gLastGuardSignal === 0) {
+                            gLastGuardSignal = signals.lastGuard;
+                            return;
+                        }
+                        gLastGuardSignal = signals.lastGuard;
+                        GuardCache.list.data = null; // Invalidate cache on signal
+                        loadGuards();
+                    }
+                })
+                .getUpdateSignals();
+        }, 5000);
+    }
+
+    // Load site options for filter
+    function loadSiteOptionsForGuards() {
+        google.script.run
+            .withSuccessHandler(function (options) {
+                sitesForGuards = options;
+                const menu = document.getElementById('guards-site-menu');
+                if (menu) {
+                    let html = `
+                        <div class="custom-select-item selected" data-value="" 
+                             onclick="selectOption('guards-site', '', 'All Sites'); filterGuards()">
+                            All Sites
+                        </div>
+                    `;
+                    options.forEach(function (opt) {
+                        html += `
+                            <div class="custom-select-item" data-value="${opt.value}" 
+                                 onclick="selectOption('guards-site', '${opt.value}', this); filterGuards()">
+                                ${escapeHtml(opt.label)}
+                            </div>
+                        `;
+                    });
+                    menu.innerHTML = html;
+                }
+            })
+            .getSiteOptions();
+    }
+
+    // Load guards from backend
+    function loadGuards() {
+        // Check cache first (Amazon-style instant loading)
+        const cached = GuardCache.getList();
+        if (cached) {
+            guardsData = cached;
+            guardsFiltered = [...guardsData];
+            renderGuardsTable();
+            updateGuardsCount();
+            return;
+        }
+
+        // Only show full loading spinner if we have no data
+        if (!guardsData || guardsData.length === 0) {
+            showTableLoading('guards-tbody', 6);
+        }
+
+        google.script.run
+            .withSuccessHandler(function (data) {
+                guardsData = data || [];
+                GuardCache.setList(guardsData); // Cache for next time
+                guardsFiltered = [...guardsData];
+                renderGuardsTable();
+                updateGuardsCount();
+            })
+            .withFailureHandler(function (error) {
+                showTableError('guards-tbody', 6, 'Failed to load guards: ' + error.message);
+            })
+            .getGuards({});
+    }
+
+    // Filter guards based on inputs
+    function filterGuards() {
+        const search = (document.getElementById('guards-search').value || '').toLowerCase().trim();
+        const site = document.getElementById('guards-site-input')?.value || '';
+        const status = document.getElementById('guards-status-input')?.value || '';
+
+        guardsFiltered = guardsData.filter(function (guard) {
+            const matchSearch = !search ||
+                (guard.name || '').toLowerCase().includes(search) ||
+                (guard.empId || '').toLowerCase().includes(search);
+            const matchSite = !site || guard.siteId === site;
+            const matchStatus = !status || guard.status === status;
+
+            return matchSearch && matchSite && matchStatus;
+        });
+
+        renderGuardsTable();
+        updateGuardsCount();
+    }
+
+    // Update guards count
+    function updateGuardsCount() {
+        document.getElementById('guards-count').textContent = guardsFiltered.length;
+    }
+
+    // Render guards table
+    function renderGuardsTable() {
+        const tbody = document.getElementById('guards-tbody');
+
+        if (guardsFiltered.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center py-12 text-muted">
+                        <span class="material-symbols-outlined text-6xl mb-4 opacity-20">person_off</span>
+                        <p class="font-medium text-lg">No guards found</p>
+                        <p class="text-sm mt-2">Adjust your filters or click the "Add Guard" button (if available) to bring more staff onboard.</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        DiffRenderer.render(tbody, guardsFiltered, {
+            keyFn: guard => guard.id,
+            renderFn: guard => {
+                const initials = getInitials(guard.name);
+                const statusBadge = getGuardStatusBadge(guard.status);
+                const siteName = getSiteName(guard.siteId);
+
+                return `
+      <tr class="clickable-row ${guard.status === 'terminated' ? 'inactive' : ''}" 
+          onclick="openGuardDetail('${guard.id}')">
+        <td>
+          <div class="flex items-center gap-3">
+            <div class="avatar avatar-sm" style="background-color: ${getAvatarColor(guard.name)}">
+              ${initials}
+            </div>
+            <div>
+              <p class="font-semibold">${escapeHtml(guard.name)}</p>
+            </div>
+          </div>
+        </td>
+        <td class="font-mono">${escapeHtml(guard.empId)}</td>
+        <td>${guard.phone || 'N/A'}</td>
+        <td>${siteName}</td>
+        <td>${statusBadge}</td>
+        <td class="text-right">
+          <div class="action-buttons">
+            <button class="btn-icon" onclick="event.stopPropagation(); openGuardForm('${guard.id}')" title="Edit">
+              <span class="material-symbols-outlined">edit</span>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+            },
+            onUpdate: (el, item, changed) => {
+                if (changed) {
+                    el.classList.add('row-update-flash');
+                    setTimeout(() => el.classList.remove('row-update-flash'), 2000);
+                }
+            }
+        });
+    }
+
+    // Get initials from name
+    function getInitials(name) {
+        if (!name) return '?';
+        return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    }
+
+    // Get avatar color based on name
+    function getAvatarColor(name) {
+        const colors = ['#3b82f6', '#8b5cf6', '#f59e0b', '#10b981', '#6366f1', '#14b8a6', '#f97316', '#06b6d4'];
+        const hash = name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+        return colors[hash % colors.length];
+    }
+
+    // Get status badge HTML
+    function getGuardStatusBadge(status) {
+        const badges = {
+            'active': '<span class="badge badge-success"><span class="status-dot bg-success"></span>' + t('guards.status.active') + '</span>',
+            'on_leave': '<span class="badge badge-warning"><span class="status-dot bg-warning"></span>' + t('guards.status.on_leave') + '</span>',
+            'off_duty': '<span class="badge badge-default"><span class="status-dot bg-muted"></span>' + t('guards.status.off_duty') + '</span>',
+            'terminated': '<span class="badge badge-danger"><span class="status-dot bg-danger"></span>' + t('guards.status.terminated') + '</span>'
+        };
+        return badges[status] || badges['active'];
+    }
+
+    // Get site name from ID
+    function getSiteName(siteId) {
+        if (!siteId) return t('guards.form.unassigned');
+        const site = sitesForGuards.find(s => s.value === siteId);
+        return site ? site.label.split(' - ')[1] : t('common.unknown', 'Unknown');
+    }
+
+    // Open guard detail modal
+    function openGuardDetail(guardId) {
+        // MODERNIZATION: Open modal FIRST
+        openModal('guard-detail');
+
+        // Check cache for instant loading (Amazon-style)
+        const cached = GuardCache.getDetail(guardId);
+        if (cached) {
+            renderGuardDetailContent(cached, guardId);
+            return;
+        }
+
+        // Show loading in modal
+        const content = document.getElementById('guard-detail-content');
+        if (content) content.innerHTML = '<div class="py-12 text-center"><span class="material-symbols-outlined animate-spin text-4xl opacity-20">progress_activity</span></div>';
+
+        google.script.run
+            .withSuccessHandler(function (guard) {
+                GuardCache.setDetail(guardId, guard); // Cache for next time
+                renderGuardDetailContent(guard, guardId);
+            })
+            .getGuardDetail(guardId);
+    }
+
+    // Render guard detail content (from cache or server)
+    function renderGuardDetailContent(guard, guardId) {
+        // Set global for modal button actions
+        window.currentGuardId = guardId;
+
+        const modal = document.activeModal;
+        if (!modal) {
+            console.warn('[Guards] No active modal found');
+            return;
+        }
+
+        // Avatar with initials
+        const avatarEl = modal.querySelector('#guard-det-avatar');
+        if (avatarEl) {
+            avatarEl.textContent = getInitials(guard.name);
+            avatarEl.style.background = `linear-gradient(135deg, ${getAvatarColor(guard.name)}, ${getAvatarColor(guard.name + '2')})`;
+        }
+
+        // Status indicator dot
+        const statusDot = modal.querySelector('#guard-det-status-dot');
+        if (statusDot) {
+            statusDot.className = 'absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white shadow-sm';
+            if (guard.status === 'active') statusDot.classList.add('bg-green-500');
+            else if (guard.status === 'on_leave') statusDot.classList.add('bg-amber-500');
+            else if (guard.status === 'off_duty') statusDot.classList.add('bg-slate-400');
+            else if (guard.status === 'terminated') statusDot.classList.add('bg-red-500');
+            else statusDot.classList.add('bg-green-500');
+        }
+
+        // Header elements
+        const nameEl = modal.querySelector('#guard-det-name');
+        const idEl = modal.querySelector('#guard-det-id');
+        const statusEl = modal.querySelector('#guard-det-status');
+
+        if (nameEl) nameEl.textContent = guard.name || 'Unknown Guard';
+        if (idEl) idEl.textContent = guard.empId || 'N/A';
+        if (statusEl) {
+            const statusMap = {
+                'active': { text: t('guards.status.active').toUpperCase(), class: 'bg-green-100 text-green-700' },
+                'on_leave': { text: t('guards.status.on_leave').toUpperCase(), class: 'bg-amber-100 text-amber-700' },
+                'off_duty': { text: t('guards.status.off_duty').toUpperCase(), class: 'bg-slate-100 text-slate-700' },
+                'terminated': { text: t('guards.status.terminated').toUpperCase(), class: 'bg-red-100 text-red-700' }
+            };
+            const st = statusMap[guard.status] || statusMap['active'];
+            statusEl.textContent = st.text;
+            statusEl.className = 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ' + st.class;
+        }
+
+        // Stats elements
+        const metaSite = modal.querySelector('#guard-det-meta-site');
+        const metaScore = modal.querySelector('#guard-det-meta-score');
+        const metaExp = modal.querySelector('#guard-det-meta-exp');
+
+        if (metaSite) metaSite.textContent = getSiteName(guard.siteId);
+        if (metaScore) metaScore.textContent = guard.qualityScore ? guard.qualityScore + '%' : 'N/A';
+        if (metaExp) {
+            if (guard.startDate) {
+                const start = new Date(guard.startDate);
+                const now = new Date();
+                const years = ((now - start) / (1000 * 60 * 60 * 24 * 365)).toFixed(1);
+                metaExp.textContent = years + ' Years';
+            } else {
+                metaExp.textContent = 'N/A';
+            }
+        }
+
+        // Contact info
+        const phoneEl = modal.querySelector('#guard-det-phone');
+        const emailEl = modal.querySelector('#guard-det-email');
+
+        if (phoneEl) phoneEl.textContent = guard.phone || 'Not provided';
+        if (emailEl) emailEl.textContent = guard.email || 'Not provided';
+
+        // Activity timeline
+        const activityEl = modal.querySelector('#guard-det-activity');
+        if (activityEl) {
+            if (guard.recentActivity && guard.recentActivity.length > 0) {
+                activityEl.innerHTML = guard.recentActivity.map((a, i) =>
+                    `<div class="timeline-item ${i === 0 ? 'active' : ''}">
+                        <div class="timeline-dot"></div>
+                        <div class="text-sm text-slate-800 font-medium">${escapeHtml(a.description)}</div>
+                        <div class="text-xs text-slate-500">${a.time}</div>
+                    </div>`
+                ).join('');
+            } else {
+                activityEl.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-32 text-slate-400">
+                        <span class="material-symbols-outlined text-4xl mb-2 opacity-20">schedule</span>
+                        <span class="text-sm">${t('guards.modal.no_activity')}</span>
+                    </div>`;
+            }
+        }
+    }
+
+    // Open add/edit guard form
+    function openGuardForm(guardId) {
+        const isEdit = !!guardId;
+
+        // MODERNIZATION: Open modal FIRST
+        openModal('guard-form');
+
+        // Initialize premium custom controls
+        if (typeof initGuardFormControls === 'function') {
+            initGuardFormControls();
+        }
+
+        const modal = document.activeModal;
+        const form = document.getElementById('form-guard');
+
+        if (form) {
+            form.reset();
+            form.dataset.guardId = guardId || '';
+        }
+
+        if (modal) {
+            modal.querySelector('.modal-title').textContent = isEdit ? t('guards.form.title.edit') : t('guards.form.title.add');
+        }
+
+        // Load site options into VKS dropdown
+        loadSiteOptionsVKS('guard-site-dropdown', null);
+
+        if (isEdit) {
+            google.script.run
+                .withSuccessHandler(function (guard) {
+                    if (document.getElementById('guard-name')) document.getElementById('guard-name').value = guard.name;
+                    if (document.getElementById('guard-emp-id')) document.getElementById('guard-emp-id').value = guard.empId;
+                    if (document.getElementById('guard-phone')) document.getElementById('guard-phone').value = guard.phone || '';
+                    if (document.getElementById('guard-email')) document.getElementById('guard-email').value = guard.email || '';
+                    if (guard.siteId) setVKSDropdownValue('guard-site-dropdown', guard.siteId);
+                    if (guard.status) setVKSDropdownValue('guard-status-dropdown', guard.status);
+                })
+                .getGuardDetail(guardId);
+        }
+    }
+
+    // Save guard
+    function saveGuard() {
+        const form = document.getElementById('form-guard');
+        const guardId = form.dataset.guardId;
+        const btn = document.getElementById('btn-save-guard');
+        const icon = document.getElementById('btn-guard-icon');
+        const text = document.getElementById('btn-guard-text');
+
+        const data = {
+            id: guardId,
+            name: document.getElementById('guard-name').value.trim(),
+            empId: document.getElementById('guard-emp-id').value.trim(),
+            phone: document.getElementById('guard-phone').value.trim(),
+            email: document.getElementById('guard-email').value.trim(),
+            siteId: document.getElementById('guard-site').value,
+            status: document.getElementById('guard-status').value
+        };
+
+        // Validation
+        if (!data.name || !data.empId) {
+            showToast(t('sites.toast.fill_required'), 'error');
+            return;
+        }
+
+        // Button loading state
+        if (btn) {
+            btn.disabled = true;
+            if (icon) { icon.textContent = 'progress_activity'; icon.classList.add('animate-spin'); }
+            if (text) text.textContent = t('common.saving', 'Saving...');
+        }
+
+        google.script.run
+            .withSuccessHandler(function (result) {
+                // Reset button
+                if (btn) {
+                    btn.disabled = false;
+                    if (icon) { icon.textContent = 'save'; icon.classList.remove('animate-spin'); }
+                    if (text) text.textContent = t('guards.form.btn.save');
+                }
+                closeModal();
+                showToast(guardId ? t('guards.toast.updated', 'Guard updated') : t('guards.toast.created', 'Guard created'), 'success');
+                GuardCache.list.data = null; // Invalidate cache
+                loadGuards();
+            })
+            .withFailureHandler(function (error) {
+                // Reset button on error
+                if (btn) {
+                    btn.disabled = false;
+                    if (icon) { icon.textContent = 'save'; icon.classList.remove('animate-spin'); }
+                    if (text) text.textContent = t('guards.form.btn.save');
+                }
+                showToast(t('sites.toast.save_failed') + ': ' + error.message, 'error');
+            })
+            .saveGuard(data);
+    }
+
+
+</script>

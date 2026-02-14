@@ -1,0 +1,123 @@
+<script>
+    // ========================================
+    // GLOBAL STATE (Moved to Head)
+    // ========================================
+    const State = {
+        currentGuardId: null, // This will store Employee ID
+        guardName: null,
+        guardSurname: null,
+        guardPhone: null,
+        isOnDuty: false,
+        currentSite: null,
+        currentShift: null,
+        lastScannedQR: null,
+        checkinData: null,
+        gps: null,
+        scanMode: null, // 'checkin' or 'patrol'
+        patrol: {
+            active: false,
+            round: 0,
+            scanned: []
+        },
+        patrolProgress: {},
+        totalPatrols: 7, // 7 patrol rounds per shift
+        pointsPerRound: 4, // 4 scanned points = 1 completed round
+        activeRoundPoints: [], // Points scanned in the current round (max 4)
+        completedRounds: [], // Array of completed round objects
+        checkpointList: [] // List of available checkpoints for this site
+    };
+
+    // ========================================
+    // GUARD PROFILE PERSISTENCE (localStorage)
+    // ========================================
+    const GUARD_PROFILE_KEY = 'vks_guard_profile';
+
+    function saveGuardProfile(profile) {
+        if (!profile || !profile.empId) return;
+        localStorage.setItem(GUARD_PROFILE_KEY, JSON.stringify({
+            ...profile,
+            savedAt: new Date().toISOString()
+        }));
+        console.log('Guard profile saved:', profile);
+    }
+
+    function loadGuardProfile() {
+        try {
+            const saved = localStorage.getItem(GUARD_PROFILE_KEY);
+            if (saved) return JSON.parse(saved);
+        } catch (e) {
+            console.warn('Error loading guard profile:', e);
+        }
+        return null;
+    }
+
+    // ========================================
+    // SESSION STATE PERSISTENCE
+    // ========================================
+    const SESSION_STATE_KEY = 'vks_stationary_guard_session';
+    const SESSION_EXPIRY_HOURS = 12;
+
+    function saveSessionState() {
+        if (!State.currentGuardId) return; // Don't save if no guard is identified
+        const session = {
+            guardId: State.currentGuardId, // BIND TO GUARD
+            isOnDuty: State.isOnDuty,
+            patrolProgress: State.patrolProgress,
+            checkinData: State.checkinData,
+            currentSite: State.currentSite,
+            currentShift: State.currentShift,
+            activeRoundPoints: State.activeRoundPoints,
+            completedRounds: State.completedRounds,
+            checkpointList: State.checkpointList,
+            pointsPerRound: State.pointsPerRound,
+            totalPatrols: State.totalPatrols,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(SESSION_STATE_KEY, JSON.stringify(session));
+        console.log('[Session] Saved for ' + State.currentGuardId, session);
+    }
+
+    function loadSessionState() {
+        try {
+            const saved = localStorage.getItem(SESSION_STATE_KEY);
+            if (!saved) return null;
+            const session = JSON.parse(saved);
+
+            // 1. Check Expiry
+            if (Date.now() - session.timestamp > SESSION_EXPIRY_HOURS * 60 * 60 * 1000) {
+                clearSessionState();
+                return null;
+            }
+
+            // 2. Check Ownership (Isolation Fix)
+            if (session.guardId !== State.currentGuardId) {
+                console.warn('[Session] Identity mismatch. Expected: ' + State.currentGuardId + ', Found: ' + session.guardId);
+                // DO NOT load this session, it belongs to another guard
+                return null;
+            }
+
+            return session;
+        } catch (e) {
+            console.warn('Error loading session:', e);
+            return null;
+        }
+    }
+
+    function clearSessionState() {
+        localStorage.removeItem(SESSION_STATE_KEY);
+
+        // RESET Memory State to prevent internal leakage
+        State.isOnDuty = false;
+        State.currentSite = null;
+        State.currentShift = null;
+        State.checkinData = null;
+        State.patrolProgress = {};
+        State.activeRoundPoints = [];
+        State.completedRounds = [];
+        State.checkpointList = [];
+        State.pointsPerRound = 4; // Reset to defaults
+        State.totalPatrols = 7;
+
+        console.log('[Session] Cleared & State Reset');
+    }
+</script>

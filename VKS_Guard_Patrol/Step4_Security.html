@@ -1,0 +1,110 @@
+<!-- Step 4: Security -->
+<div id="step-4" class="step-content hidden">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title"><span class="material-symbols-outlined">search</span> ກວດກາບໍລິເວນສະຖານທີ່</h2>
+            <div class="info-box mt-2">
+                <span class="material-symbols-outlined info-icon">lightbulb</span>
+                <p class="text-xs">ກະລຸນາກວດກາຄວາມປອດໄພຮອບໆບໍລິເວນຈຸດກວດນີ້ ເພື່ອຊອກຫາສິ່ງຜິດປົກກະຕິ.</p>
+            </div>
+        </div>
+        <div class="card-content">
+            <div class="input-group">
+                <label class="mb-2 block font-medium">ສະພາບລວມຄວາມປອດໄພ</label>
+                <div class="grid-cols-2">
+                    <label class="radio-card">
+                        <input type="radio" name="siteStatus" value="Normal" checked onchange="toggleIssues(false)">
+                        <div class="radio-card-content">
+                            <span class="material-symbols-outlined text-xl text-success">check_circle</span>
+                            <span class="font-medium">ສະພາບປົກກະຕິ</span>
+                        </div>
+                    </label>
+                    <label class="radio-card danger">
+                        <input type="radio" name="siteStatus" value="Issue" onchange="toggleIssues(true)">
+                        <div class="radio-card-content">
+                            <span class="material-symbols-outlined text-xl text-warning">warning</span>
+                            <span class="font-medium">ພົບເຫັນບັນຫາ</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Security Check Items -->
+            <div class="section-divider">
+                <span class="section-header-text"><span class="material-symbols-outlined">security</span>
+                    ກວດກາອຸປະກອນຄວາມປອດໄພ</span>
+                <div class="accent-line"></div>
+            </div>
+            <div class="grid-cols-2 mb-4">
+                <label class="radio-card">
+                    <input type="checkbox" id="check_fire_extinguisher" name="check_fire_extinguisher" value="OK">
+                    <div class="radio-card-content">
+                        <span class="material-symbols-outlined text-xl">fire_extinguisher</span>
+                        <span class="font-medium">ຖັງດັບເພີງ</span>
+                    </div>
+                </label>
+                <label class="radio-card">
+                    <input type="checkbox" id="check_camera" name="check_camera" value="OK">
+                    <div class="radio-card-content">
+                        <span class="material-symbols-outlined text-xl">videocam</span>
+                        <span class="font-medium">ກ້ອງວົງຈອນປິດ</span>
+                    </div>
+                </label>
+                <label class="radio-card">
+                    <input type="checkbox" id="check_door" name="check_door" value="OK">
+                    <div class="radio-card-content">
+                        <span class="material-symbols-outlined text-xl">door_front</span>
+                        <span class="font-medium">ປະຕູ/ທາງເຂົ້າ</span>
+                    </div>
+                </label>
+                <label class="radio-card">
+                    <input type="checkbox" id="check_lights" name="check_lights" value="OK">
+                    <div class="radio-card-content">
+                        <span class="material-symbols-outlined text-xl">lightbulb</span>
+                        <span class="font-medium">ລະບົບໄຟເຍືອງທາງ</span>
+                    </div>
+                </label>
+            </div>
+
+            <div id="issueDetails" class="hidden mt-4">
+                <div class="input-group">
+                    <label>ບົດບັນທຶກ ແລະ ລາຍລະອຽດເພີ່ມເຕີມ</label>
+                    <textarea id="notes" name="notes" placeholder="ລະບຸລາຍລະອຽດ ຫຼື ສິ່ງທີ່ພົບເຫັນ..."></textarea>
+                </div>
+                <div class="input-group">
+                    <label class="mb-2 block font-medium"><span class="material-symbols-outlined">photo_camera</span>
+                        ຮູບພາບຫຼັກຖານປະກອບ</label>
+
+                    <!-- Camera + Choose File Buttons -->
+                    <div class="grid-cols-2 mb-3">
+                        <button type="button" class="btn btn-primary" onclick="capturePhoto()">
+                            <span class="material-symbols-outlined" style="margin-right: 0.5rem;">photo_camera</span>
+                            ຖ່າຍຮູບ
+                        </button>
+                        <button type="button" class="btn btn-outline"
+                            onclick="document.getElementById('photoInput').click()">
+                            <span class="material-symbols-outlined" style="margin-right: 0.5rem;">folder_open</span>
+                            ເລືອກຮູບ
+                        </button>
+                    </div>
+
+                    <!-- Hidden file input for camera capture -->
+                    <input type="file" id="cameraInput" accept="image/*" capture="environment" class="hidden"
+                        onchange="handleMultiFileChange(this)">
+
+                    <!-- Hidden file input for gallery -->
+                    <input type="file" id="photoInput" accept="image/*" class="hidden"
+                        onchange="handleMultiFileChange(this)">
+
+                    <!-- Upload Counter -->
+                    <div id="photoCounter" class="text-xs text-muted mb-2 font-medium">ຮູບພາບ: 0 / 5</div>
+
+                    <!-- Multi-File Previews Container -->
+                    <div id="filePreviewsContainer" class="flex flex-col gap-2">
+                        <!-- Previews will be injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

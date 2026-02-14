@@ -1,0 +1,146 @@
+<script>
+    // JS_Special.html - Refactored Logic for Special Duty Mode
+
+    // --- TOGGLE TARGET INPUT ---
+    // --- TOGGLE TARGET INPUT ---
+    window.toggleSpecialTargetInput = function () {
+        const isOnboarding = document.getElementById('typeOnboarding').checked;
+        const label = document.getElementById('targetGuardLabel');
+        const input = document.getElementById('targetGuardName');
+        const container = document.getElementById('targetGuardContainer');
+
+        if (label && input) {
+            if (isOnboarding) {
+                label.innerHTML = '<span class="material-symbols-outlined">school</span> ຊື່ຜູ້ຖືກຝຶກ';
+                input.placeholder = 'ປ້ອນຊື່ຜູ້ຖືກຝຶກ...';
+            } else {
+                label.innerHTML = '<span class="material-symbols-outlined">person_off</span> ປ່ຽນແທນ';
+                input.placeholder = 'ປ້ອນຊື່ຜູ້ປ່ຽນແທນ...';
+            }
+        }
+    };
+
+    // --- POPULATE SPECIAL DROPDOWNS ---
+    window.populateSpecialDropdowns = function () {
+        console.log('[Special] Populating dropdowns...');
+
+        if (typeof configData === 'undefined' || !configData.patrolNames) {
+            console.warn('[Special] Config data not loaded yet.');
+            return;
+        }
+
+        const dropdown = document.getElementById('sp-patrolName-options');
+
+        if (dropdown && configData.patrolNames && configData.patrolNames.length > 0) {
+            dropdown.innerHTML = '';
+            configData.patrolNames.forEach(name => {
+                const div = document.createElement('div');
+                div.className = 'custom-select-option';
+                div.dataset.value = name;
+                div.textContent = name;
+                const opt = div;
+                div.onclick = function () { selectCustomOption(opt, 'sp-patrolName'); };
+                dropdown.appendChild(div);
+            });
+            console.log(`[Special] Added ${configData.patrolNames.length} patrol names.`);
+        }
+
+        // Trigger site update
+        updateSpecialSiteList();
+    };
+
+    // --- UPDATE SPECIAL SITE LIST ---
+    window.updateSpecialSiteList = function () {
+        console.log("=== updateSpecialSiteList called ===");
+        const routeA = document.getElementById('sp-routeA')?.checked;
+        const routeB = document.getElementById('sp-routeB')?.checked;
+        const route = routeA ? 'A' : (routeB ? 'B' : null);
+
+        if (!configData) return;
+
+        const dropdown = document.getElementById('sp-siteName-options');
+        const display = document.querySelector('#sp-siteName-select .custom-select-value');
+        const input = document.getElementById('sp-siteName');
+        const triggerText = document.querySelector('#sp-siteName-select .custom-select-value');
+
+        if (!dropdown) return;
+
+        // Reset
+        dropdown.innerHTML = '';
+        input.value = '';
+        if (triggerText) triggerText.textContent = 'ເລືອກຈຸດປະຈຳ...';
+
+        if (!route) {
+            dropdown.innerHTML = '<div class="custom-select-option p-3 text-gray-400">ກະລຸນາເລືອກເສັ້ນທາງກ່ອນ...</div>';
+            return;
+        }
+
+        // Use global configData
+        const sites = (route === 'A') ? configData.routeA : configData.routeB;
+
+        if (sites && sites.length > 0) {
+            sites.forEach(s => {
+                const div = document.createElement('div');
+                div.className = 'custom-select-option p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0';
+                div.dataset.value = s;
+                div.textContent = s;
+                const opt = div;
+                div.onclick = function () {
+                    selectCustomOption(opt, 'sp-siteName');
+                };
+                dropdown.appendChild(div);
+            });
+            console.log(`[Special] Added ${sites.length} sites for Route ${route}.`);
+        } else {
+            dropdown.innerHTML = '<div class="custom-select-option p-3 text-gray-400">ບໍ່ພົບສະຖານທີ່</div>';
+        }
+    };
+
+    // --- DEBUG TOOLS ---
+    window.debugSpecialDropdown = function () {
+        showToast("Debugging Patrol Dropdown...", "info");
+        const dropdown = document.getElementById('sp-patrolName-options');
+        if (!dropdown) { alert("Dropdown #sp-patrolName-options not found!"); return; }
+        dropdown.closest('.custom-select').classList.add('open');
+
+        const firstOption = dropdown.querySelector('.custom-select-option');
+        if (!firstOption) { alert("No options found!"); return; }
+
+        const rect = firstOption.getBoundingClientRect();
+        const topElement = document.elementFromPoint(rect.left + 10, rect.top + 10);
+
+        let msg = "Check:\n";
+        if (topElement && (topElement === firstOption || firstOption.contains(topElement))) {
+            msg += "✅ Success! Option is clickable.";
+        } else {
+            msg += "❌ BLOCKAGE: " + (topElement ? topElement.tagName : "None");
+        }
+        alert(msg);
+    };
+
+    window.debugSpecialSiteDropdown = function () {
+        showToast("Debugging Site Dropdown...", "info");
+        const dropdown = document.getElementById('sp-siteName-options');
+        if (!dropdown) { alert("Dropdown #sp-siteName-options not found!"); return; }
+        dropdown.closest('.custom-select').classList.add('open');
+
+        const firstOption = dropdown.querySelector('.custom-select-option');
+        if (!firstOption) { alert("No options found! Select a route first?"); return; }
+
+        const rect = firstOption.getBoundingClientRect();
+        const topElement = document.elementFromPoint(rect.left + 10, rect.top + 10);
+
+        let msg = "Check:\n";
+        if (topElement && (topElement === firstOption || firstOption.contains(topElement))) {
+            msg += "✅ Success! Option is clickable.";
+        } else {
+            msg += "❌ BLOCKAGE: " + (topElement ? topElement.tagName : "None");
+        }
+        alert(msg);
+    };
+
+    // --- START SPECIAL DUTY ---
+    // --- START SPECIAL DUTY (Logic moved to JavaScript.html) ---
+    // Previously, this file contained a conflicting version of startSpecialDuty that submitted data immediately.
+    // It has been removed to ensure the Multi-Stage Workflow (Input -> Timer -> Report) works correctly.
+</script>

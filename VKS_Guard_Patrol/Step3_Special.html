@@ -1,0 +1,200 @@
+<!-- Step 3 Special: Report -->
+<div id="step-3-special" class="step-content hidden px-4 pb-20">
+    <style>
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #06b6d4;
+            cursor: pointer;
+            border: 4px solid #fff;
+            box-shadow: 0 0 0 2px #06b6d4;
+        }
+
+        /* Critical style overrides to ensure rounding in GAS IFRAME */
+        .metric-card-v124 {
+            background-color: #f8fafc !important;
+            border: 1px solid #f1f5f9 !important;
+            border-radius: 20px !important;
+            padding: 1rem !important;
+        }
+
+        .icon-box-v124 {
+            width: 40px !important;
+            height: 40px !important;
+            border-radius: 12px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex-shrink: 0 !important;
+        }
+    </style>
+    <div class="max-w-[390px] mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title flex items-center gap-2">
+                    <span class="material-symbols-outlined text-purple-600">assignment</span>
+                    ບົດລາຍງານ
+                </h2>
+                <div class="info-box mt-2">
+                    <span class="material-symbols-outlined info-icon">info</span>
+                    <p class="text-xs">ກວດສອບລາຍລະອຽດການປະຕິບັດງານ ແລະ ປະເມີນຜົນຄັ້ງສຸດທ້າຍ.</p>
+                </div>
+            </div>
+
+            <div class="card-content">
+                <!-- Time & Target Grid (Final Refined Style) -->
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                    <div class="metric-card-v124 flex flex-col items-center justify-center text-center">
+                        <div class="icon-box-v124 bg-purple-100 text-purple-600 mb-2">
+                            <span class="material-symbols-outlined text-xl">schedule</span>
+                        </div>
+                        <span
+                            class="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-0.5">ໄລຍະເວລາ</span>
+                        <span class="text-base font-bold text-purple-600" id="report-duration">00:00:00</span>
+                    </div>
+                    <div class="metric-card-v124 flex flex-col items-center justify-center text-center">
+                        <div class="icon-box-v124 bg-blue-100 text-blue-500 mb-2">
+                            <span class="material-symbols-outlined text-xl">person</span>
+                        </div>
+                        <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-0.5">ຍາມ</span>
+                        <span class="text-base font-bold text-slate-700 truncate w-full px-2"
+                            id="report-target">--</span>
+                    </div>
+                </div>
+
+                <!-- 1. ASSESSMENT SECTION -->
+                <div id="report-section-stationary" class="hidden">
+                    <div class="section-divider mb-4">
+                        <span class="section-header-text"><span class="material-symbols-outlined">gavel</span>
+                            ລະດັບຄວາມສ່ຽງ</span>
+                        <div class="accent-line"></div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2 mb-6">
+                        <label class="radio-card">
+                            <input type="radio" name="riskLevel" value="Low" checked>
+                            <div class="radio-card-content p-2">
+                                <span class="material-symbols-outlined text-success text-lg">check_circle</span>
+                                <span class="font-bold text-[10px]">Low</span>
+                                <span class="text-[8px] text-gray-400">ຕ່ຳ</span>
+                            </div>
+                        </label>
+                        <label class="radio-card">
+                            <input type="radio" name="riskLevel" value="Medium">
+                            <div class="radio-card-content p-2">
+                                <span class="material-symbols-outlined text-warning text-lg">warning</span>
+                                <span class="font-bold text-[10px]">Medium</span>
+                                <span class="text-[8px] text-gray-400">ກາງ</span>
+                            </div>
+                        </label>
+                        <label class="radio-card">
+                            <input type="radio" name="riskLevel" value="High">
+                            <div class="radio-card-content p-2">
+                                <span class="material-symbols-outlined text-danger text-lg">error</span>
+                                <span class="font-bold text-[10px]">High</span>
+                                <span class="text-[8px] text-gray-400">ສູງ</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 2. EVALUATION SECTION (ONBOARDING) -->
+                <div id="report-section-onboarding" class="hidden">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="material-symbols-outlined text-slate-400 text-lg">military_tech</span>
+                        <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wide">
+                            ການປະເມີນ</h3>
+                        <div class="h-px bg-gray-200 flex-grow ml-2"></div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <!-- Uniform Rating -->
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-2 text-slate-700 font-medium text-sm">
+                                <span class="material-symbols-outlined text-purple-600 text-base">checkroom</span>
+                                <span>ເຄື່ອງແບບ</span>
+                            </div>
+                            <div class="relative px-1 py-2">
+                                <input type="range" id="sp-ratingUniform" name="ratingUniform" min="1" max="5" value="3"
+                                    class="range-slider w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer focus:outline-none"
+                                    oninput="updateSliderValue(this)">
+                                <div class="flex justify-between text-xs text-gray-400 mt-2 font-medium px-1">
+                                    <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <span class="text-2xl font-bold text-purple-600"><span
+                                        id="sp-ratingUniform-value">3</span>/5</span>
+                            </div>
+                        </div>
+
+                        <!-- Comm Rating -->
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-2 text-slate-700 font-medium text-sm">
+                                <span class="material-symbols-outlined text-purple-600 text-base">forum</span>
+                                <span>ການສື່ສານ</span>
+                            </div>
+                            <div class="relative px-1 py-2">
+                                <input type="range" id="sp-ratingCommunication" name="ratingCommunication" min="1"
+                                    max="5" value="3"
+                                    class="range-slider w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer focus:outline-none"
+                                    oninput="updateSliderValue(this)">
+                                <div class="flex justify-between text-xs text-gray-400 mt-2 font-medium px-1">
+                                    <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <span class="text-2xl font-bold text-purple-600"><span
+                                        id="sp-ratingCommunication-value">3</span>/5</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Photo & Notes SECTION -->
+                <div class="section-divider mt-8 mb-5">
+                    <span class="section-header-text"><span class="material-symbols-outlined">add_a_photo</span>
+                        ຫຼັກຖານ</span>
+                    <div class="accent-line"></div>
+                </div>
+
+                <div class="input-group mb-6">
+                    <div class="upload-zone border-2 border-dashed border-gray-200 rounded-2xl p-6 text-center hover:bg-purple-50 hover:border-purple-300 transition-all cursor-pointer"
+                        onclick="document.getElementById('specialPhotoInput').click()">
+                        <input type="file" id="specialPhotoInput" accept="image/*" class="hidden"
+                            onchange="handleSpecialPhoto(this)">
+                        <div id="specialPhotoPreview" class="hidden mb-3">
+                            <img src="" class="mx-auto h-32 object-contain rounded-xl border-2 border-white shadow-sm">
+                        </div>
+                        <div id="specialPhotoPlaceholder">
+                            <div
+                                class="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-2 text-gray-400">
+                                <span class="material-symbols-outlined">photo_camera</span>
+                            </div>
+                            <p class="text-[10px] font-bold text-gray-700">ຖ່າຍຮູບ</p>
+                        </div>
+                    </div>
+                    <input type="hidden" id="specialPhotoBase64">
+                </div>
+
+                <div class="input-group">
+                    <label
+                        class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block">ໝາຍເຫດ</label>
+                    <textarea id="specialNotes"
+                        class="w-full p-4 border border-gray-100 rounded-xl bg-gray-50 text-xs focus:bg-white focus:ring-4 focus:ring-purple-50 outline-none"
+                        rows="3" placeholder="ບັນທຶກອື່ນໆ..."></textarea>
+                </div>
+            </div>
+
+            <!-- Common Rating Footer -->
+            <div class="mt-6 pt-4 border-t border-gray-100">
+                <div id="report-section-stationary" class="hidden">
+                    <!-- Stationary Specific evaluation if any -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

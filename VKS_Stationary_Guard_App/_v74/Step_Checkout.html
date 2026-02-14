@@ -1,0 +1,259 @@
+<div class="flex flex-col h-full space-y-6 pb-40">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <button onclick="navigateTo('home')"
+                class="w-10 h-10 rounded-xl flex items-center justify-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 shadow-sm">
+                <span class="material-symbols-outlined">arrow_back</span>
+            </button>
+            <div class="ml-2">
+                <h1 class="font-bold text-lg tracking-tight text-slate-900 dark:text-white">ສິ້ນສຸດການປະຕິບັດງານ</h1>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+                    Check-out</p>
+            </div>
+        </div>
+        <div
+            class="w-10 h-10 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+            <img id="checkout-avatar" alt="Guard" class="w-full h-full object-cover"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCv-dU-uWDaWoSWHAqqRqONcrevVbUa5F0Z07NnEMKwxS72HeaCaMLRCl4K1KXJvk3C-gfhRCIkOJGG0pm_hk0FG1VWZsLZaX4ineSwMDOaCjdEqzQbw4icFZnWdOvLFTJTG8F5seE1OLUN00j6aMzVeMzRldTDbrHVO8hcilci-juT2nh0KY-hvu7P64aEs_TCnNwxPjlnTsiysyzGfnFKiFmTCme7gjpju1PviH3OOP_H6Zxex_waVEw8ghyw4MH7hEwJGDANQqTx" />
+        </div>
+    </div>
+
+    <!-- Shift Summary Card -->
+    <section class="space-y-3">
+        <h2 class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 px-1">ສະຫຼຸບວຽກ</h2>
+        <div class="glass-card rounded-[2rem] p-6 space-y-6">
+            <div class="flex items-center justify-between">
+                <div class="space-y-1">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ຈຳນວນຮອບລາດຕະເວນ</p>
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-2xl font-extrabold text-slate-800 dark:text-white"
+                            id="checkout-rounds">0/0</span>
+                        <span class="text-sm font-bold text-emerald-600 dark:text-emerald-400">ຮອບທີ່ສຳເລັດ</span>
+                    </div>
+                </div>
+                <!-- Circular Progress -->
+                <div
+                    class="w-14 h-14 rounded-full border-4 border-emerald-100 dark:border-emerald-900 flex items-center justify-center relative">
+                    <svg class="w-full h-full transform -rotate-90 absolute inset-0">
+                        <circle class="text-emerald-500" cx="28" cy="28" fill="transparent" r="24" stroke="currentColor"
+                            stroke-dasharray="150.7" id="checkout-progress-ring" stroke-dashoffset="150.7"
+                            stroke-width="4"></circle>
+                    </svg>
+                    <span
+                        class="absolute inset-0 flex items-center justify-center text-[10px] font-black text-emerald-600 dark:text-emerald-400"
+                        id="checkout-percent">0%</span>
+                </div>
+            </div>
+            <div class="h-px bg-slate-100 dark:bg-slate-800 w-full"></div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ເວລາດຳເນີນງານທັງໝົດ</p>
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-slate-400 text-lg">schedule</span>
+                        <span class="text-lg font-bold text-slate-700 dark:text-slate-300"
+                            id="checkout-duration">--:--</span>
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ສະຖານທີ່</p>
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-slate-400 text-lg">location_on</span>
+                        <span class="text-lg font-bold text-slate-700 dark:text-slate-300" id="checkout-zone">--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Observed Irregularities -->
+    <section class="space-y-3">
+        <div class="flex items-center justify-between px-1">
+            <h2 class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">ສິ່ງຜິດປົກກະຕິທີ່ພົບພໍ້</h2>
+        </div>
+        <div class="relative group">
+            <textarea id="checkout-notes"
+                class="w-full h-32 glass-card rounded-2xl p-4 text-slate-700 dark:text-slate-300 placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 outline-none transition-all resize-none"
+                placeholder="ລະບຸເຫດການ ຫຼື ສິ່ງທີ່ຢາກແຈ້ງໃຫ້ກວດກາຕໍ່..."></textarea>
+            <div class="absolute bottom-3 right-3 flex gap-2">
+                <span class="material-symbols-outlined text-slate-300 dark:text-slate-600">edit_note</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Photo Capture -->
+    <section class="space-y-3">
+        <button onclick="document.getElementById('checkout-cam').click()"
+            class="w-full tactile-btn glass-card rounded-2xl p-5 flex items-center justify-between group bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border-dashed border-2">
+            <input type="file" id="checkout-cam" accept="image/*" capture="environment" class="hidden"
+                onchange="handleCheckoutPhoto(this)">
+            <div class="flex items-center gap-4">
+                <div
+                    class="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 group-hover:bg-slate-200 dark:group-hover:bg-slate-700 transition-colors">
+                    <span class="material-symbols-outlined text-2xl">add_a_photo</span>
+                </div>
+                <div class="text-left">
+                    <h3 class="font-bold text-slate-800 dark:text-slate-200">ຖ່າຍຮູບສະພາບພື້ນທີ່</h3>
+                    <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wide">
+                        (ຈຳເປັນ)</p>
+                </div>
+            </div>
+            <span class="material-symbols-outlined text-slate-300 dark:text-slate-600">chevron_right</span>
+        </button>
+        <div id="checkout-photo-preview" class="hidden rounded-2xl overflow-hidden"></div>
+    </section>
+
+    <!-- Checkout Action -->
+    <section class="pt-4">
+        <button onclick="confirmCheckout()"
+            class="w-full tactile-btn checkout-gradient rounded-[2rem] p-6 shadow-xl shadow-orange-200/50 dark:shadow-none flex items-center justify-center gap-3">
+            <span class="material-symbols-outlined text-white text-2xl">verified_user</span>
+            <div class="text-center">
+                <span class="block text-white font-black text-lg tracking-wide">ຢືນຢັນ ແລະ ອອກວຽກ</span>
+            </div>
+        </button>
+    </section>
+
+    <!-- Floating Status Indicator - INSIDE wrapper -->
+    <div class="fixed bottom-8 left-0 right-0 flex justify-center px-6 z-50">
+        <div
+            class="w-full max-w-[340px] glass-card rounded-full py-4 px-8 flex items-center justify-between bg-white/95 dark:bg-slate-900/95">
+            <div class="flex items-center gap-4">
+                <div class="relative flex h-3 w-3">
+                    <span
+                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                </div>
+                <div class="flex flex-col">
+                    <span
+                        class="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">ສະຖານະ</span>
+                    <span class="text-sm font-bold text-slate-700 dark:text-slate-300">ກຳລັງປະຕິບັດງານ</span>
+                </div>
+            </div>
+            <div class="w-px h-6 bg-slate-200 dark:bg-slate-700"></div>
+            <div class="flex items-center gap-2 text-slate-400">
+                <span class="material-symbols-outlined text-xl">timer</span>
+                <span class="text-xs font-bold text-slate-500 dark:text-slate-400" id="checkout-timer">00:00</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let checkoutPhotoData = null;
+
+    function initCheckoutData() {
+        // Calculate shift duration
+        if (State.checkinData?.checkinTime) {
+            const now = new Date();
+            const checkin = new Date(State.checkinData.checkinTime);
+            const diffMs = now - checkin;
+            const hours = Math.floor(diffMs / 3600000);
+            const minutes = Math.floor((diffMs % 3600000) / 60000);
+            document.getElementById('checkout-duration').innerText = `${hours}ຊມ ${minutes}ນ`;
+            document.getElementById('checkout-timer').innerText = `${hours}:${String(minutes).padStart(2, '0')}`;
+        }
+
+        // Patrol progress (Nested: Rounds)
+        const roundsCompleted = (State.completedRounds || []).length;
+        const totalRounds = State.totalPatrols || 7;
+        const percent = totalRounds > 0 ? Math.round((roundsCompleted / totalRounds) * 100) : 0;
+
+        document.getElementById('checkout-rounds').innerText = `${roundsCompleted}/${totalRounds}`;
+        document.getElementById('checkout-percent').innerText = `${percent}%`;
+
+        // Update circular progress
+        const ring = document.getElementById('checkout-progress-ring');
+        const circumference = 150.7;
+        const offset = circumference - (percent / 100) * circumference;
+        ring.style.strokeDashoffset = offset;
+
+        // Zone
+        if (State.checkinData?.locationName) {
+            document.getElementById('checkout-zone').innerText = State.checkinData.locationName;
+        }
+    }
+
+    function handleCheckoutPhoto(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                checkoutPhotoData = e.target.result;
+                const preview = document.getElementById('checkout-photo-preview');
+                preview.innerHTML = `<img src="${e.target.result}" class="w-full h-48 object-cover" alt="Site Condition">`;
+                preview.classList.remove('hidden');
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function confirmCheckout() {
+        if (!checkoutPhotoData) {
+            showError("ຕ້ອງການຮູບພາບ", "ກະລຸນາຖ່າຍຮູບສະພາບພື້ນທີ່ກ່ອນອອກວຽກ.");
+            return;
+        }
+
+        showLoading('ກຳລັງຢືນຢັນການອອກວຽກ...');
+
+        const payload = {
+            guardId: State.currentGuardId,
+            locationId: State.checkinData?.locationName,
+            scanType: 'CHECKOUT',
+            meta: {
+                notes: document.getElementById('checkout-notes').value,
+                photo: checkoutPhotoData,
+                patrolProgress: State.patrolProgress,
+                lat: State.gps?.lat,
+                lng: State.gps?.lng
+            }
+        };
+
+        submitScanData(payload)
+            .then(result => {
+                hideLoading();
+                if (result.success) {
+                    State.isOnDuty = false;
+
+                    // GAMIFICATION: STREAK & BADGES
+                    if (typeof StreakManager !== 'undefined' || typeof BadgeManager !== 'undefined') {
+                        const r = (State.completedRounds || []).length;
+                        const t = State.totalPatrols || 1;
+                        const isPerfect = r >= t && r > 0;
+
+                        // Streak
+                        if (typeof StreakManager !== 'undefined' && isPerfect) {
+                            if (StreakManager.checkIncrement(true)) {
+                                showSuccess("🔥 Streak Increased!", "ສຸດຍອດ! ຮັກສາສະຖິຕິຕໍ່ໄປເດີ");
+                            }
+                        }
+
+                        // Badges
+                        if (typeof BadgeManager !== 'undefined') {
+                            BadgeManager.checkPerfectShift(isPerfect);
+                        }
+                    }
+                    // Stop Patrol Monitor
+                    if (typeof PatrolMonitor !== 'undefined') {
+                        PatrolMonitor.hideAlerts();
+                        if (PatrolMonitor.checkInterval) clearInterval(PatrolMonitor.checkInterval);
+                    }
+
+                    State.checkinData = null;
+                    State.patrolProgress = {};
+                    State.completedRounds = [];
+                    State.activeRoundPoints = [];
+                    clearSessionState(); // Reset everything
+                    updateDutyStatusUI();
+                    navigateTo('success');
+                } else {
+                    showError("ຂໍ້ຜິດພາດ", result.message);
+                }
+            })
+            .catch(err => {
+                hideLoading();
+                showError("ເຄືອຂ່າຍມີບັນຫາ", err);
+            });
+    }
+
+    setTimeout(initCheckoutData, 100);
+</script>

@@ -1,0 +1,66 @@
+<!-- Step 2: Guard Info -->
+<div id="step-2" class="step-content hidden">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">👮 ຂໍ້ມູນພະນັກງານຍາມ</h2>
+            <div class="info-box mt-2">
+                <span class="info-icon">💡</span>
+                <p class="text-xs">ກວດສອບຊື່ພະນັກງານ ແລະ ກະການເຮັດວຽກທີ່ກຳລັງປະຈຳການຢູ່ໃນຈຸດກວດນີ້.</p>
+            </div>
+        </div>
+        <div class="card-content">
+            <div class="input-group">
+                <label>👤 ຊື່ພະນັກງານຍາມ (ລປພ)</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span class="text-xl">👤</span>
+                    </div>
+                    <input type="text" id="guardName" name="guardName"
+                        class="w-full pl-10 p-4 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:bg-white focus:ring-4 focus:ring-blue-50 outline-none transition-all"
+                        placeholder="ພິມຊື່ຍາມ...">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>⏰ ກະການເຮັດວຽກ (Shift)</label>
+                <div class="custom-select" id="shift-select">
+                    <input type="hidden" id="shift" name="shift" value="Shift 1">
+                    <div class="custom-select-trigger" onclick="toggleCustomSelect('shift-select')">
+                        <span class="custom-select-value">☀️ ກະ 1 (06:00 - 14:00)</span>
+                        <i>▼</i>
+                    </div>
+                    <div class="custom-select-dropdown" id="shift-options">
+                        <div class="custom-select-option selected" data-value="Shift 1"
+                            onclick="selectCustomOption(this, 'shift')">☀️ ກະ 1 (06:00 - 14:00)</div>
+                        <div class="custom-select-option" data-value="Shift 2"
+                            onclick="selectCustomOption(this, 'shift')">⛅ ກະ 2 (14:00 - 22:00)</div>
+                        <div class="custom-select-option" data-value="Shift 3"
+                            onclick="selectCustomOption(this, 'shift')">🌙 ກະ 3 (22:00 - 06:00)</div>
+                        <div class="custom-select-option" data-value="Special"
+                            onclick="selectCustomOption(this, 'shift')">⭐ ກະພິເສດ</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label class="mb-2 block font-medium">ປະເພດການເຮັດວຽກ</label>
+                <div class="grid-cols-2">
+                    <label class="radio-card">
+                        <input type="radio" name="empType" value="Permanent" checked>
+                        <div class="radio-card-content">
+                            <span class="text-xl">🏢</span>
+                            <span class="font-medium">ພະນັກງານປະຈຳ</span>
+                        </div>
+                    </label>
+                    <label class="radio-card">
+                        <input type="radio" name="empType" value="OT">
+                        <div class="radio-card-content">
+                            <span class="text-xl">⏱️</span>
+                            <span class="font-medium">ພະນັກງານລ່ວງເວລາ (OT)</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

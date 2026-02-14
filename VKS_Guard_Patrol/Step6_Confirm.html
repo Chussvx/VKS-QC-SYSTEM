@@ -1,0 +1,103 @@
+﻿<!-- Step 6: Confirm -->
+<div id="step-6" class="step-content hidden">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">📝 ກວດສອບ ແລະ ສົ່ງບົດລາຍງານ</h2>
+            <div class="info-box mt-2">
+                <span class="info-icon">💡</span>
+                <p class="text-xs">ກວດສອບຄວາມຖືກຕ້ອງຂອງຂໍ້ມູນທັງໝົດ ແລະ ໃຫ້ຄະແນນຄວາມພ້ອມຂອງພະນັກງານ ກ່ອນກົດສົ່ງ.</p>
+            </div>
+        </div>
+
+        <div class="card-content">
+            <!-- Selection Summary Section -->
+            <div class="summary-section">
+                <div class="summary-title">
+                    <span>📑 ຂໍ້ມູນທີ່ເລືອກ</span>
+                </div>
+                <div class="detail-grid">
+                    <div class="detail-field">
+                        <span class="detail-label">ສາຍກວດ</span>
+                        <span class="detail-value" id="summary-patrolName">--</span>
+                    </div>
+                    <div class="detail-field">
+                        <span class="detail-label">ສະຖານທີ່</span>
+                        <span class="detail-value primary" id="summary-siteName">--</span>
+                    </div>
+                </div>
+            </div>
+            <div class="input-group">
+                <label class="mb-3">⭐ ການປະເມີນພະນັກງານ</label>
+
+                <!-- Communication Rating -->
+                <div class="rating-group mb-4">
+                    <label class="text-sm font-medium block mb-2">💬 ການສື່ສານ</label>
+                    <div class="slider-container">
+                        <input type="range" id="ratingCommunication" name="ratingCommunication" min="1" max="5"
+                            value="3" class="rating-slider" oninput="updateSliderValue(this)">
+                        <div class="slider-labels">
+                            <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+                        </div>
+                        <div class="slider-value-display"><span id="ratingCommunication-value">3</span>/5</div>
+                    </div>
+                </div>
+
+                <!-- Uniform Rating -->
+                <div class="rating-group">
+                    <label class="text-sm font-medium block mb-2">👔 ຄວາມຮຽບຮ້ອຍເຄື່ອງແບບ</label>
+                    <div class="slider-container">
+                        <input type="range" id="ratingUniform" name="ratingUniform" min="1" max="5" value="3"
+                            class="rating-slider" oninput="updateSliderValue(this)">
+                        <div class="slider-labels">
+                            <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+                        </div>
+                        <div class="slider-value-display"><span id="ratingUniform-value">3</span>/5</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>⌛ ເວລາສິ້ນສຸດການກວດກາ</label>
+                <input type="hidden" id="finishTime" name="finishTime" value="">
+                <div class="ios-time-picker" id="finishTimePicker">
+                    <div class="ios-time-display" onclick="openTimePicker('finishTimePicker', 'finishTime')">
+                        <span class="ios-time-value" id="finishTimeDisplay">05:30 AM</span>
+                        <span class="ios-time-icon">🕐</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>📍 ສະຖານທີ່ປະຈຸບັນ</label>
+                <input type="hidden" id="gpsLink" name="gpsLink" value="">
+                <input type="hidden" id="gpsLat" name="gpsLat" value="">
+                <input type="hidden" id="gpsLng" name="gpsLng" value="">
+
+                <!-- Location Display Card -->
+                <div class="location-card" id="locationCard">
+                    <div class="location-status" id="locationStatus">
+                        <span class="location-icon">📍</span>
+                        <span class="location-text">ກົດປຸ່ມເພື່ອຮັບສະຖານທີ່</span>
+                    </div>
+                    <div class="location-coords hidden" id="locationCoords">
+                        <span class="coords-label">ພິກັດ:</span>
+                        <span class="coords-value" id="coordsValue">--</span>
+                    </div>
+                </div>
+
+                <!-- Get Location Button -->
+                <button type="button" class="btn btn-primary w-full mt-3" id="getLocationBtn" onclick="getMyLocation()">
+                    <span id="locationBtnIcon">📍</span>
+                    <span id="locationBtnText">ຮັບສະຖານທີ່ປະຈຸບັນ</span>
+                </button>
+
+                <!-- Fallback Manual Input (HIDDEN FOR STRICT MODE) -->
+                <div class="mt-4 hidden">
+                    <p class="text-xs text-muted-foreground mb-2">ຫຼື ວາງລິ້ງ Google Maps ດ້ວຍຕົນເອງ:</p>
+                    <input type="url" id="gpsLinkManual" placeholder="https://maps.app.goo.gl/..." class="input w-full"
+                        oninput="syncGpsLink(this.value)">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

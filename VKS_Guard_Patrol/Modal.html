@@ -1,0 +1,81 @@
+<!-- Modal -->
+<div id="modalOverlay" class="dialog-overlay hidden">
+    <div class="dialog-content">
+        <div class="dialog-header">
+            <h2 id="modalTitle" class="dialog-title">Title</h2>
+            <p id="modalDesc" class="dialog-description">Description goes here.</p>
+        </div>
+        <!-- Buttons Container -->
+        <div style="display:flex; justify-content:center; gap: 10px; margin-top:1rem;">
+            <!-- Cancel Button -->
+            <button id="modalBtnCancel" class="btn btn-outline flex-1 hidden" onclick="closeModal()">Cancel</button>
+            <!-- OK/Confirm Button -->
+            <button id="modalBtn" class="btn btn-primary flex-1" onclick="closeModal()">OK</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.modalCallback = null;
+
+    /**
+     * Show customizable modal
+     * type: 'alert' | 'success' | 'confirm'
+     * onConfirm: function to run if 'confirm' type is used and user clicks OK
+     */
+    window.showModal = function (title, message, type = 'alert', onConfirm = null) {
+        document.getElementById('modalTitle').innerText = title;
+        document.getElementById('modalDesc').innerText = message;
+
+        const overlay = document.getElementById('modalOverlay');
+        const btnOk = document.getElementById('modalBtn');
+        const btnCancel = document.getElementById('modalBtnCancel');
+
+        // Reset
+        window.modalCallback = null;
+
+        // Default State (Alert)
+        btnCancel.style.display = 'none'; // Force hide
+        btnOk.style.width = '100%';       // Full width by default
+        btnOk.className = 'btn btn-primary w-full';
+        btnOk.innerText = 'OK / ຮັບຊາບ';
+
+        if (type === 'success') {
+            btnOk.classList.add('bg-green-600', 'text-white');
+            btnOk.innerText = 'OK / ຕົກລົງ';
+        } else if (type === 'confirm') {
+            // Confirm Mode: Show Two Buttons
+            // Force flex layout
+            btnCancel.style.display = 'block';
+            btnOk.style.width = 'auto'; // Let flex handle it
+
+            btnOk.className = 'btn btn-primary flex-1 bg-purple-600 text-white';
+            btnOk.innerText = 'Confirm / ຢືນຢັນ';
+
+            btnCancel.className = 'btn btn-outline flex-1';
+            btnCancel.innerText = 'Cancel / ຍົກເລີກ';
+
+        }
+
+        // BIND CALLBACK (Universal for all types: Success, Confirm, Alert)
+        // Fix v93: Ensure callback runs even if type is 'success'
+        if (onConfirm) {
+            window.modalCallback = onConfirm;
+            btnOk.onclick = function () {
+                closeModal();
+                if (window.modalCallback) setTimeout(window.modalCallback, 100);
+            };
+        } else {
+            // Default Close Behavior (if no callback)
+            btnOk.onclick = closeModal;
+        }
+
+        overlay.classList.remove('hidden');
+    };
+
+    window.closeModal = function () {
+        document.getElementById('modalOverlay').classList.add('hidden');
+        // Reset generic onclick
+        document.getElementById('modalBtn').onclick = closeModal;
+    };
+</script>

@@ -1,0 +1,2555 @@
+<!-- Page_Calendar.html - Patrol Plans Manager -->
+<!-- Repurposed from Shift Calendar to Patrol Planning & Compliance -->
+<div id="page-calendar" class="page-content">
+
+    <!-- Filter Bar -->
+    <div class="filter-bar justify-between" style="flex-wrap: wrap; gap: 12px;">
+        <div class="flex items-center gap-3" style="flex-wrap: wrap;">
+            <!-- Date Picker -->
+            <div style="position: relative;">
+                <input type="text" id="pp-date-picker" class="form-input" readonly
+                    style="cursor:pointer; width: 160px; padding-right: 2.5rem; font-weight: 600;"
+                    placeholder="Select date...">
+                <span class="material-symbols-outlined"
+                    style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);font-size:1.1rem;color:var(--text-muted);pointer-events:none;">calendar_today</span>
+            </div>
+
+            <button class="btn btn-secondary btn-sm" onclick="ppGoToToday()" data-i18n="calendar.today">Today</button>
+
+            <!-- Route Filter -->
+            <div class="view-toggle">
+                <button class="view-btn active" data-route="A" onclick="ppSetRoute('A')"
+                    data-i18n="patrol.route_a">Route A</button>
+                <button class="view-btn" data-route="B" onclick="ppSetRoute('B')" data-i18n="patrol.route_b">Route
+                    B</button>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <!-- Copy Plan -->
+            <button class="btn btn-secondary btn-sm" onclick="openCopyPlanModal()">
+                <span class="material-symbols-outlined" style="font-size: 16px;">content_copy</span>
+                <span data-i18n="patrol.copy_plan">Copy Plan</span>
+            </button>
+
+            <!-- View Toggle -->
+            <div class="view-toggle">
+                <button class="view-btn active" data-view="daily" onclick="ppSetView('daily')">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">today</span>
+                    <span data-i18n="patrol.daily">Daily</span>
+                </button>
+                <button class="view-btn" data-view="analytics" onclick="ppSetView('analytics')">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">analytics</span>
+                    <span data-i18n="patrol.analytics">Analytics</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compliance Summary Cards -->
+    <div class="grid grid-cols-4 gap-4 mb-4" id="pp-summary-cards" style="display: none;">
+        <div class="card p-4 text-center">
+            <div class="text-xs text-muted font-bold" style="text-transform: uppercase; letter-spacing: 0.5px;"
+                data-i18n="patrol.compliance">
+                COMPLIANCE</div>
+            <div class="text-3xl font-bold mt-1" id="pp-compliance-rate" style="color: var(--success);">—%</div>
+        </div>
+        <div class="card p-4 text-center">
+            <div class="text-xs text-muted font-bold" style="text-transform: uppercase; letter-spacing: 0.5px;"
+                data-i18n="patrol.planned">PLANNED
+            </div>
+            <div class="text-3xl font-bold mt-1" id="pp-total-planned" style="color: var(--primary);">—</div>
+        </div>
+        <div class="card p-4 text-center">
+            <div class="text-xs text-muted font-bold" style="text-transform: uppercase; letter-spacing: 0.5px;"
+                data-i18n="patrol.visited">VISITED
+            </div>
+            <div class="text-3xl font-bold mt-1" id="pp-total-visited" style="color: var(--success);">—</div>
+        </div>
+        <div class="card p-4 text-center">
+            <div class="text-xs text-muted font-bold" style="text-transform: uppercase; letter-spacing: 0.5px;"
+                data-i18n="patrol.missed">MISSED
+            </div>
+            <div class="text-3xl font-bold mt-1" id="pp-total-missed" style="color: var(--danger);">—</div>
+        </div>
+    </div>
+
+    <!-- ==================== DAILY VIEW ==================== -->
+    <div id="pp-daily-view">
+        <!-- 3 Shift Columns -->
+        <div class="grid grid-cols-3 gap-4" id="pp-shifts-grid" style="min-height: 400px;">
+
+            <!-- Morning Column -->
+            <div class="card p-0 overflow-hidden" id="pp-col-morning">
+                <div class="pp-shift-header pp-shift-morning">
+                    <div class="flex items-center gap-2">
+                        <span style="font-size: 20px;">🌅</span>
+                        <div>
+                            <div class="font-bold" data-i18n="patrol.shift.morning">MORNING</div>
+                            <div class="text-xs" style="opacity: 0.8;">05:30 – 14:30</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <button class="btn btn-sm pp-add-btn" onclick="ppViewShiftRoute('morning')"
+                            title="View Inspector Route">
+                            <span class="material-symbols-outlined" style="font-size: 16px;">map</span>
+                        </button>
+                        <button class="btn btn-sm pp-add-btn" onclick="ppViewShiftLogs('morning')"
+                            title="View Inspection Logs">
+                            <span class="material-symbols-outlined" style="font-size: 16px;">assignment</span>
+                        </button>
+                        <button class="btn btn-sm pp-add-btn" onclick="openAddSitesModal('morning')">
+                            <span class="material-symbols-outlined" style="font-size: 16px;">add</span>
+                            <span data-i18n="patrol.add">Add</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="pp-shift-body" id="pp-body-morning">
+                    <div class="pp-empty-state">
+                        <span class="material-symbols-outlined"
+                            style="font-size: 32px; opacity: 0.3;">event_available</span>
+                        <p class="text-xs text-muted mt-2" data-i18n="patrol.no_sites_planned">No sites planned</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- evening Column -->
+            <div class="card p-0 overflow-hidden" id="pp-col-evening">
+                <div class="pp-shift-header pp-shift-evening">
+                    <div class="flex items-center gap-2">
+                        <span style="font-size: 20px;">🌆</span>
+                        <div>
+                            <div class="font-bold" data-i18n="patrol.shift.evening">evening</div>
+                            <div class="text-xs" style="opacity: 0.8;">13:30 – 22:30</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <button class="btn btn-sm pp-add-btn" onclick="ppViewShiftRoute('evening')"
+                            title="View Inspector Route">
+                            <span class="material-symbols-outlined" style="font-size: 16px;">map</span>
+                        </button>
+                        <button class="btn btn-sm pp-add-btn" onclick="ppViewShiftLogs('evening')"
+                            title="View Inspection Logs">
+                            <span class="material-symbols-outlined" style="font-size: 16px;">assignment</span>
+                        </button>
+                        <button class="btn btn-sm pp-add-btn" onclick="openAddSitesModal('evening')">
+                            <span class="material-symbols-outlined" style="font-size: 16px;">add</span>
+                            <span data-i18n="patrol.add">Add</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="pp-shift-body" id="pp-body-evening">
+                    <div class="pp-empty-state">
+                        <span class="material-symbols-outlined"
+                            style="font-size: 32px; opacity: 0.3;">event_available</span>
+                        <p class="text-xs text-muted mt-2" data-i18n="patrol.no_sites_planned">No sites planned</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Night Column -->
+            <div class="card p-0 overflow-hidden" id="pp-col-night">
+                <div class="pp-shift-header pp-shift-night">
+                    <div class="flex items-center gap-2">
+                        <span style="font-size: 20px;">🌙</span>
+                        <div>
+                            <div class="font-bold" data-i18n="patrol.shift.night">NIGHT</div>
+                            <div class="text-xs" style="opacity: 0.8;">21:30 – 06:30</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <button class="btn btn-sm pp-add-btn" onclick="ppViewShiftRoute('night')"
+                            title="View Inspector Route">
+                            <span class="material-symbols-outlined" style="font-size: 16px;">map</span>
+                        </button>
+                        <button class="btn btn-sm pp-add-btn" onclick="ppViewShiftLogs('night')"
+                            title="View Inspection Logs">
+                            <span class="material-symbols-outlined" style="font-size: 16px;">assignment</span>
+                        </button>
+                        <button class="btn btn-sm pp-add-btn" onclick="openAddSitesModal('night')">
+                            <span class="material-symbols-outlined" style="font-size: 16px;">add</span>
+                            <span data-i18n="patrol.add">Add</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="pp-shift-body" id="pp-body-night">
+                    <div class="pp-empty-state">
+                        <span class="material-symbols-outlined"
+                            style="font-size: 32px; opacity: 0.3;">event_available</span>
+                        <p class="text-xs text-muted mt-2" data-i18n="patrol.no_sites_planned">No sites planned</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== ANALYTICS VIEW ==================== -->
+    <div id="pp-analytics-view" style="display: none;">
+        <!-- Date Range Selector -->
+        <div class="card" style="padding: 16px 20px; margin-bottom: 16px;">
+            <div class="flex items-center gap-3" style="flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-outlined"
+                        style="font-size: 18px; color: var(--primary);">date_range</span>
+                    <span class="text-xs font-bold"
+                        style="color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;"
+                        data-i18n="patrol.from">From</span>
+                    <input type="text" id="pp-analytics-start" class="form-input" readonly
+                        style="cursor:pointer; width: 140px; font-weight: 600;" placeholder="Start...">
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="text-xs font-bold"
+                        style="color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;"
+                        data-i18n="patrol.to">To</span>
+                    <input type="text" id="pp-analytics-end" class="form-input" readonly
+                        style="cursor:pointer; width: 140px; font-weight: 600;" placeholder="End...">
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="loadAnalytics()" id="pp-analytics-generate-btn"
+                    style="padding: 8px 20px;">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">analytics</span>
+                    <span data-i18n="patrol.generate">Generate</span>
+                </button>
+                <div class="view-toggle" style="margin-left: 8px;">
+                    <button class="view-btn active" data-aroute="ALL" onclick="ppSetAnalyticsRoute('ALL')"
+                        style="font-size: 11px; padding: 6px 12px;">
+                        <span data-i18n="patrol.all_routes">All</span>
+                    </button>
+                    <button class="view-btn" data-aroute="A" onclick="ppSetAnalyticsRoute('A')"
+                        style="font-size: 11px; padding: 6px 12px;">
+                        Route A
+                    </button>
+                    <button class="view-btn" data-aroute="B" onclick="ppSetAnalyticsRoute('B')"
+                        style="font-size: 11px; padding: 6px 12px;">
+                        Route B
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Skeleton -->
+        <div id="pp-analytics-loading" style="display: none;">
+            <div class="grid grid-cols-5 gap-4 mb-4">
+                <div class="card p-4">
+                    <div class="skeleton skeleton-card" style="height: 60px;"></div>
+                </div>
+                <div class="card p-4">
+                    <div class="skeleton skeleton-card" style="height: 60px;"></div>
+                </div>
+                <div class="card p-4">
+                    <div class="skeleton skeleton-card" style="height: 60px;"></div>
+                </div>
+                <div class="card p-4">
+                    <div class="skeleton skeleton-card" style="height: 60px;"></div>
+                </div>
+                <div class="card p-4">
+                    <div class="skeleton skeleton-card" style="height: 60px;"></div>
+                </div>
+            </div>
+            <div class="card p-4">
+                <div class="skeleton skeleton-card" style="height: 200px;"></div>
+            </div>
+        </div>
+
+        <!-- Analytics Summary Cards -->
+        <div class="grid grid-cols-5 gap-4 mb-4" id="pp-analytics-summary" style="display: none;">
+            <div class="card pp-stat-card">
+                <div class="pp-stat-icon" style="background: rgba(16,185,129,0.08);">
+                    <span class="material-symbols-outlined"
+                        style="font-size: 20px; color: var(--primary);">verified</span>
+                </div>
+                <div class="pp-stat-label" data-i18n="patrol.compliance">Compliance</div>
+                <div class="pp-stat-value" id="pp-a-rate" style="color: var(--primary);">—%</div>
+            </div>
+            <div class="card pp-stat-card">
+                <div class="pp-stat-icon" style="background: rgba(59,130,246,0.08);">
+                    <span class="material-symbols-outlined" style="font-size: 20px; color: #3b82f6;">event_note</span>
+                </div>
+                <div class="pp-stat-label" data-i18n="patrol.planned">Planned</div>
+                <div class="pp-stat-value" id="pp-a-planned" style="color: #1e293b;">—</div>
+            </div>
+            <div class="card pp-stat-card">
+                <div class="pp-stat-icon" style="background: rgba(16,185,129,0.08);">
+                    <span class="material-symbols-outlined" style="font-size: 20px; color: #10b981;">check_circle</span>
+                </div>
+                <div class="pp-stat-label" data-i18n="patrol.visited">Visited</div>
+                <div class="pp-stat-value" id="pp-a-visited" style="color: #10b981;">—</div>
+            </div>
+            <div class="card pp-stat-card">
+                <div class="pp-stat-icon" style="background: rgba(239,68,68,0.08);">
+                    <span class="material-symbols-outlined" style="font-size: 20px; color: #ef4444;">cancel</span>
+                </div>
+                <div class="pp-stat-label" data-i18n="patrol.missed">Missed</div>
+                <div class="pp-stat-value" id="pp-a-missed" style="color: #ef4444;">—</div>
+            </div>
+            <div class="card pp-stat-card">
+                <div class="pp-stat-icon" style="background: rgba(245,158,11,0.08);">
+                    <span class="material-symbols-outlined" style="font-size: 20px; color: #f59e0b;">warning</span>
+                </div>
+                <div class="pp-stat-label" data-i18n="patrol.unplanned">Unplanned</div>
+                <div class="pp-stat-value" id="pp-a-unplanned" style="color: #f59e0b;">—</div>
+            </div>
+        </div>
+
+        <!-- Charts Row 1: Trend Line + Shift Donut -->
+        <div class="grid grid-cols-2 gap-4 mb-4" id="pp-charts-row1" style="display: none;">
+            <!-- Compliance Trend Line -->
+            <div class="card" style="padding: 20px;">
+                <h3 class="pp-chart-title">
+                    <span class="material-symbols-outlined"
+                        style="font-size: 18px; color: var(--primary);">trending_up</span>
+                    <span data-i18n="patrol.compliance_trend">Compliance Trend</span>
+                </h3>
+                <div id="pp-trend-chart" style="width: 100%; height: 200px; margin-top: 12px;"></div>
+            </div>
+            <!-- Shift Breakdown Donut -->
+            <div class="card" style="padding: 20px;">
+                <h3 class="pp-chart-title">
+                    <span class="material-symbols-outlined" style="font-size: 18px; color: #8b5cf6;">donut_small</span>
+                    <span data-i18n="patrol.shift_breakdown">Shift Breakdown</span>
+                </h3>
+                <div id="pp-donut-chart"
+                    style="width: 100%; height: 200px; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 24px;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row 2: Heatmap + Most Missed -->
+        <div class="grid grid-cols-2 gap-4 mb-4" id="pp-charts-row2" style="display: none;">
+            <!-- Compliance Heatmap -->
+            <div class="card" style="padding: 20px;">
+                <h3 class="pp-chart-title">
+                    <span class="material-symbols-outlined"
+                        style="font-size: 18px; color: #f59e0b;">calendar_month</span>
+                    <span data-i18n="patrol.compliance_heatmap">Compliance Heatmap</span>
+                </h3>
+                <div id="pp-heatmap" style="margin-top: 12px;"></div>
+            </div>
+            <!-- Most Missed Sites -->
+            <div class="card" style="padding: 20px;">
+                <h3 class="pp-chart-title">
+                    <span class="material-symbols-outlined" style="font-size: 18px; color: #ef4444;">location_off</span>
+                    <span data-i18n="patrol.most_missed">Most Missed Sites</span>
+                </h3>
+                <div id="pp-missed-chart" style="margin-top: 12px;"></div>
+            </div>
+        </div>
+
+        <div class="card p-0 overflow-hidden" id="pp-analytics-table-card" style="display: none;">
+            <div style="padding: 16px 20px; border-bottom: 1px solid var(--border);">
+                <h3
+                    style="font-size: 14px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-outlined"
+                        style="font-size: 18px; color: var(--primary);">calendar_month</span>
+                    <span data-i18n="patrol.daily_breakdown">Daily Breakdown</span>
+                </h3>
+            </div>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="padding-left: 20px;" data-i18n="patrol.date">Date</th>
+                            <th class="text-center" data-i18n="patrol.planned">Planned</th>
+                            <th class="text-center" data-i18n="patrol.visited">Visited</th>
+                            <th class="text-center" data-i18n="patrol.missed">Missed</th>
+                            <th class="text-center" data-i18n="patrol.unplanned">Unplanned</th>
+                            <th class="text-center" style="padding-right: 20px;" data-i18n="patrol.compliance">
+                                Compliance</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pp-analytics-tbody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Inspector Performance -->
+        <div class="card" id="pp-inspector-card" style="display: none; margin-top: 16px; padding: 20px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                <h3
+                    style="font-size: 15px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-outlined" style="font-size: 20px; color: #f59e0b;">emoji_events</span>
+                    <span data-i18n="patrol.inspector_performance">Inspector Leaderboard</span>
+                </h3>
+                <span id="pp-inspector-count-badge"
+                    style="font-size: 11px; font-weight: 600; color: var(--text-muted); background: rgba(60,60,67,0.06); padding: 3px 10px; border-radius: 8px;"></span>
+            </div>
+            <div id="pp-inspector-list"></div>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="flex items-center gap-4 mt-4 text-sm" id="pp-legend">
+        <span class="flex items-center gap-2"><span class="legend-dot" style="background: var(--success);"></span>
+            <span data-i18n="patrol.visited">Visited</span></span>
+        <span class="flex items-center gap-2"><span class="legend-dot" style="background: var(--danger);"></span>
+            <span data-i18n="patrol.missed">Missed</span></span>
+        <span class="flex items-center gap-2"><span class="legend-dot" style="background: var(--warning);"></span>
+            <span data-i18n="patrol.unplanned">Unplanned</span></span>
+        <span id="pp-last-updated"
+            style="display:none; margin-left:auto; font-size:11px; color:var(--text-muted); font-weight:600;"></span>
+    </div>
+
+</div>
+
+<!-- ==================== STYLES ==================== -->
+<style>
+    /* Shift Column Headers */
+    .pp-shift-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        color: #fff;
+        font-size: 13px;
+    }
+
+    .pp-shift-morning {
+        background: linear-gradient(135deg, #f59e0b, #f97316);
+    }
+
+    .pp-shift-evening {
+        background: linear-gradient(135deg, #3b82f6, #6366f1);
+    }
+
+    .pp-shift-night {
+        background: linear-gradient(135deg, #1e293b, #334155);
+    }
+
+    .pp-add-btn {
+        background: rgba(255, 255, 255, 0.2) !important;
+        color: #fff !important;
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+        font-size: 12px !important;
+        padding: 4px 10px !important;
+        border-radius: 6px !important;
+    }
+
+    .pp-add-btn:hover {
+        background: rgba(255, 255, 255, 0.35) !important;
+    }
+
+    .pp-shift-body {
+        padding: 8px;
+        min-height: 300px;
+        max-height: calc(100vh - 380px);
+        overflow-y: auto;
+    }
+
+    .pp-empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 16px;
+        color: var(--text-muted);
+    }
+
+    /* Site Cards */
+    .pp-site-card {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        margin-bottom: 6px;
+        font-size: 13px;
+        transition: all 0.15s ease;
+        position: relative;
+    }
+
+    .pp-site-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .pp-site-card.visited {
+        background: rgba(34, 197, 94, 0.08);
+        border-left: 3px solid var(--success);
+    }
+
+    .pp-site-card.missed {
+        background: rgba(239, 68, 68, 0.08);
+        border-left: 3px solid var(--danger);
+    }
+
+    .pp-site-card.unplanned {
+        background: rgba(245, 158, 11, 0.08);
+        border-left: 3px solid var(--warning);
+    }
+
+    .pp-site-card.partial {
+        background: rgba(251, 146, 60, 0.10);
+        border-left: 3px solid #fb923c;
+    }
+
+    .pp-site-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+
+    .pp-site-icon.visited {
+        background: var(--success);
+        color: #fff;
+    }
+
+    .pp-site-icon.missed {
+        background: var(--danger);
+        color: #fff;
+    }
+
+    .pp-site-icon.unplanned {
+        background: var(--warning);
+        color: #fff;
+    }
+
+    .pp-site-icon.partial {
+        background: #fb923c;
+        color: #fff;
+    }
+
+    .pp-site-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .pp-site-name {
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .pp-site-meta {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 1px;
+    }
+
+    .pp-site-delete {
+        opacity: 0;
+        transition: opacity 0.15s;
+        cursor: pointer;
+        color: var(--text-muted);
+        font-size: 16px !important;
+    }
+
+    .pp-site-card:hover .pp-site-delete {
+        opacity: 0.6;
+    }
+
+    .pp-site-delete:hover {
+        opacity: 1 !important;
+        color: var(--danger) !important;
+    }
+
+    /* Multi-shift indicator: site appears in more than one shift */
+    .pp-site-card.pp-multi-shift {
+        border-left: 3px solid #f59e0b;
+    }
+
+    .pp-multi-shift-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+        margin-left: 6px;
+        vertical-align: middle;
+    }
+
+    /* Unplanned Divider */
+    .pp-unplanned-divider {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 12px 0 8px;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--warning);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .pp-unplanned-divider::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--warning);
+        opacity: 0.3;
+    }
+
+    /* Summary Cards Color */
+    #pp-summary-cards .card {
+        border: none;
+    }
+
+    /* Analytics Table */
+    /* Analytics Compliance Bar */
+    .pp-compliance-bar {
+        width: 60px;
+        height: 6px;
+        border-radius: 99px;
+        background: rgba(60, 60, 67, 0.06);
+        display: inline-block;
+        vertical-align: middle;
+        margin-left: 8px;
+        overflow: hidden;
+    }
+
+    .pp-compliance-fill {
+        height: 100%;
+        border-radius: 99px;
+        transition: width 0.4s var(--spring-snappy, cubic-bezier(0.2, 0, 0, 1));
+    }
+
+    /* Chart Titles */
+    .pp-chart-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+    }
+
+    /* Donut Legend */
+    .pp-donut-legend {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .pp-donut-legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+
+    .pp-donut-legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .pp-donut-legend-value {
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-left: auto;
+        font-size: 13px;
+    }
+
+    /* Heatmap */
+    .pp-heatmap-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 4px;
+    }
+
+    .pp-heatmap-cell {
+        aspect-ratio: 1;
+        border-radius: 6px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: default;
+        transition: transform 0.15s, box-shadow 0.15s;
+        position: relative;
+    }
+
+    .pp-heatmap-cell:hover {
+        transform: scale(1.08);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+        z-index: 1;
+    }
+
+    .pp-heatmap-cell .rate {
+        font-size: 9px;
+        font-weight: 700;
+        opacity: 0.9;
+    }
+
+    .pp-heatmap-header {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 4px;
+        margin-bottom: 4px;
+    }
+
+    .pp-heatmap-header span {
+        text-align: center;
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+    }
+
+    /* Missed Sites Bar Chart */
+    .pp-missed-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+
+    .pp-missed-name {
+        width: 120px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex-shrink: 0;
+    }
+
+    .pp-missed-bar-bg {
+        flex: 1;
+        height: 20px;
+        background: rgba(239, 68, 68, 0.06);
+        border-radius: 6px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .pp-missed-bar-fill {
+        height: 100%;
+        border-radius: 6px;
+        background: linear-gradient(90deg, #ef4444, #f87171);
+        transition: width 0.5s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .pp-missed-count {
+        font-size: 12px;
+        font-weight: 700;
+        color: #ef4444;
+        min-width: 28px;
+        text-align: right;
+        flex-shrink: 0;
+    }
+
+    .pp-missed-route {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--text-muted);
+        background: rgba(60, 60, 67, 0.06);
+        padding: 1px 6px;
+        border-radius: 4px;
+        flex-shrink: 0;
+    }
+
+    /* Premium Stat Cards */
+    .pp-stat-card {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 6px;
+        transition: box-shadow 0.2s var(--spring-snappy, ease), transform 0.15s;
+    }
+
+    .pp-stat-card:hover {
+        box-shadow: var(--shadow-md, 0 4px 8px rgba(0, 0, 0, 0.06));
+        transform: translateY(-1px);
+    }
+
+    .pp-stat-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 2px;
+    }
+
+    .pp-stat-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-muted, #94a3b8);
+    }
+
+    .pp-stat-value {
+        font-size: 24px;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    /* Inspector Card */
+    /* ===================== Inspector Performance (iOS 26) ===================== */
+    .pp-inspector-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 16px;
+        margin: 0 -16px;
+        border-radius: 14px;
+        transition: background 0.15s ease;
+    }
+
+    .pp-inspector-item:hover {
+        background: rgba(16, 185, 129, 0.04);
+    }
+
+    .pp-inspector-rank {
+        width: 24px;
+        height: 24px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 800;
+        color: #fff;
+        flex-shrink: 0;
+    }
+
+    .pp-inspector-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 700;
+        color: #fff;
+        flex-shrink: 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .pp-inspector-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .pp-inspector-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary, #1e293b);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .pp-inspector-stats {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 4px;
+    }
+
+    .pp-inspector-stat-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-muted, #94a3b8);
+        background: rgba(60, 60, 67, 0.04);
+        padding: 2px 8px;
+        border-radius: 6px;
+    }
+
+    .pp-inspector-stat-pill .material-symbols-outlined {
+        font-size: 12px;
+    }
+
+    .pp-inspector-progress {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+    }
+
+    .pp-inspector-bar {
+        width: 100px;
+        height: 6px;
+        border-radius: 99px;
+        background: rgba(60, 60, 67, 0.06);
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    .pp-inspector-bar-fill {
+        height: 100%;
+        border-radius: 99px;
+        transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .pp-inspector-count {
+        font-size: 15px;
+        font-weight: 800;
+        color: var(--text-primary, #1e293b);
+        min-width: 28px;
+        text-align: right;
+        flex-shrink: 0;
+    }
+
+    /* Responsive: stack columns on narrow screens */
+    @media (max-width: 900px) {
+        #pp-shifts-grid {
+            grid-template-columns: 1fr !important;
+        }
+
+        #pp-analytics-summary {
+            grid-template-columns: repeat(3, 1fr) !important;
+        }
+    }
+
+    @media (max-width: 600px) {
+        #pp-analytics-summary {
+            grid-template-columns: repeat(2, 1fr) !important;
+        }
+    }
+
+    /* ===================== Add Sites Modal (iOS 26) ===================== */
+    .pp-search-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(60, 60, 67, 0.04);
+        border-radius: 10px;
+        padding: 8px 12px;
+    }
+
+    .pp-selection-pill {
+        display: inline-flex;
+        align-items: center;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--primary, #10b981);
+        background: rgba(16, 185, 129, 0.08);
+        padding: 4px 10px;
+        border-radius: 8px;
+    }
+
+    .pp-site-check-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 20px;
+        cursor: pointer;
+        transition: background 0.15s ease;
+        font-size: 14px;
+        border-bottom: 1px solid rgba(60, 60, 67, 0.06);
+    }
+
+    .pp-site-check-item:last-child {
+        border-bottom: none;
+    }
+
+    .pp-site-check-item:hover {
+        background: rgba(16, 185, 129, 0.03);
+    }
+
+    .pp-site-check-item.is-disabled {
+        opacity: 0.5;
+        cursor: default;
+    }
+
+    .pp-site-check-item input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: var(--primary, #10b981);
+        border-radius: 6px;
+        flex-shrink: 0;
+    }
+
+    .pp-site-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .pp-site-icon .material-symbols-outlined {
+        font-size: 18px;
+    }
+
+    .pp-site-label {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .pp-site-name {
+        font-weight: 600;
+        color: var(--text-primary, #1e293b);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .pp-site-id {
+        font-size: 11px;
+        color: var(--text-muted, #94a3b8);
+        margin-top: 1px;
+    }
+
+    .pp-site-check-item.select-all-row {
+        background: rgba(16, 185, 129, 0.04);
+        border-bottom: 1px solid var(--border, rgba(60, 60, 67, 0.12));
+        padding: 14px 20px;
+        position: sticky;
+        top: 0;
+        z-index: 2;
+    }
+
+    /* Copy Modal Weekday Checkboxes */
+    .pp-weekday-grid {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+    }
+
+    .pp-weekday-btn {
+        width: 42px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        background: var(--bg-card);
+        transition: all 0.15s;
+    }
+
+    .pp-weekday-btn.active {
+        background: var(--primary);
+        color: #fff;
+        border-color: var(--primary);
+    }
+
+    /* Site Detail Modal */
+    .pp-detail-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(4px);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: ppFadeIn 0.2s ease;
+    }
+
+    @keyframes ppFadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    @keyframes ppSlideUp {
+        from {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .pp-detail-modal {
+        background: var(--bg-card, #fff);
+        border-radius: 16px;
+        width: 420px;
+        max-width: 92vw;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.18);
+        animation: ppSlideUp 0.25s ease;
+    }
+
+    .pp-detail-header {
+        padding: 20px 20px 12px;
+        border-bottom: 1px solid var(--border, #e5e7eb);
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .pp-detail-header .pp-detail-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .pp-detail-icon.visited {
+        background: var(--success);
+        color: #fff;
+    }
+
+    .pp-detail-icon.missed {
+        background: var(--danger);
+        color: #fff;
+    }
+
+    .pp-detail-icon.unplanned {
+        background: var(--warning);
+        color: #fff;
+    }
+
+    .pp-detail-header h3 {
+        font-size: 15px;
+        font-weight: 700;
+        margin: 0;
+        color: var(--text-primary);
+        line-height: 1.3;
+    }
+
+    .pp-detail-header .pp-detail-badge {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 4px;
+        margin-top: 4px;
+        display: inline-block;
+    }
+
+    .pp-detail-badge.visited {
+        background: rgba(34, 197, 94, 0.12);
+        color: #16a34a;
+    }
+
+    .pp-detail-badge.missed {
+        background: rgba(239, 68, 68, 0.12);
+        color: #dc2626;
+    }
+
+    .pp-detail-badge.unplanned {
+        background: rgba(245, 158, 11, 0.12);
+        color: #d97706;
+    }
+
+    .pp-detail-badge.partial {
+        background: rgba(251, 146, 60, 0.12);
+        color: #ea580c;
+    }
+
+    .pp-detail-close {
+        margin-left: auto;
+        cursor: pointer;
+        color: var(--text-muted);
+        font-size: 20px !important;
+        padding: 4px;
+        border-radius: 8px;
+        transition: background 0.15s;
+    }
+
+    .pp-detail-close:hover {
+        background: rgba(0, 0, 0, 0.06);
+    }
+
+    .pp-detail-body {
+        padding: 16px 20px 20px;
+    }
+
+    .pp-detail-section {
+        margin-bottom: 16px;
+    }
+
+    .pp-detail-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .pp-detail-section-title {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+
+    .pp-detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 0;
+        font-size: 13px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    }
+
+    .pp-detail-row:last-child {
+        border-bottom: none;
+    }
+
+    .pp-detail-label {
+        color: var(--text-muted);
+        font-weight: 500;
+    }
+
+    .pp-detail-value {
+        font-weight: 600;
+        color: var(--text-primary);
+        text-align: right;
+        max-width: 60%;
+        word-break: break-word;
+    }
+
+    .pp-detail-diagnosis {
+        padding: 10px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 1.5;
+    }
+
+    .pp-detail-diagnosis.success {
+        background: rgba(34, 197, 94, 0.08);
+        color: #16a34a;
+        border: 1px solid rgba(34, 197, 94, 0.15);
+    }
+
+    .pp-detail-diagnosis.warning {
+        background: rgba(239, 68, 68, 0.08);
+        color: #dc2626;
+        border: 1px solid rgba(239, 68, 68, 0.15);
+    }
+
+    .pp-detail-diagnosis.info {
+        background: rgba(59, 130, 246, 0.08);
+        color: #2563eb;
+        border: 1px solid rgba(59, 130, 246, 0.15);
+    }
+
+    .pp-nearmiss {
+        padding: 8px 10px;
+        border-radius: 6px;
+        background: rgba(245, 158, 11, 0.06);
+        border: 1px solid rgba(245, 158, 11, 0.12);
+        margin-top: 6px;
+        font-size: 12px;
+    }
+
+    .pp-nearmiss-label {
+        font-weight: 600;
+        color: #d97706;
+        margin-bottom: 4px;
+    }
+</style>
+
+<!-- ==================== SCRIPT ==================== -->
+<script>
+    // State
+    var ppSelectedDate = '';
+    var ppSelectedRoute = 'A';
+    var ppCurrentView = 'daily';
+    var ppComplianceData = null;  // cached compliance for current date
+    var ppDatePicker = null;
+    var ppAnalyticsRoute = 'ALL';
+    var ppAutoRefreshTimer = null;
+    var ppAutoRefreshInterval = 30000; // 30 seconds
+    var _ppInitialized = false;        // Smart reload guard
+
+    // ===========================
+    // DRILL-DOWN NAVIGATION
+    // ===========================
+
+    /** Navigate to Inspection Logs pre-filtered by the selected shift & date */
+    function ppViewShiftLogs(shift) {
+        window._pendingInspectionFilter = {
+            shift: shift,           // 'morning' | 'evening' | 'night'
+            date: ppSelectedDate,   // '2026-02-14' format
+            route: ppSelectedRoute  // 'A' | 'B'
+        };
+        navigateTo('inspection-logs');
+    }
+
+    /** Navigate to Inspector Routes pre-filtered by date & shift */
+    function ppViewShiftRoute(shift) {
+        window._pendingRouteView = {
+            date: ppSelectedDate,   // '2026-02-14' format
+            shift: shift            // 'morning' | 'evening' | 'night'
+            // No inspector — user selects on arrival
+        };
+        navigateTo('inspector-routes');
+    }
+
+    // ===========================
+    // INITIALIZATION
+    // ===========================
+
+    function init_calendar() {
+        // === SMART REVISIT: skip full re-init if already loaded ===
+        if (_ppInitialized) {
+            // Show cached data instantly (no spinner, no backend call)
+            if (ppComplianceData) {
+                renderShiftColumns(ppComplianceData);
+                renderSummaryCards(ppComplianceData);
+            }
+            // Restart auto-refresh (was killed by RefreshManager.stop on page leave)
+            if (ppCurrentView === 'daily' && ppSelectedDate) {
+                RefreshManager.start('calendar', ppSilentRefresh, ppAutoRefreshInterval);
+            }
+            return;
+        }
+        _ppInitialized = true;
+
+        // Initialize Flatpickr for date
+        ppDatePicker = flatpickr('#pp-date-picker', {
+            dateFormat: 'Y-m-d',
+            defaultDate: 'today',
+            maxDate: new Date().fp_incr(30), // 30 days ahead
+            onChange: function (selectedDates, dateStr) {
+                ppSelectedDate = dateStr;
+                loadPatrolPlans();
+            }
+        });
+
+        ppSelectedDate = ppFormatDate(new Date());
+        document.getElementById('pp-date-picker').value = ppSelectedDate;
+
+        // Initialize analytics Flatpickr
+        flatpickr('#pp-analytics-start', {
+            dateFormat: 'Y-m-d',
+            defaultDate: ppGetWeekStart()
+        });
+        flatpickr('#pp-analytics-end', {
+            dateFormat: 'Y-m-d',
+            defaultDate: 'today'
+        });
+
+        loadPatrolPlans();
+    }
+
+    function ppGoToToday() {
+        ppSelectedDate = ppFormatDate(new Date());
+        if (ppDatePicker) ppDatePicker.setDate(ppSelectedDate);
+        loadPatrolPlans();
+    }
+
+    function ppSetRoute(route) {
+        ppSelectedRoute = route;
+        // Update toggle UI
+        document.querySelectorAll('.view-toggle .view-btn[data-route]').forEach(function (btn) {
+            btn.classList.toggle('active', btn.getAttribute('data-route') === route);
+        });
+        loadPatrolPlans();
+    }
+
+    function ppSetAnalyticsRoute(route) {
+        ppAnalyticsRoute = route;
+        document.querySelectorAll('.view-toggle .view-btn[data-aroute]').forEach(function (btn) {
+            btn.classList.toggle('active', btn.getAttribute('data-aroute') === route);
+        });
+        // Auto-regenerate if dates already selected
+        var startDate = document.getElementById('pp-analytics-start').value;
+        var endDate = document.getElementById('pp-analytics-end').value;
+        if (startDate && endDate) loadAnalytics();
+    }
+
+    function ppSetView(view) {
+        ppCurrentView = view;
+        document.querySelectorAll('.view-toggle .view-btn[data-view]').forEach(function (btn) {
+            btn.classList.toggle('active', btn.getAttribute('data-view') === view);
+        });
+        document.getElementById('pp-daily-view').style.display = view === 'daily' ? '' : 'none';
+        document.getElementById('pp-analytics-view').style.display = view === 'analytics' ? '' : 'none';
+        document.getElementById('pp-legend').style.display = view === 'daily' ? '' : 'none';
+        // Manage auto-refresh based on view
+        if (view === 'daily' && ppSelectedDate) {
+            RefreshManager.start('calendar', ppSilentRefresh, ppAutoRefreshInterval);
+        } else {
+            RefreshManager.stop('calendar');
+        }
+    }
+
+    // ===========================
+    // LOAD & RENDER
+    // ===========================
+
+    function loadPatrolPlans() {
+        if (!ppSelectedDate) return;
+
+        // Show skeleton loading cards in all columns
+        var skeletonHtml = '';
+        for (var sk = 0; sk < 4; sk++) {
+            skeletonHtml += '<div class="pp-site-card" style="opacity:0.5;pointer-events:none;animation:pulse 1.5s ease-in-out infinite">' +
+                '<div style="display:flex;align-items:center;gap:8px;">' +
+                '<div style="width:24px;height:24px;border-radius:50%;background:var(--border)"></div>' +
+                '<div style="flex:1">' +
+                '<div style="height:12px;width:' + (60 + sk * 10) + '%;background:var(--border);border-radius:4px;margin-bottom:6px"></div>' +
+                '<div style="height:10px;width:40%;background:var(--border);border-radius:4px;opacity:0.6"></div>' +
+                '</div></div></div>';
+        }
+        ['morning', 'evening', 'night'].forEach(function (shift) {
+            var body = document.getElementById('pp-body-' + shift);
+            if (body) {
+                body.style.opacity = '1';
+                body.innerHTML = skeletonHtml;
+            }
+        });
+
+        google.script.run
+            .withSuccessHandler(function (data) {
+                // Null-safe: if GAS serialization fails, data may be null
+                if (!data) {
+                    data = { plans: [], visited: [], missed: [], unplanned: [], summary: { totalPlanned: 0, totalVisited: 0, totalMissed: 0, totalUnplanned: 0, complianceRate: 0 } };
+                    console.warn('[PatrolPlans] Backend returned null — possible Date serialization issue');
+                }
+                ppComplianceData = data;
+                renderShiftColumns(data);
+                renderSummaryCards(data);
+            })
+            .withFailureHandler(function (err) {
+                showToast('Failed to load plans: ' + (err && err.message ? err.message : 'Unknown error'), 'error');
+                ppComplianceData = { plans: [], visited: [], missed: [], unplanned: [], summary: { totalPlanned: 0, totalVisited: 0, totalMissed: 0, totalUnplanned: 0, complianceRate: 0 } };
+                ['morning', 'evening', 'night'].forEach(function (shift) {
+                    var body = document.getElementById('pp-body-' + shift);
+                    if (body) body.innerHTML = '<div class="pp-empty-state"><span class="material-symbols-outlined" style="color:var(--danger)">error</span><p class="text-xs text-muted mt-2">' + t('patrol.load_failed') + '</p></div>';
+                });
+            })
+            .getPatrolCompliance(ppSelectedDate);
+
+        // Start auto-refresh (managed — stops on page leave)
+        RefreshManager.start('calendar', ppSilentRefresh, ppAutoRefreshInterval);
+    }
+
+    function ppSilentRefresh() {
+        if (!ppSelectedDate || ppCurrentView !== 'daily') return;
+
+        google.script.run
+            .withSuccessHandler(function (data) {
+                if (!data) return;
+                ppComplianceData = data;
+                renderShiftColumns(data);
+                renderSummaryCards(data);
+                ppUpdateLastRefreshed();
+            })
+            .withFailureHandler(function () { /* silent fail */ })
+            .getPatrolCompliance(ppSelectedDate);
+    }
+
+    function ppStartAutoRefresh() {
+        ppStopAutoRefresh();
+        ppAutoRefreshTimer = setInterval(ppSilentRefresh, ppAutoRefreshInterval);
+    }
+
+    function ppStopAutoRefresh() {
+        if (ppAutoRefreshTimer) {
+            clearInterval(ppAutoRefreshTimer);
+            ppAutoRefreshTimer = null;
+        }
+    }
+
+    function ppUpdateLastRefreshed() {
+        var el = document.getElementById('pp-last-updated');
+        if (!el) return;
+        var now = new Date();
+        var h = String(now.getHours()).padStart(2, '0');
+        var m = String(now.getMinutes()).padStart(2, '0');
+        var s = String(now.getSeconds()).padStart(2, '0');
+        el.textContent = t('patrol.last_updated') + ' ' + h + ':' + m + ':' + s;
+        el.style.display = '';
+        el.style.cursor = 'pointer';
+        el.onclick = ppShowDebugLogs;
+    }
+
+    function ppShowDebugLogs() {
+        if (!ppComplianceData || !ppComplianceData.allLogs || ppComplianceData.allLogs.length === 0) {
+            alert('No logs loaded yet.');
+            return;
+        }
+        var logs = ppComplianceData.allLogs.slice(); // clone to avoid mutation
+        logs.sort(function (a, b) { return (b.timestamp || '').localeCompare(a.timestamp || ''); });
+        var msg = 'DEBUG LOGS (Total: ' + logs.length + ')\n\n';
+        logs.slice(0, 15).forEach(function (l) {
+            msg += '[' + (l.shift || '???') + '] ' + (l.timestamp || '').split(' ')[1] + ' | Route: ' + l.route + '\n';
+            msg += '   Name: ' + l.patrolName + ' | Strategy: ' + (l.shiftStrategy || '?') + '\n';
+            msg += '   Col5: ' + (l.shiftRaw || '') + '\n';
+            msg += '----------------\n';
+        });
+        alert(msg);
+        console.table(logs);
+    }
+
+    /**
+     * Show site detail modal — searches allLogs for matching/near-miss logs
+     * @param {string} siteName - Site name to look up
+     * @param {string} shift - morning/evening/night
+     * @param {string} route - A/B
+     * @param {string} status - visited/missed/unplanned
+     */
+    function ppShowSiteDetail(siteName, shift, route, status) {
+        if (!ppComplianceData) return;
+        var allLogs = ppComplianceData.allLogs || [];
+        var siteNameLower = (siteName || '').trim().toLowerCase();
+
+        // Find exact-match logs (same site + shift + route)
+        var exactMatches = [];
+        var nearMisses = [];
+        for (var i = 0; i < allLogs.length; i++) {
+            var log = allLogs[i];
+            var logSite = (log.siteName || '').trim().toLowerCase();
+            if (logSite === siteNameLower) {
+                if (log.shift === shift && log.route === route) {
+                    exactMatches.push(log);
+                } else {
+                    nearMisses.push(log);
+                }
+            }
+        }
+
+        // Build modal HTML
+        var statusLabel = status === 'visited' ? '✅ Visited' : status === 'partial' ? '⚠️ Partially Visited' : status === 'missed' ? '❌ Missed' : '⚠️ Unplanned';
+        var icon = status === 'visited' ? 'check_circle' : status === 'partial' ? 'sync_problem' : status === 'missed' ? 'cancel' : 'warning';
+
+        var html = '<div class="pp-detail-overlay" onclick="if(event.target===this)ppCloseSiteDetail()">';
+        html += '<div class="pp-detail-modal">';
+
+        // Header
+        html += '<div class="pp-detail-header">';
+        html += '<div class="pp-detail-icon ' + status + '"><span class="material-symbols-outlined" style="font-size:18px">' + icon + '</span></div>';
+        html += '<div><h3>' + escapeHtml(siteName) + '</h3>';
+        html += '<span class="pp-detail-badge ' + status + '">' + statusLabel + '</span></div>';
+        html += '<span class="material-symbols-outlined pp-detail-close" onclick="ppCloseSiteDetail()">close</span>';
+        html += '</div>';
+
+        // Body
+        html += '<div class="pp-detail-body">';
+
+        // Plan Info section
+        html += '<div class="pp-detail-section">';
+        html += '<div class="pp-detail-section-title">' + t('patrol.plan_info', 'Plan Info') + '</div>';
+        html += '<div class="pp-detail-row"><span class="pp-detail-label">Shift</span><span class="pp-detail-value">' + shift + '</span></div>';
+        html += '<div class="pp-detail-row"><span class="pp-detail-label">Route</span><span class="pp-detail-value">' + route + '</span></div>';
+        html += '<div class="pp-detail-row"><span class="pp-detail-label">Date</span><span class="pp-detail-value">' + (ppSelectedDate || '—') + '</span></div>';
+        html += '</div>';
+
+        // Diagnosis section
+        if (status === 'visited' && exactMatches.length > 0) {
+            var m = exactMatches[0];
+            html += '<div class="pp-detail-section">';
+            html += '<div class="pp-detail-section-title">' + t('patrol.matched_log', 'Matched Inspection Log') + '</div>';
+            html += '<div class="pp-detail-diagnosis success">✅ ' + t('patrol.match_confirmed', 'Log matched this plan') + '</div>';
+            html += '<div style="margin-top:10px">';
+            html += '<div class="pp-detail-row"><span class="pp-detail-label">Time</span><span class="pp-detail-value">' + (m.timestamp || '').split(' ')[1] + '</span></div>';
+            html += '<div class="pp-detail-row"><span class="pp-detail-label">Inspector</span><span class="pp-detail-value">' + escapeHtml(m.patrolName || '') + '</span></div>';
+            if (m.guardName) html += '<div class="pp-detail-row"><span class="pp-detail-label">Guard</span><span class="pp-detail-value">' + escapeHtml(m.guardName) + '</span></div>';
+            html += '<div class="pp-detail-row"><span class="pp-detail-label">Score</span><span class="pp-detail-value">' + (m.score || '—') + '</span></div>';
+            html += '<div class="pp-detail-row"><span class="pp-detail-label">Shift Source</span><span class="pp-detail-value">' + (m.shiftStrategy || '—') + '</span></div>';
+            if (m.shiftRaw) html += '<div class="pp-detail-row"><span class="pp-detail-label">Raw Shift Col</span><span class="pp-detail-value" style="font-size:11px">' + escapeHtml(m.shiftRaw) + '</span></div>';
+            if (m.routeRaw) html += '<div class="pp-detail-row"><span class="pp-detail-label">Raw Route</span><span class="pp-detail-value" style="font-size:11px">' + escapeHtml(m.routeRaw) + '</span></div>';
+            html += '</div></div>';
+
+            // Show additional matches if >1
+            if (exactMatches.length > 1) {
+                html += '<div class="pp-detail-section"><div class="pp-detail-section-title">Other Matching Logs (' + (exactMatches.length - 1) + ')</div>';
+                for (var k = 1; k < exactMatches.length; k++) {
+                    var em = exactMatches[k];
+                    html += '<div class="pp-nearmiss"><div style="font-weight:600">' + (em.timestamp || '').split(' ')[1] + ' — ' + escapeHtml(em.patrolName || '') + '</div></div>';
+                }
+                html += '</div>';
+            }
+        } else if (status === 'partial') {
+            // Partial: site visited but with shift/route mismatch
+            var pLog = exactMatches[0] || nearMisses[0] || null;
+            html += '<div class="pp-detail-section">';
+            html += '<div class="pp-detail-section-title">' + t('patrol.diagnosis', 'Diagnosis') + '</div>';
+            html += '<div class="pp-detail-diagnosis warning">⚠️ Site was visited but shift/route did not match plan</div>';
+            if (pLog) {
+                html += '<div style="margin-top:10px">';
+                html += '<div class="pp-detail-row"><span class="pp-detail-label">Time</span><span class="pp-detail-value">' + (pLog.timestamp || '').split(' ')[1] + '</span></div>';
+                html += '<div class="pp-detail-row"><span class="pp-detail-label">Inspector</span><span class="pp-detail-value">' + escapeHtml(pLog.patrolName || '') + '</span></div>';
+                if (pLog.guardName) html += '<div class="pp-detail-row"><span class="pp-detail-label">Guard</span><span class="pp-detail-value">' + escapeHtml(pLog.guardName) + '</span></div>';
+                html += '<div class="pp-detail-row"><span class="pp-detail-label">Score</span><span class="pp-detail-value">' + (pLog.score || '—') + '</span></div>';
+                var pReasons = [];
+                if (pLog.shift !== shift) pReasons.push('Shift: ' + pLog.shift + ' ≠ ' + shift);
+                if (pLog.route !== route) pReasons.push('Route: ' + pLog.route + ' ≠ ' + route);
+                if (pReasons.length > 0) {
+                    html += '<div class="pp-detail-row"><span class="pp-detail-label">Mismatch</span><span class="pp-detail-value" style="color:var(--warning)">' + pReasons.join(' · ') + '</span></div>';
+                }
+                html += '</div>';
+            }
+            html += '</div>';
+        } else if (status === 'missed') {
+            html += '<div class="pp-detail-section">';
+            html += '<div class="pp-detail-section-title">' + t('patrol.diagnosis', 'Diagnosis') + '</div>';
+            if (nearMisses.length === 0 && exactMatches.length === 0) {
+                html += '<div class="pp-detail-diagnosis warning">❌ ' + t('patrol.no_log_found', 'No inspection log found for this site today') + '</div>';
+            } else {
+                html += '<div class="pp-detail-diagnosis warning">⚠️ ' + t('patrol.log_found_no_match', 'Log(s) found for this site but did not match this plan') + '</div>';
+                var allFound = nearMisses.concat(exactMatches);
+                for (var n = 0; n < allFound.length; n++) {
+                    var nm = allFound[n];
+                    var reasons = [];
+                    if (nm.shift !== shift) reasons.push('Shift: ' + nm.shift + ' ≠ ' + shift);
+                    if (nm.route !== route) reasons.push('Route: ' + nm.route + ' ≠ ' + route);
+                    html += '<div class="pp-nearmiss">';
+                    html += '<div class="pp-nearmiss-label">Near Miss #' + (n + 1) + '</div>';
+                    html += '<div>' + (nm.timestamp || '').split(' ')[1] + ' — ' + escapeHtml(nm.patrolName || '') + '</div>';
+                    if (reasons.length > 0) html += '<div style="color:var(--danger);margin-top:2px">' + reasons.join(' · ') + '</div>';
+                    html += '</div>';
+                }
+            }
+            html += '</div>';
+        } else if (status === 'unplanned') {
+            // For unplanned, show log details
+            var uLog = exactMatches[0] || nearMisses[0] || null;
+            html += '<div class="pp-detail-section">';
+            html += '<div class="pp-detail-section-title">' + t('patrol.log_details', 'Inspection Log Details') + '</div>';
+            html += '<div class="pp-detail-diagnosis info">ℹ️ ' + t('patrol.unplanned_info', 'This visit was not in the plan for this shift/route') + '</div>';
+            if (uLog) {
+                html += '<div style="margin-top:10px">';
+                html += '<div class="pp-detail-row"><span class="pp-detail-label">Time</span><span class="pp-detail-value">' + (uLog.timestamp || '').split(' ')[1] + '</span></div>';
+                html += '<div class="pp-detail-row"><span class="pp-detail-label">Inspector</span><span class="pp-detail-value">' + escapeHtml(uLog.patrolName || '') + '</span></div>';
+                if (uLog.guardName) html += '<div class="pp-detail-row"><span class="pp-detail-label">Guard</span><span class="pp-detail-value">' + escapeHtml(uLog.guardName) + '</span></div>';
+                html += '<div class="pp-detail-row"><span class="pp-detail-label">Score</span><span class="pp-detail-value">' + (uLog.score || '—') + '</span></div>';
+                html += '<div class="pp-detail-row"><span class="pp-detail-label">Shift Source</span><span class="pp-detail-value">' + (uLog.shiftStrategy || '—') + '</span></div>';
+                html += '</div>';
+            }
+            html += '</div>';
+        }
+
+        html += '</div></div></div>';
+
+        // Inject modal
+        var container = document.createElement('div');
+        container.id = 'pp-site-detail-container';
+        container.innerHTML = html;
+        document.body.appendChild(container);
+    }
+
+    function ppCloseSiteDetail() {
+        var el = document.getElementById('pp-site-detail-container');
+        if (el) el.remove();
+    }
+
+    // Pause auto-refresh when page is hidden
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) {
+            RefreshManager.stop('calendar');
+        } else if (ppCurrentView === 'daily' && ppSelectedDate) {
+            ppSilentRefresh();
+            RefreshManager.start('calendar', ppSilentRefresh, ppAutoRefreshInterval);
+        }
+    });
+
+    function renderSummaryCards(data) {
+        var container = document.getElementById('pp-summary-cards');
+        if (!data) { container.style.display = 'none'; return; }
+
+        // Recompute summary from route-filtered data (not backend totals which include both routes)
+        var routePlanned = (data.plans || []).filter(function (p) { return p.route === ppSelectedRoute; });
+        var routeVisited = (data.visited || []).filter(function (v) { return v.route === ppSelectedRoute; });
+        var routePartial = (data.partial || []).filter(function (p) { return p.route === ppSelectedRoute; });
+        var routeMissed = (data.missed || []).filter(function (m) { return m.route === ppSelectedRoute; });
+        var routeUnplanned = (data.unplanned || []).filter(function (u) { return u.route === ppSelectedRoute; });
+
+        var totalPlanned = routePlanned.length;
+        var totalVisited = routeVisited.length;
+        var totalPartial = routePartial.length;
+        var totalMissed = routeMissed.length;
+        var totalUnplanned = routeUnplanned.length;
+        // Compliance: visited = 100% credit, partial = 50% credit
+        var complianceRate = totalPlanned > 0 ? Math.round(((totalVisited + (totalPartial * 0.5)) / totalPlanned) * 100) : 0;
+
+        // Only show if there are plans or unplanned visits
+        if (totalPlanned === 0 && totalUnplanned === 0) {
+            container.style.display = 'none';
+            return;
+        }
+
+        container.style.display = '';
+        document.getElementById('pp-compliance-rate').textContent = complianceRate + '%';
+        document.getElementById('pp-compliance-rate').style.color =
+            complianceRate >= 80 ? 'var(--success)' :
+                complianceRate >= 50 ? 'var(--warning)' : 'var(--danger)';
+
+        document.getElementById('pp-total-planned').textContent = totalPlanned;
+        document.getElementById('pp-total-visited').textContent = totalVisited + (totalPartial > 0 ? ' (' + totalPartial + ' partial)' : '');
+        document.getElementById('pp-total-missed').textContent = totalMissed;
+    }
+
+    function renderShiftColumns(data) {
+        // Null-safe guard
+        if (!data) data = { plans: [], visited: [], partial: [], missed: [], unplanned: [] };
+
+        // DEBUG: Log plan shift distribution
+        var shiftDist = {};
+        (data.plans || []).forEach(function (p) {
+            var key = (p.shift || 'EMPTY') + '|' + (p.route || '?');
+            shiftDist[key] = (shiftDist[key] || 0) + 1;
+        });
+        console.log('[Calendar] Plan distribution by shift|route:', JSON.stringify(shiftDist));
+        console.log('[Calendar] Total plans:', (data.plans || []).length, 'Selected route:', ppSelectedRoute);
+
+        var shifts = ['morning', 'evening', 'night'];
+
+        shifts.forEach(function (shift) {
+            var body = document.getElementById('pp-body-' + shift);
+            if (!body) return;
+
+            // Filter by current route
+            var planned = (data.plans || []).filter(function (p) {
+                return p.shift === shift && p.route === ppSelectedRoute;
+            });
+            var visited = (data.visited || []).filter(function (v) {
+                return v.shift === shift && v.route === ppSelectedRoute;
+            });
+            var partialList = (data.partial || []).filter(function (pv) {
+                return pv.shift === shift && pv.route === ppSelectedRoute;
+            });
+            var missed = (data.missed || []).filter(function (m) {
+                return m.shift === shift && m.route === ppSelectedRoute;
+            });
+            var unplanned = (data.unplanned || []).filter(function (u) {
+                return u.shift === shift && u.route === ppSelectedRoute;
+            });
+
+            var html = '';
+
+            // Visited sites
+            visited.forEach(function (v) {
+                html += renderSiteCard(v.siteName, 'visited', v.patrolName, v.planId, v.timestamp, v.multiShift, shift, ppSelectedRoute);
+            });
+
+            // Partially visited sites
+            partialList.forEach(function (pv) {
+                html += renderSiteCard(pv.siteName, 'partial', pv.patrolName, pv.planId, pv.timestamp, pv.multiShift, shift, ppSelectedRoute, pv.mismatch, pv.actualShift, pv.actualRoute);
+            });
+
+            // Missed sites
+            missed.forEach(function (m) {
+                html += renderSiteCard(m.siteName, 'missed', null, m.planId, null, m.multiShift, shift, ppSelectedRoute);
+            });
+
+            // Unplanned divider + cards
+            if (unplanned.length > 0) {
+                html += '<div class="pp-unplanned-divider">⚠️ ' + t('patrol.outside_plan') + '</div>';
+                unplanned.forEach(function (u) {
+                    html += renderSiteCard(u.siteName, 'unplanned', u.patrolName, null, u.timestamp, false, shift, ppSelectedRoute);
+                });
+            }
+
+            if (!html) {
+                html = '<div class="pp-empty-state"><span class="material-symbols-outlined" style="font-size: 32px; opacity: 0.3;">event_available</span><p class="text-xs text-muted mt-2">' + t('patrol.no_sites_planned') + '</p></div>';
+            }
+
+            body.style.opacity = '0';
+            body.innerHTML = html;
+            // Smooth fade-in from skeleton to real content
+            requestAnimationFrame(function () { body.style.transition = 'opacity 0.25s ease'; body.style.opacity = '1'; });
+        });
+    }
+
+    // Delegated click handler for site cards — reads data-attributes
+    document.addEventListener('click', function (e) {
+        var card = e.target.closest('.pp-site-card');
+        if (!card) return;
+        // Don't trigger if the delete button was clicked
+        if (e.target.closest('.pp-site-delete')) return;
+        var site = card.getAttribute('data-site');
+        var shift = card.getAttribute('data-shift');
+        var route = card.getAttribute('data-route');
+        var status = card.getAttribute('data-status');
+        if (site && shift && status) {
+            // Decode HTML entities (escapeHtml encodes &, <, >, ", ')
+            var tmp = document.createElement('textarea');
+            tmp.innerHTML = site;
+            var decodedSite = tmp.value;
+            ppShowSiteDetail(decodedSite, shift, route, status);
+        }
+    });
+
+    function renderSiteCard(siteName, status, patrolName, planId, timestamp, multiShift, shift, route, mismatch, actualShift, actualRoute) {
+        var icon = status === 'visited' ? 'check_circle' :
+            status === 'partial' ? 'sync_problem' :
+                status === 'missed' ? 'cancel' : 'warning';
+
+        // Format time from timestamp string ("2026-02-12 08:45:00" → "08:45")
+        var timeStr = '';
+        if (timestamp) {
+            var parts = timestamp.split(' ');
+            if (parts.length >= 2) {
+                var timeParts = parts[1].split(':');
+                timeStr = timeParts[0] + ':' + timeParts[1];
+            }
+        }
+
+        var meta = '';
+        if (status === 'visited' && (patrolName || timeStr)) {
+            var metaParts = [];
+            if (timeStr) metaParts.push('<span class="material-symbols-outlined" style="font-size:12px;vertical-align:-2px;">schedule</span> ' + timeStr);
+            if (patrolName) metaParts.push(t('patrol.by') + ': ' + escapeHtml(patrolName));
+            meta = '<div class="pp-site-meta">' + metaParts.join(' · ') + '</div>';
+        } else if (status === 'partial') {
+            // Show mismatch info for partially visited sites
+            var metaParts3 = [];
+            if (timeStr) metaParts3.push('<span class="material-symbols-outlined" style="font-size:12px;vertical-align:-2px;">schedule</span> ' + timeStr);
+            if (patrolName) metaParts3.push(t('patrol.by') + ': ' + escapeHtml(patrolName));
+            meta = '<div class="pp-site-meta">' + metaParts3.join(' · ') + '</div>';
+            // Show what mismatched
+            var mismatchInfo = [];
+            if (mismatch && mismatch.indexOf('shift') >= 0) mismatchInfo.push('Shift: ' + (actualShift || '?') + ' ≠ ' + shift);
+            if (mismatch && mismatch.indexOf('route') >= 0) mismatchInfo.push('Route: ' + (actualRoute || '?') + ' ≠ ' + route);
+            if (mismatchInfo.length > 0) {
+                meta += '<div class="pp-site-meta" style="color:var(--warning);font-size:11px;">' + mismatchInfo.join(' · ') + '</div>';
+            }
+        } else if (status === 'missed') {
+            meta = '<div class="pp-site-meta" style="color: var(--danger);">' + t('patrol.no_patrol') + '</div>';
+        } else if (status === 'unplanned' && (patrolName || timeStr)) {
+            var metaParts2 = [];
+            if (timeStr) metaParts2.push('<span class="material-symbols-outlined" style="font-size:12px;vertical-align:-2px;">schedule</span> ' + timeStr);
+            if (patrolName) metaParts2.push(t('patrol.by') + ': ' + escapeHtml(patrolName));
+            meta = '<div class="pp-site-meta">' + metaParts2.join(' · ') + '</div>';
+        }
+
+        // Multi-shift badge
+        var multiShiftBadge = '';
+        if (multiShift) {
+            multiShiftBadge = '<span class="pp-multi-shift-badge" title="' + t('patrol.multi_shift') + '"><span class="material-symbols-outlined" style="font-size:13px;">repeat</span></span>';
+        }
+
+        var deleteBtn = '';
+        if (planId) {
+            deleteBtn = '<span class="material-symbols-outlined pp-site-delete" onclick="event.stopPropagation(); ppDeletePlan(\'' + planId + '\', \'' + escapeHtml(siteName).replace(/'/g, "\\'") + '\')" title="Remove from plan">close</span>';
+        }
+
+        var multiClass = multiShift ? ' pp-multi-shift' : '';
+
+        // Use data-attributes for click handler (avoids escaping issues with site names)
+        var dataAttrs = 'data-site="' + escapeHtml(siteName) + '" data-shift="' + (shift || '') + '" data-route="' + (route || '') + '" data-status="' + status + '"';
+
+        return '<div class="pp-site-card ' + status + multiClass + '" ' + dataAttrs + ' style="cursor:pointer">' +
+            '<div class="pp-site-icon ' + status + '"><span class="material-symbols-outlined" style="font-size: 16px;">' + icon + '</span></div>' +
+            '<div class="pp-site-info"><div class="pp-site-name">' + escapeHtml(siteName) + multiShiftBadge + '</div>' + meta + '</div>' +
+            deleteBtn +
+            '</div>';
+    }
+
+    // ===========================
+    // ADD SITES
+    // ===========================
+
+    function openAddSitesModal(shift) {
+        window._ppAddShift = shift;
+
+        // Open modal first
+        openModal('pp-add-sites');
+
+        // Set shift label
+        var titleEl = document.getElementById('pp-add-title');
+        if (titleEl) {
+            var shiftLabels = { morning: '🌅 ' + t('patrol.shift.morning'), evening: '🌆 ' + t('patrol.shift.evening'), night: '🌙 ' + t('patrol.shift.night') };
+            titleEl.textContent = t('patrol.add_sites') + ' — ' + (shiftLabels[shift] || shift).toUpperCase();
+        }
+
+        // Show loading
+        var listEl = document.getElementById('pp-sites-checklist');
+        if (listEl) listEl.innerHTML = '<div class="text-center py-8"><span class="material-symbols-outlined spin text-primary">progress_activity</span></div>';
+
+        // Load sites for current route
+        google.script.run
+            .withSuccessHandler(function (sites) {
+                renderSitesChecklist(sites, shift);
+            })
+            .withFailureHandler(function (err) {
+                if (listEl) listEl.innerHTML = '<p class="text-center text-danger py-4">' + t('patrol.failed_load_sites') + '</p>';
+            })
+            .getSitesByRoute(ppSelectedRoute);
+    }
+
+    function renderSitesChecklist(sites, shift) {
+        var listEl = document.getElementById('pp-sites-checklist');
+        if (!listEl) return;
+
+        // Find already-planned siteIds for this shift+route (store planId for delete)
+        var alreadyPlanned = {};
+        if (ppComplianceData && ppComplianceData.plans) {
+            ppComplianceData.plans.forEach(function (p) {
+                if (p.shift === shift && p.route === ppSelectedRoute) {
+                    alreadyPlanned[p.siteId] = p.id; // store planId
+                }
+            });
+        }
+        // Store original state for diff on submit
+        window._ppOriginalPlanned = alreadyPlanned;
+
+        if (!sites || sites.length === 0) {
+            listEl.innerHTML = '<p class="text-center text-muted py-4">' + t('patrol.no_active_sites') + ' ' + ppSelectedRoute + '</p>';
+            return;
+        }
+
+        var availableCount = sites.length;
+        var plannedCount = Object.keys(alreadyPlanned).length;
+
+        // Sticky select-all row
+        var html = '<label class="pp-site-check-item select-all-row">' +
+            '<input type="checkbox" id="pp-select-all" onchange="ppToggleSelectAll(this.checked)">' +
+            '<span class="material-symbols-outlined" style="font-size: 18px; color: var(--primary, #10b981);">checklist</span>' +
+            '<div class="pp-site-label">' +
+            '<div class="pp-site-name">' + t('patrol.select_all') + '</div>' +
+            '<div class="pp-site-id">' + plannedCount + ' ' + t('patrol.planned_label') + ', ' + availableCount + ' ' + t('patrol.total_label') + '</div>' +
+            '</div></label>';
+
+        var iconColors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#06b6d4', '#ec4899', '#84cc16', '#ef4444'];
+
+        sites.forEach(function (site, idx) {
+            var planId = alreadyPlanned[site.id];
+            var isPlanned = !!planId;
+            var checkedAttr = isPlanned ? 'checked' : '';
+            var plannedClass = isPlanned ? ' is-planned' : '';
+            var iconBg = iconColors[idx % iconColors.length];
+            var dataPlanId = planId ? ' data-plan-id="' + planId + '"' : '';
+
+            // Extract site ID code from name (e.g. VKS25-061)
+            var siteCode = '';
+            var match = (site.nameEN || '').match(/VKS\d+-\d+\w*/i);
+            if (match) siteCode = match[0];
+
+            html += '<label class="pp-site-check-item' + plannedClass + '" data-search="' + (site.nameEN || '').toLowerCase() + '">' +
+                '<input type="checkbox" value="' + site.id + '" data-name="' + escapeHtml(site.nameEN) + '"' + dataPlanId + ' ' + checkedAttr + ' onchange="ppUpdateCounter()">' +
+                '<div class="pp-site-icon" style="background: ' + iconBg + '12; color: ' + iconBg + ';">' +
+                '<span class="material-symbols-outlined">location_on</span></div>' +
+                '<div class="pp-site-label">' +
+                '<div class="pp-site-name">' + escapeHtml(site.nameEN) + (isPlanned ? ' <span style="color: var(--primary); font-weight: 500; font-size: 11px;">● ' + t('patrol.planned_label') + '</span>' : '') + '</div>' +
+                (siteCode ? '<div class="pp-site-id">' + siteCode + '</div>' : '') +
+                '</div></label>';
+        });
+
+        listEl.innerHTML = html;
+    }
+
+    function ppToggleSelectAll(checked) {
+        var checkboxes = document.querySelectorAll('#pp-sites-checklist input[type="checkbox"]:not(#pp-select-all)');
+        checkboxes.forEach(function (cb) { cb.checked = checked; });
+        ppUpdateCounter();
+    }
+
+    function ppUpdateCounter() {
+        var checkboxes = document.querySelectorAll('#pp-sites-checklist input[type="checkbox"]:checked:not(#pp-select-all)');
+        var counter = document.getElementById('pp-add-counter');
+        if (counter) {
+            var count = checkboxes.length;
+            counter.textContent = count + ' ' + t('patrol.selected');
+            counter.style.display = count > 0 ? '' : 'none';
+        }
+    }
+
+    function ppFilterSiteSearch(query) {
+        var items = document.querySelectorAll('#pp-sites-checklist .pp-site-check-item:not(.select-all-row)');
+        var q = (query || '').toLowerCase().trim();
+        items.forEach(function (item) {
+            var text = item.getAttribute('data-search') || '';
+            item.style.display = (!q || text.indexOf(q) >= 0) ? '' : 'none';
+        });
+    }
+
+    function ppSubmitAddSites() {
+        var shift = window._ppAddShift;
+        var originalPlanned = window._ppOriginalPlanned || {};
+
+        // Get ALL checkboxes (not just checked)
+        var allCheckboxes = document.querySelectorAll('#pp-sites-checklist input[type="checkbox"]:not(#pp-select-all)');
+
+        var newSiteIds = [];       // Newly checked (need to add)
+        var planIdsToDelete = [];  // Unchecked that were planned (need to remove)
+
+        allCheckboxes.forEach(function (cb) {
+            var siteId = cb.value;
+            var wasPlanned = originalPlanned[siteId];
+            if (cb.checked && !wasPlanned) {
+                newSiteIds.push(siteId); // New addition
+            } else if (!cb.checked && wasPlanned) {
+                planIdsToDelete.push(wasPlanned); // Unchecked → delete plan
+            }
+        });
+
+        if (newSiteIds.length === 0 && planIdsToDelete.length === 0) {
+            showToast(t('patrol.no_changes'), 'info');
+            return;
+        }
+
+        // Disable button
+        var btn = document.getElementById('pp-add-save-btn');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<span class="material-symbols-outlined spin" style="font-size:16px">progress_activity</span> ' + t('patrol.saving'); }
+
+        var userId = window.currentUser ? window.currentUser.id : '';
+        var pending = 0;
+        var errors = [];
+
+        function onComplete() {
+            pending--;
+            if (pending <= 0) {
+                closeModal();
+                var msg = [];
+                if (newSiteIds.length > 0) msg.push(newSiteIds.length + ' ' + t('patrol.added'));
+                if (planIdsToDelete.length > 0) msg.push(planIdsToDelete.length + ' ' + t('patrol.removed'));
+                showToast(msg.join(', ') + (errors.length > 0 ? ' (' + errors.length + ' ' + t('patrol.errors') + ')' : ''), errors.length > 0 ? 'warning' : 'success');
+                loadPatrolPlans(); // Refresh
+            }
+        }
+
+        // 1. Add new sites
+        if (newSiteIds.length > 0) {
+            pending++;
+            google.script.run
+                .withSuccessHandler(function () { onComplete(); })
+                .withFailureHandler(function (err) { errors.push(err.message); onComplete(); })
+                .savePatrolPlans(ppSelectedDate, shift, ppSelectedRoute, newSiteIds, userId);
+        }
+
+        // 2. Delete unchecked plans
+        if (planIdsToDelete.length > 0) {
+            pending++;
+            google.script.run
+                .withSuccessHandler(function () { onComplete(); })
+                .withFailureHandler(function (err) { errors.push(err.message); onComplete(); })
+                .deletePatrolPlans(planIdsToDelete);
+        }
+
+        // If nothing was dispatched (shouldn't happen but safety)
+        if (pending === 0) {
+            closeModal();
+        }
+    }
+
+    // ===========================
+    // DELETE PLAN ENTRY
+    // ===========================
+
+    function ppDeletePlan(planId, siteName) {
+        showConfirm(
+            t('patrol.remove_confirm'),
+            t('patrol.remove_message').replace('{site}', siteName),
+            function () {
+                google.script.run
+                    .withSuccessHandler(function () {
+                        showToast(t('patrol.removed_toast'), 'success');
+                        loadPatrolPlans();
+                    })
+                    .withFailureHandler(function (err) {
+                        showToast(t('patrol.delete_failed') + ': ' + err.message, 'error');
+                    })
+                    .deletePatrolPlan(planId);
+            }
+        );
+    }
+
+    // ===========================
+    // COPY PLAN
+    // ===========================
+
+    function openCopyPlanModal() {
+        openModal('pp-copy-plan');
+        ppSetCopyMode('day');
+
+        // Init flatpickr for source and target
+        setTimeout(function () {
+            flatpickr('#pp-copy-source', {
+                dateFormat: 'Y-m-d',
+                defaultDate: ppSelectedDate
+            });
+            flatpickr('#pp-copy-target', {
+                dateFormat: 'Y-m-d',
+                defaultDate: new Date().fp_incr(1),
+                maxDate: new Date().fp_incr(30)
+            });
+        }, 100);
+    }
+
+    function ppSetCopyMode(mode) {
+        window._ppCopyMode = mode;
+        document.querySelectorAll('.pp-copy-mode-btn').forEach(function (btn) {
+            btn.classList.toggle('active', btn.getAttribute('data-mode') === mode);
+        });
+
+        // Show/hide shift selector
+        var shiftRow = document.getElementById('pp-copy-shift-row');
+        if (shiftRow) shiftRow.style.display = mode === 'shift' ? '' : 'none';
+
+        // Show/hide target date vs weekday
+        var targetRow = document.getElementById('pp-copy-target-row');
+        var weekdayRow = document.getElementById('pp-copy-weekday-row');
+        if (targetRow) targetRow.style.display = mode !== 'weekly' ? '' : 'none';
+        if (weekdayRow) weekdayRow.style.display = mode === 'weekly' ? '' : 'none';
+    }
+
+    function ppToggleWeekday(el) {
+        el.classList.toggle('active');
+    }
+
+    function ppSubmitCopy() {
+        var mode = window._ppCopyMode;
+        var fromDate = document.getElementById('pp-copy-source').value;
+
+        if (!fromDate) { showToast(t('patrol.select_source'), 'warning'); return; }
+
+        var options = { mode: mode, route: ppSelectedRoute };
+
+        if (mode === 'shift') {
+            var shiftSel = document.getElementById('pp-copy-shift-select');
+            options.shift = shiftSel ? shiftSel.value : 'morning';
+            options.toDate = document.getElementById('pp-copy-target').value;
+            if (!options.toDate) { showToast(t('patrol.select_target'), 'warning'); return; }
+        } else if (mode === 'day') {
+            options.toDate = document.getElementById('pp-copy-target').value;
+            if (!options.toDate) { showToast(t('patrol.select_target'), 'warning'); return; }
+        } else if (mode === 'weekly') {
+            var weekdays = [];
+            document.querySelectorAll('.pp-weekday-btn.active').forEach(function (btn) {
+                weekdays.push(parseInt(btn.getAttribute('data-day')));
+            });
+            if (weekdays.length === 0) { showToast(t('patrol.select_weekday'), 'warning'); return; }
+            options.weekdays = weekdays;
+            options.weeksAhead = parseInt(document.getElementById('pp-copy-weeks').value) || 4;
+        }
+
+        var btn = document.getElementById('pp-copy-save-btn');
+        if (btn) { btn.disabled = true; btn.textContent = t('patrol.copying'); }
+
+        var userId = window.currentUser ? window.currentUser.id : '';
+
+        google.script.run
+            .withSuccessHandler(function (result) {
+                closeModal();
+                if (result.success) {
+                    showToast(t('patrol.copied') + ' ' + result.added + ' ' + t('patrol.plans_label') + (result.skipped > 0 ? ', ' + result.skipped + ' ' + t('patrol.skipped') : ''), 'success');
+                    loadPatrolPlans();
+                } else {
+                    showToast(result.message || t('patrol.no_plans_copy'), 'warning');
+                }
+            })
+            .withFailureHandler(function (err) {
+                showToast(t('patrol.copy_failed') + ': ' + err.message, 'error');
+                if (btn) { btn.disabled = false; btn.textContent = t('patrol.copy_btn'); }
+            })
+            .copyPatrolPlans(fromDate, options, userId);
+    }
+
+    // ===========================
+    // ANALYTICS
+    // ===========================
+
+    function loadAnalytics() {
+        var startDate = document.getElementById('pp-analytics-start').value;
+        var endDate = document.getElementById('pp-analytics-end').value;
+
+        if (!startDate || !endDate) {
+            showToast(t('patrol.select_dates'), 'warning');
+            return;
+        }
+
+        // Show loading skeleton, hide results
+        var loadingEl = document.getElementById('pp-analytics-loading');
+        if (loadingEl) loadingEl.style.display = '';
+        document.getElementById('pp-analytics-summary').style.display = 'none';
+        document.getElementById('pp-charts-row1').style.display = 'none';
+        document.getElementById('pp-charts-row2').style.display = 'none';
+        document.getElementById('pp-analytics-table-card').style.display = 'none';
+        document.getElementById('pp-inspector-card').style.display = 'none';
+
+        // Disable generate button
+        var genBtn = document.getElementById('pp-analytics-generate-btn');
+        if (genBtn) { genBtn.disabled = true; genBtn.innerHTML = '<span class="material-symbols-outlined spin" style="font-size:16px">progress_activity</span> ' + t('patrol.loading_analytics'); }
+
+        google.script.run
+            .withSuccessHandler(function (data) {
+                if (loadingEl) loadingEl.style.display = 'none';
+                if (genBtn) { genBtn.disabled = false; genBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px">analytics</span> <span data-i18n="patrol.generate">Generate</span>'; }
+                renderAnalytics(data);
+            })
+            .withFailureHandler(function (err) {
+                if (loadingEl) loadingEl.style.display = 'none';
+                if (genBtn) { genBtn.disabled = false; genBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px">analytics</span> <span data-i18n="patrol.generate">Generate</span>'; }
+                showToast(t('patrol.analytics_failed') + ': ' + (err && err.message ? err.message : 'Unknown error'), 'error');
+            })
+            .getPatrolComplianceRange(startDate, endDate, ppAnalyticsRoute);
+    }
+
+    function renderAnalytics(data) {
+        if (!data || !data.overallSummary) {
+            showToast(t('patrol.no_analytics'), 'warning');
+            return;
+        }
+
+        // Summary cards
+        var s = data.overallSummary;
+        document.getElementById('pp-analytics-summary').style.display = '';
+        document.getElementById('pp-a-rate').textContent = s.complianceRate + '%';
+        document.getElementById('pp-a-rate').style.color =
+            s.complianceRate >= 80 ? '#10b981' :
+                s.complianceRate >= 50 ? '#f59e0b' : '#ef4444';
+        document.getElementById('pp-a-planned').textContent = s.totalPlanned;
+        document.getElementById('pp-a-visited').textContent = s.totalVisited;
+        document.getElementById('pp-a-missed').textContent = s.totalMissed;
+        document.getElementById('pp-a-unplanned').textContent = s.totalUnplanned;
+
+        // Render charts
+        document.getElementById('pp-charts-row1').style.display = '';
+        document.getElementById('pp-charts-row2').style.display = '';
+        renderTrendChart(data.dailyStats || []);
+        renderDonutChart(data.shiftStats || {});
+        renderHeatmap(data.dailyStats || []);
+        renderMissedSitesChart(data.mostMissedSites || []);
+
+        // Daily breakdown table
+        var tbody = document.getElementById('pp-analytics-tbody');
+        var html = '';
+        var dailyStats = data.dailyStats || [];
+
+        for (var i = 0; i < dailyStats.length; i++) {
+            var day = dailyStats[i];
+            var ds = day.summary || {};
+            var rate = ds.complianceRate || 0;
+            var barColor = rate >= 80 ? '#10b981' : rate >= 50 ? '#f59e0b' : '#ef4444';
+
+            // Format date to be more readable
+            var dateParts = (day.date || '').split('-');
+            var dateLabel = dateParts.length === 3 ? dateParts[2] + '/' + dateParts[1] : day.date;
+
+            html += '<tr>' +
+                '<td style="padding-left: 20px; font-weight: 600;">' + dateLabel + '</td>' +
+                '<td class="text-center" style="color: var(--text-secondary);">' + (ds.totalPlanned || 0) + '</td>' +
+                '<td class="text-center" style="font-weight: 700; color: #10b981;">' + (ds.totalVisited || 0) + '</td>' +
+                '<td class="text-center" style="font-weight: 700; color: #ef4444;">' + (ds.totalMissed || 0) + '</td>' +
+                '<td class="text-center" style="font-weight: 700; color: #f59e0b;">' + (ds.totalUnplanned || 0) + '</td>' +
+                '<td class="text-center" style="padding-right: 20px;">' +
+                '<span style="font-weight: 700; color: ' + barColor + ';">' + rate + '%</span>' +
+                '<div class="pp-compliance-bar"><div class="pp-compliance-fill" style="width:' + rate + '%;background:' + barColor + ';"></div></div>' +
+                '</td></tr>';
+        }
+
+        if (!html) {
+            html = '<tr><td colspan="6" class="text-center py-8 text-muted">' + t('patrol.no_data_range') + '</td></tr>';
+        }
+
+        tbody.innerHTML = html;
+        document.getElementById('pp-analytics-table-card').style.display = '';
+
+        // Inspector performance with premium iOS 26 cards
+        var inspList = document.getElementById('pp-inspector-list');
+        var inspectors = data.inspectors || [];
+        var inspHtml = '';
+        var maxVisited = 0;
+        for (var j = 0; j < inspectors.length; j++) {
+            if (inspectors[j].sitesVisited > maxVisited) maxVisited = inspectors[j].sitesVisited;
+        }
+
+        var avatarColors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#84cc16'];
+        var rankColors = ['#f59e0b', '#94a3b8', '#d97706']; // gold, silver, bronze
+        var barGradients = [
+            'linear-gradient(90deg, #10b981, #059669)',
+            'linear-gradient(90deg, #3b82f6, #2563eb)',
+            'linear-gradient(90deg, #8b5cf6, #7c3aed)',
+            'linear-gradient(90deg, #f59e0b, #d97706)',
+            'linear-gradient(90deg, #ef4444, #dc2626)',
+            'linear-gradient(90deg, #ec4899, #db2777)',
+            'linear-gradient(90deg, #06b6d4, #0891b2)',
+            'linear-gradient(90deg, #84cc16, #65a30d)'
+        ];
+
+        for (var k = 0; k < inspectors.length; k++) {
+            var insp = inspectors[k];
+            var barWidth = maxVisited > 0 ? Math.round((insp.sitesVisited / maxVisited) * 100) : 0;
+            var initials = (insp.name || '??').substring(0, 2).toUpperCase();
+            var bgColor = avatarColors[k % avatarColors.length];
+            var barGrad = barGradients[k % barGradients.length];
+
+            // Ranking badge for top 3
+            var rankHtml = '';
+            if (k < 3) {
+                rankHtml = '<div class="pp-inspector-rank" style="background: ' + rankColors[k] + ';">#' + (k + 1) + '</div>';
+            } else {
+                rankHtml = '<div style="width: 24px; text-align: center; font-size: 11px; font-weight: 600; color: var(--text-muted); flex-shrink: 0;">' + (k + 1) + '</div>';
+            }
+
+            inspHtml += '<div class="pp-inspector-item">' +
+                rankHtml +
+                '<div class="pp-inspector-avatar" style="background: ' + bgColor + ';">' + initials + '</div>' +
+                '<div class="pp-inspector-info">' +
+                '<div class="pp-inspector-name">' + escapeHtml(insp.name) + '</div>' +
+                '<div class="pp-inspector-stats">' +
+                '<span class="pp-inspector-stat-pill"><span class="material-symbols-outlined">schedule</span>' + insp.shiftsWorked + ' ' + (insp.shiftsWorked !== 1 ? t('patrol.shifts_label') : t('patrol.shift_label')) + '</span>' +
+                '<span class="pp-inspector-stat-pill"><span class="material-symbols-outlined">location_on</span>' + insp.sitesVisited + ' ' + t('patrol.sites_label') + '</span>' +
+                '</div>' +
+                '</div>' +
+                '<div class="pp-inspector-progress">' +
+                '<div class="pp-inspector-bar"><div class="pp-inspector-bar-fill" style="width: ' + barWidth + '%; background: ' + barGrad + ';"></div></div>' +
+                '<div class="pp-inspector-count">' + insp.sitesVisited + '</div>' +
+                '</div>' +
+                '</div>';
+        }
+
+        if (inspHtml) {
+            inspList.innerHTML = inspHtml;
+            document.getElementById('pp-inspector-card').style.display = '';
+            var cntBadge = document.getElementById('pp-inspector-count-badge');
+            if (cntBadge) cntBadge.textContent = inspectors.length + ' ' + (inspectors.length !== 1 ? t('patrol.inspectors_label') : t('patrol.inspector_label'));
+        }
+    }
+
+    // ===========================
+    // CHART RENDERERS
+    // ===========================
+
+    function renderTrendChart(dailyStats) {
+        var container = document.getElementById('pp-trend-chart');
+        if (!container || !dailyStats.length) { container.innerHTML = '<div class="text-center text-muted py-4">' + t('patrol.no_data_range') + '</div>'; return; }
+
+        var w = container.offsetWidth || 400;
+        var h = 200;
+        var padL = 36, padR = 16, padT = 16, padB = 28;
+        var chartW = w - padL - padR;
+        var chartH = h - padT - padB;
+
+        // Extract daily rates
+        var rates = dailyStats.map(function (d) { return (d.summary || {}).complianceRate || 0; });
+        var labels = dailyStats.map(function (d) { var p = (d.date || '').split('-'); return p.length === 3 ? p[2] + '/' + p[1] : d.date; });
+        var maxR = 100;
+        var n = rates.length;
+
+        // Build points
+        var points = [];
+        for (var i = 0; i < n; i++) {
+            var x = padL + (n > 1 ? (i / (n - 1)) * chartW : chartW / 2);
+            var y = padT + chartH - (rates[i] / maxR) * chartH;
+            points.push({ x: x, y: y, rate: rates[i], label: labels[i] });
+        }
+
+        var linePoints = points.map(function (p) { return p.x + ',' + p.y; }).join(' ');
+        var areaPoints = padL + ',' + (padT + chartH) + ' ' + linePoints + ' ' + (padL + (n > 1 ? chartW : chartW / 2)) + ',' + (padT + chartH);
+
+        // Grid lines
+        var gridHtml = '';
+        for (var g = 0; g <= 4; g++) {
+            var gy = padT + (g / 4) * chartH;
+            var gVal = 100 - g * 25;
+            gridHtml += '<line x1="' + padL + '" y1="' + gy + '" x2="' + (w - padR) + '" y2="' + gy + '" stroke="rgba(60,60,67,0.06)" stroke-width="1"/>';
+            gridHtml += '<text x="' + (padL - 6) + '" y="' + (gy + 3) + '" fill="var(--text-muted)" font-size="9" text-anchor="end" font-weight="600">' + gVal + '</text>';
+        }
+
+        // X labels (show max 10)
+        var xLabelsHtml = '';
+        var step = Math.max(1, Math.ceil(n / 10));
+        for (var xl = 0; xl < n; xl += step) {
+            xLabelsHtml += '<text x="' + points[xl].x + '" y="' + (h - 4) + '" fill="var(--text-muted)" font-size="9" text-anchor="middle" font-weight="600">' + points[xl].label + '</text>';
+        }
+
+        // Dots
+        var dotsHtml = '';
+        for (var di = 0; di < points.length; di++) {
+            var color = points[di].rate >= 80 ? '#10b981' : points[di].rate >= 50 ? '#f59e0b' : '#ef4444';
+            dotsHtml += '<circle cx="' + points[di].x + '" cy="' + points[di].y + '" r="4" fill="' + color + '" stroke="white" stroke-width="2">' +
+                '<title>' + points[di].label + ': ' + points[di].rate + '%</title></circle>';
+        }
+
+        container.innerHTML = '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;height:auto;">' +
+            '<defs><linearGradient id="ppTrendGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#10b981" stop-opacity="0.25"/><stop offset="100%" stop-color="#10b981" stop-opacity="0.02"/></linearGradient></defs>' +
+            gridHtml +
+            '<polygon points="' + areaPoints + '" fill="url(#ppTrendGrad)"/>' +
+            '<polyline points="' + linePoints + '" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+            dotsHtml +
+            xLabelsHtml +
+            '</svg>';
+    }
+
+    function renderDonutChart(shiftStats) {
+        var container = document.getElementById('pp-donut-chart');
+        if (!container) return;
+
+        var m = shiftStats.morning || {};
+        var a = shiftStats.evening || {};
+        var n = shiftStats.night || {};
+
+        var segments = [
+            { label: '🌅 ' + t('patrol.shift.morning'), visited: m.visited || 0, missed: m.missed || 0, planned: m.planned || 0, color: '#10b981' },
+            { label: '☀️ ' + t('patrol.shift.evening'), visited: a.visited || 0, missed: a.missed || 0, planned: a.planned || 0, color: '#3b82f6' },
+            { label: '🌙 ' + t('patrol.shift.night'), visited: n.visited || 0, missed: n.missed || 0, planned: n.planned || 0, color: '#8b5cf6' }
+        ];
+
+        var total = 0;
+        segments.forEach(function (s) { total += s.planned; });
+        if (total === 0) { container.innerHTML = '<div class="text-center text-muted py-4">' + t('patrol.no_data_range') + '</div>'; return; }
+
+        // SVG donut
+        var size = 160, cx = 80, cy = 80, r = 60, strokeW = 22;
+        var circumference = 2 * Math.PI * r;
+        var offset = 0;
+        var arcsHtml = '';
+
+        segments.forEach(function (seg) {
+            var ratio = seg.planned / total;
+            var dashLen = circumference * ratio;
+            var dashGap = circumference - dashLen;
+            var rate = seg.planned > 0 ? Math.round((seg.visited / seg.planned) * 100) : 0;
+
+            // Main arc (planned)
+            arcsHtml += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' + seg.color + '" stroke-opacity="0.15" stroke-width="' + strokeW + '" ' +
+                'stroke-dasharray="' + dashLen + ' ' + dashGap + '" stroke-dashoffset="-' + offset + '" transform="rotate(-90 ' + cx + ' ' + cy + ')"/>';
+
+            // Visited portion (darker)
+            var visitedRatio = seg.planned > 0 ? seg.visited / seg.planned : 0;
+            var visitedLen = dashLen * visitedRatio;
+            arcsHtml += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' + seg.color + '" stroke-width="' + strokeW + '" ' +
+                'stroke-dasharray="' + visitedLen + ' ' + (circumference - visitedLen) + '" stroke-dashoffset="-' + offset + '" stroke-linecap="round" transform="rotate(-90 ' + cx + ' ' + cy + ')">' +
+                '<title>' + seg.label + ': ' + rate + '% (' + seg.visited + '/' + seg.planned + ')</title></circle>';
+
+            offset += dashLen;
+        });
+
+        // Center text
+        var overallRate = total > 0 ? Math.round(((m.visited || 0) + (a.visited || 0) + (n.visited || 0)) / total * 100) : 0;
+        var centerHtml = '<text x="' + cx + '" y="' + (cy - 4) + '" text-anchor="middle" font-size="22" font-weight="800" fill="var(--text-primary)">' + overallRate + '%</text>' +
+            '<text x="' + cx + '" y="' + (cy + 13) + '" text-anchor="middle" font-size="10" fill="var(--text-muted)" font-weight="600">' + t('patrol.compliance') + '</text>';
+
+        var svgHtml = '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '">' + arcsHtml + centerHtml + '</svg>';
+
+        // Legend
+        var legendHtml = '<div class="pp-donut-legend">';
+        segments.forEach(function (seg) {
+            var rate = seg.planned > 0 ? Math.round((seg.visited / seg.planned) * 100) : 0;
+            legendHtml += '<div class="pp-donut-legend-item">' +
+                '<span class="pp-donut-legend-dot" style="background:' + seg.color + ';"></span>' +
+                '<span>' + seg.label + '</span>' +
+                '<span class="pp-donut-legend-value">' + seg.visited + '/' + seg.planned + ' <span style="font-size:10px;color:' + seg.color + '">(' + rate + '%)</span></span>' +
+                '</div>';
+        });
+        legendHtml += '</div>';
+
+        container.innerHTML = svgHtml + legendHtml;
+    }
+
+    function renderHeatmap(dailyStats) {
+        var container = document.getElementById('pp-heatmap');
+        if (!container || !dailyStats.length) { container.innerHTML = '<div class="text-center text-muted py-4">' + t('patrol.no_data_range') + '</div>'; return; }
+
+        // Day headers
+        var dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        var headerHtml = '<div class="pp-heatmap-header">';
+        dayNames.forEach(function (d) { headerHtml += '<span>' + d + '</span>'; });
+        headerHtml += '</div>';
+
+        // Build cells
+        var gridHtml = '<div class="pp-heatmap-grid">';
+
+        // Find first day's weekday to add empty cells
+        var firstDate = new Date(dailyStats[0].date + 'T12:00:00');
+        var firstDay = firstDate.getDay();
+        var mondayOffset = (firstDay === 0 ? 6 : firstDay - 1);
+        for (var e = 0; e < mondayOffset; e++) {
+            gridHtml += '<div class="pp-heatmap-cell" style="opacity: 0;"></div>';
+        }
+
+        dailyStats.forEach(function (day) {
+            var ds = day.summary || {};
+            var rate = ds.complianceRate || 0;
+            var dateNum = (day.date || '').split('-')[2] || '';
+
+            var bg, fg;
+            if (ds.totalPlanned === 0) {
+                bg = 'rgba(60,60,67,0.04)';
+                fg = 'var(--text-muted)';
+            } else if (rate >= 80) {
+                bg = 'rgba(16,185,129,0.15)';
+                fg = '#059669';
+            } else if (rate >= 50) {
+                bg = 'rgba(245,158,11,0.15)';
+                fg = '#d97706';
+            } else {
+                bg = 'rgba(239,68,68,0.15)';
+                fg = '#dc2626';
+            }
+
+            gridHtml += '<div class="pp-heatmap-cell" style="background:' + bg + ';color:' + fg + ';" title="' + day.date + ': ' + rate + '% (' + (ds.totalVisited || 0) + '/' + (ds.totalPlanned || 0) + ')">' +
+                '<span>' + parseInt(dateNum, 10) + '</span>' +
+                (ds.totalPlanned > 0 ? '<span class="rate">' + rate + '%</span>' : '') +
+                '</div>';
+        });
+
+        gridHtml += '</div>';
+
+        // Legend
+        var legendHtml = '<div style="display:flex;align-items:center;gap:12px;margin-top:10px;justify-content:center;">' +
+            '<span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-muted);"><span style="width:12px;height:12px;border-radius:3px;background:rgba(239,68,68,0.15);"></span>&lt;50%</span>' +
+            '<span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-muted);"><span style="width:12px;height:12px;border-radius:3px;background:rgba(245,158,11,0.15);"></span>50-79%</span>' +
+            '<span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-muted);"><span style="width:12px;height:12px;border-radius:3px;background:rgba(16,185,129,0.15);"></span>≥80%</span>' +
+            '</div>';
+
+        container.innerHTML = headerHtml + gridHtml + legendHtml;
+    }
+
+    function renderMissedSitesChart(sites) {
+        var container = document.getElementById('pp-missed-chart');
+        if (!container) return;
+
+        if (!sites || sites.length === 0) {
+            container.innerHTML = '<div style="text-align:center;padding:20px 0;"><span class="material-symbols-outlined" style="font-size:32px;color:#10b981;opacity:0.5;">verified</span>' +
+                '<p style="font-size:12px;color:var(--text-muted);margin-top:6px;">' + t('patrol.no_missed_sites') + '</p></div>';
+            return;
+        }
+
+        var maxCount = sites[0].count || 1;
+        var html = '';
+        sites.forEach(function (site) {
+            var barWidth = Math.round((site.count / maxCount) * 100);
+            html += '<div class="pp-missed-item">' +
+                '<span class="pp-missed-name" title="' + escapeHtml(site.name) + '">' + escapeHtml(site.name) + '</span>' +
+                '<span class="pp-missed-route">' + (site.route || '–') + '</span>' +
+                '<div class="pp-missed-bar-bg"><div class="pp-missed-bar-fill" style="width:' + barWidth + '%;"></div></div>' +
+                '<span class="pp-missed-count">' + site.count + '</span>' +
+                '</div>';
+        });
+
+        container.innerHTML = html;
+    }
+
+    // ===========================
+    // HELPERS
+    // ===========================
+
+    function ppFormatDate(d) {
+        var y = d.getFullYear();
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        var day = String(d.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + day;
+    }
+
+    function ppGetWeekStart() {
+        var d = new Date();
+        var day = d.getDay();
+        var diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday
+        return new Date(d.setDate(diff));
+    }
+</script>

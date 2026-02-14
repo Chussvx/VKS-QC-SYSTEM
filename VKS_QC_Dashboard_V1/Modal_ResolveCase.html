@@ -1,0 +1,269 @@
+<!-- Modal: Resolve Case - Premium Stitch Style
+     Shared modal for resolving both Incidents and Complaints
+     Following VKS Design System - Cards on Gray Pattern -->
+<div id="modal-resolve-case" class="hidden">
+    <!-- Modal Container - Premium Style -->
+    <div
+        class="relative w-full h-full max-w-[520px] mx-auto my-8 bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden ring-1 ring-gray-900/5">
+
+        <!-- Header with Success Theme -->
+        <header
+            class="sticky top-0 z-10 bg-gradient-to-r from-emerald-50 to-white px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <!-- Success Icon Circle -->
+                <div
+                    class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-100 to-emerald-200 shadow-lg shadow-emerald-200/50 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[24px] text-emerald-600">check_circle</span>
+                </div>
+                <div>
+                    <h3 id="resolve-modal-title" class="text-lg font-bold text-gray-900" data-i18n="resolve.title">
+                        Resolve Case</h3>
+                    <p id="resolve-case-id" class="text-sm text-gray-500 font-mono">ID: -</p>
+                </div>
+            </div>
+            <!-- Close Button -->
+            <button onclick="closeModal('modal-resolve-case')"
+                class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+        </header>
+
+        <!-- Hidden fields -->
+        <input type="hidden" id="resolve-case-type" value="">
+        <input type="hidden" id="resolve-item-id" value="">
+
+        <!-- Body: Resolution Form -->
+        <main class="flex-1 overflow-y-auto px-6 py-5 bg-gray-50 space-y-5">
+
+            <!-- Status Selection Card -->
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2"
+                    data-i18n="resolve.status_label">Resolution
+                    Status *</label>
+                <input type="hidden" id="resolve-status" value="resolved">
+                <div class="custom-select" id="resolve-status-dropdown"></div>
+            </div>
+
+            <!-- Resolution Notes Card -->
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2"
+                    data-i18n="resolve.notes_label">Resolution Notes
+                    *</label>
+                <textarea id="resolve-notes" rows="3" placeholder="Describe what was done to resolve this case..."
+                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all resize-none"></textarea>
+                <p class="mt-2 text-xs text-gray-400 flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[14px]">info</span>
+                    <span data-i18n="resolve.notes_hint">Required: Explain the resolution</span>
+                </p>
+            </div>
+
+            <!-- Root Cause (Incidents Only) -->
+            <div class="incident-only bg-white rounded-xl border border-gray-200 shadow-sm p-4" style="display: none;">
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2"
+                    data-i18n="resolve.root_cause">Root
+                    Cause</label>
+                <input type="hidden" id="resolve-root-cause">
+                <div class="custom-select" id="resolve-root-cause-dropdown"></div>
+            </div>
+
+            <!-- Preventive Measures (Incidents Only) -->
+            <div class="incident-only bg-white rounded-xl border border-gray-200 shadow-sm p-4" style="display: none;">
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2"
+                    data-i18n="resolve.preventive">Preventive
+                    Measures</label>
+                <textarea id="resolve-preventive" rows="2" placeholder="What measures will prevent recurrence?"
+                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all resize-none"></textarea>
+            </div>
+
+            <!-- Disciplinary Action (Complaints Only) -->
+            <div class="complaint-only bg-white rounded-xl border border-gray-200 shadow-sm p-4" style="display: none;">
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2"
+                    data-i18n="resolve.discipline">Disciplinary
+                    Action</label>
+                <textarea id="resolve-discipline" rows="2" placeholder="Any disciplinary action taken?"
+                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all resize-none"></textarea>
+            </div>
+
+            <!-- Approved By Card -->
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2"
+                    data-i18n="resolve.approved_by">Approved
+                    By</label>
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-10 h-10 bg-gradient-to-br from-emerald-100 to-emerald-200 rounded-full flex items-center justify-center">
+                        <span class="material-symbols-outlined text-[20px] text-emerald-600">person</span>
+                    </div>
+                    <input type="text" id="resolve-approved-by" readonly
+                        class="flex-1 px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl text-sm text-gray-600 font-medium">
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer: Actions -->
+        <footer class="px-6 py-4 bg-white border-t border-gray-100 flex items-center justify-end gap-3">
+            <button onclick="closeModal('modal-resolve-case')"
+                class="px-5 py-2.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 font-medium rounded-xl transition-colors"
+                data-i18n="resolve.btn.cancel">
+                Cancel
+            </button>
+            <button id="btn-submit-resolution" onclick="submitResolution()"
+                class="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-lg shadow-emerald-300/50 transition-all">
+                <span class="material-symbols-outlined text-[18px]">check_circle</span>
+                <span data-i18n="resolve.btn.submit">Mark as Resolved</span>
+            </button>
+        </footer>
+    </div>
+</div>
+
+<script>
+    /**
+     * Open resolve modal for incident or complaint
+     * @param {string} type - 'incident' or 'complaint'
+     * @param {string} itemId - The ID of the incident/complaint
+     */
+    function openResolveModal(type, itemId) {
+        // Set hidden fields
+        document.getElementById('resolve-case-type').value = type;
+        document.getElementById('resolve-item-id').value = itemId;
+        document.getElementById('resolve-case-id').textContent = 'ID: ' + itemId;
+
+        // Update title
+        var title = type === 'incident' ? 'Resolve Incident' : 'Resolve Case';
+        document.getElementById('resolve-modal-title').textContent = title;
+
+        // Show/hide type-specific fields
+        var incidentFields = document.querySelectorAll('.incident-only');
+        var complaintFields = document.querySelectorAll('.complaint-only');
+
+        for (var i = 0; i < incidentFields.length; i++) {
+            incidentFields[i].style.display = type === 'incident' ? 'block' : 'none';
+        }
+        for (var i = 0; i < complaintFields.length; i++) {
+            complaintFields[i].style.display = type === 'complaint' ? 'block' : 'none';
+        }
+
+        // Init premium controls FIRST (before setting values)
+        initResolveCaseControls();
+
+        // Clear previous values
+        setVKSDropdownValue('resolve-status-dropdown', 'resolved');
+        document.getElementById('resolve-notes').value = '';
+        setVKSDropdownValue('resolve-root-cause-dropdown', '');
+        document.getElementById('resolve-preventive').value = '';
+        document.getElementById('resolve-discipline').value = '';
+
+        // Auto-fill approver (from cached user)
+        var approver = window.currentUser ? window.currentUser.name : 'Current User';
+        document.getElementById('resolve-approved-by').value = approver;
+
+        // Open modal
+        openModal('resolve-case');
+    }
+
+    /**
+     * Submit resolution
+     */
+    function submitResolution() {
+        var type = document.getElementById('resolve-case-type').value;
+        var itemId = document.getElementById('resolve-item-id').value;
+        var status = document.getElementById('resolve-status').value;
+        var notes = document.getElementById('resolve-notes').value.trim();
+
+        // Validate required fields
+        if (!notes) {
+            showValidationErrorModal([{ label: 'Resolution Notes', fieldId: 'resolve-notes', type: 'input' }]);
+            return;
+        }
+
+        // Build resolution data
+        var resolutionData = {
+            id: itemId,
+            status: status,
+            resolution: notes,
+            resolvedTime: new Date().toISOString(),
+            resolvedBy: document.getElementById('resolve-approved-by').value
+        };
+
+        // Add type-specific fields
+        if (type === 'incident') {
+            resolutionData.rootCause = document.getElementById('resolve-root-cause').value;
+            resolutionData.preventiveMeasures = document.getElementById('resolve-preventive').value;
+        } else {
+            resolutionData.disciplinaryAction = document.getElementById('resolve-discipline').value;
+            resolutionData.approvedBy = document.getElementById('resolve-approved-by').value;
+        }
+
+        // Show loading state
+        var btn = document.getElementById('btn-submit-resolution');
+        var originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span> Saving...';
+        btn.disabled = true;
+
+        // Call backend
+        var backendFn = type === 'incident' ? 'resolveIncident' : 'resolveComplaint';
+
+        google.script.run
+            .withSuccessHandler(function (result) {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+
+                if (result && result.success) {
+                    closeModal('modal-resolve-case');
+                    showToast((type === 'incident' ? 'Incident' : 'Case') + ' resolved successfully!', 'success');
+
+                    // Close detail modal too
+                    closeModal(type === 'incident' ? 'incident-detail-new' : 'complaint-detail-new');
+
+                    // Refresh list
+                    if (type === 'incident' && typeof loadIncidents === 'function') {
+                        loadIncidents();
+                    } else if (typeof loadComplaints === 'function') {
+                        loadComplaints();
+                    }
+                } else {
+                    showToast('Error: ' + (result ? result.error : 'Unknown error'), 'error');
+                }
+            })
+            .withFailureHandler(function (error) {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                showToast('Error: ' + error.message, 'error');
+            })
+        [backendFn](resolutionData);
+    }
+
+    /**
+     * Initialize premium controls for Resolve Case modal
+     */
+    function initResolveCaseControls() {
+        // Resolution Status dropdown
+        initVKSDropdown({
+            containerId: 'resolve-status-dropdown',
+            hiddenInputId: 'resolve-status',
+            placeholder: 'Select status...',
+            searchable: false,
+            items: [
+                { value: 'resolved', label: '✓ Resolved' },
+                { value: 'closed', label: '◯ Closed (No Action Needed)' },
+                { value: 'cancelled', label: '✕ Cancelled (False Alarm)' }
+            ]
+        });
+
+        // Root Cause dropdown (incident-only)
+        initVKSDropdown({
+            containerId: 'resolve-root-cause-dropdown',
+            hiddenInputId: 'resolve-root-cause',
+            placeholder: 'Select root cause...',
+            searchable: false,
+            items: [
+                { value: 'human_error', label: '👤 Human Error' },
+                { value: 'equipment_failure', label: '⚙️ Equipment Failure' },
+                { value: 'external_threat', label: '🚨 External Threat' },
+                { value: 'policy_gap', label: '📋 Policy/Procedure Gap' },
+                { value: 'infrastructure', label: '🏗️ Infrastructure Issue' },
+                { value: 'other', label: '📝 Other' }
+            ]
+        });
+    }
+</script>

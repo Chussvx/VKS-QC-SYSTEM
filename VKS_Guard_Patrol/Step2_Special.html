@@ -1,0 +1,170 @@
+<!-- Step 2 Special: Active Duty (Timer) v124 -->
+<div id="step-2-special" class="step-content hidden px-4 pb-20">
+    <!-- TAILWIND CDN Fallback for GAS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#7C3AED",
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .timer-glow-v124 {
+            text-shadow: 0 0 20px rgba(124, 58, 237, 0.15);
+        }
+
+        .card-shadow-v124 {
+            box-shadow: 0 25px 50px -12px rgba(168, 85, 247, 0.1);
+        }
+
+        @keyframes ping-v124 {
+
+            75%,
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+
+        .animate-ping-v124 {
+            animation: ping-v124 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+    </style>
+
+    <div class="max-w-[390px] mx-auto h-full flex flex-col justify-center py-4">
+        <div class="relative bg-white border border-primary/30 rounded-[32px] card-shadow-v124 overflow-hidden">
+            <!-- Top Gradient Bar -->
+            <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary/20 via-primary to-primary/20">
+            </div>
+
+            <div class="p-8 flex flex-col min-h-[420px]">
+                <!-- Header -->
+                <div class="flex justify-between items-start mb-6">
+                    <div class="flex-1 pr-4">
+                        <h1 class="text-primary font-bold text-xl leading-tight" data-key="special_active">
+                            ພວມປະຕິບັດໜ້າທີ່ <br />
+                        </h1>
+                    </div>
+
+                    <div
+                        class="flex items-center gap-1.5 bg-red-50 px-3 py-1.5 rounded-full border border-red-100 h-fit">
+                        <span class="relative flex h-2 w-2">
+                            <span
+                                class="animate-ping-v124 absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                        </span>
+                        <span class="text-[10px] font-bold text-red-600 tracking-widest uppercase">Live</span>
+                    </div>
+                </div>
+
+                <!-- Location Card -->
+                <div class="bg-slate-50 rounded-2xl p-5 mb-4 border border-slate-100 min-w-full">
+                    <div class="flex items-start gap-4">
+                        <div class="bg-primary/10 p-2.5 rounded-xl">
+                            <span class="material-symbols-outlined text-primary text-2xl">location_on</span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] mb-1.5">ຈຸດປະຈຳ
+                            </p>
+                            <p class="text-slate-800 font-bold leading-relaxed text-base">
+                                <span id="special-status-detail" class="break-words">ທະນາຄານ ການຄ້າຕ່າງປະເທດລາວ</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timer Section (Centered) -->
+                <div class="flex-1 flex flex-col justify-center items-center py-4">
+                    <!-- Added negative margin to compensate for tracking to ensure perfect optical center -->
+                    <h3 class="text-[13px] font-bold text-slate-400 uppercase tracking-[0.25em] mb-8 mr-[-0.25em]">
+                        ໄລຍະເວລາ
+                    </h3>
+                    <div class="timer-glow-v124 flex justify-center">
+                        <span id="special-timer-display"
+                            class="text-6xl font-mono font-bold tracking-tight text-slate-900 tabular-nums text-center">
+                            00:00:00
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Guard Not Coming Button (Onboarding Only) -->
+                <div id="guard-no-show-section" class="hidden mt-4 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="showGuardNoShowModal()"
+                        class="w-full flex items-center justify-center gap-2 py-3 px-4 text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-all">
+                        <span class="material-symbols-outlined text-lg">person_off</span>
+                        <span class="font-semibold text-sm">ພະນັກງານບໍ່ມາ? / Guard Not Coming?</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Guard No-Show Reason Modal -->
+<div id="guard-no-show-modal" class="hidden fixed inset-0 z-[9999] flex items-center justify-center p-4"
+    style="background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" onclick="event.stopPropagation()">
+        <!-- Header -->
+        <div style="padding:20px; border-bottom:1px solid #f1f5f9;">
+            <h3
+                style="font-size:18px; font-weight:700; color:#1e293b; display:flex; align-items:center; gap:8px; margin:0;">
+                <span class="material-symbols-outlined" style="color:#f59e0b;">warning</span>
+                ເຫດຜົນ / Reason
+            </h3>
+            <p style="font-size:14px; color:#64748b; margin-top:4px;">ເລືອກເຫດຜົນທີ່ພະນັກງານບໍ່ມາ</p>
+        </div>
+
+        <!-- Options -->
+        <div style="padding:20px; display:flex; flex-direction:column; gap:12px;">
+            <label
+                style="display:flex; align-items:center; gap:12px; padding:16px; background:#f8fafc; border-radius:12px; cursor:pointer; border:2px solid transparent;">
+                <input type="radio" name="noShowReason" value="ບໍ່ສາມາດຕິດຕໍ່ໄດ້ / No Contact"
+                    style="width:20px; height:20px; accent-color:#7C3AED;">
+                <span style="font-size:14px; font-weight:500; color:#334155;">ບໍ່ສາມາດຕິດຕໍ່ໄດ້ / No Contact</span>
+            </label>
+            <label
+                style="display:flex; align-items:center; gap:12px; padding:16px; background:#f8fafc; border-radius:12px; cursor:pointer; border:2px solid transparent;">
+                <input type="radio" name="noShowReason" value="ໂທແລ້ວບໍ່ຮັບ / Called - Not Responding"
+                    style="width:20px; height:20px; accent-color:#7C3AED;">
+                <span style="font-size:14px; font-weight:500; color:#334155;">ໂທແລ້ວບໍ່ຮັບ / Called - Not
+                    Responding</span>
+            </label>
+            <label
+                style="display:flex; align-items:center; gap:12px; padding:16px; background:#f8fafc; border-radius:12px; cursor:pointer; border:2px solid transparent;">
+                <input type="radio" name="noShowReason" value="ພະນັກງານຍົກເລີກ / Guard Cancelled"
+                    style="width:20px; height:20px; accent-color:#7C3AED;">
+                <span style="font-size:14px; font-weight:500; color:#334155;">ພະນັກງານຍົກເລີກ / Guard Cancelled</span>
+            </label>
+            <label
+                style="display:flex; align-items:center; gap:12px; padding:16px; background:#f8fafc; border-radius:12px; cursor:pointer; border:2px solid transparent;">
+                <input type="radio" name="noShowReason" value="other"
+                    style="width:20px; height:20px; accent-color:#7C3AED;" id="noShowReasonOther">
+                <span style="font-size:14px; font-weight:500; color:#334155;">ອື່ນໆ / Other</span>
+            </label>
+
+            <!-- Other Reason Text Input -->
+            <div id="no-show-other-input" class="hidden" style="margin-top:8px;">
+                <input type="text" id="noShowOtherText" placeholder="ລະບຸເຫດຜົນ / Specify reason..."
+                    style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:12px; font-size:14px; outline:none;">
+            </div>
+        </div>
+
+        <!-- Footer Buttons -->
+        <div style="display:flex; gap:12px; padding:20px; border-top:1px solid #f1f5f9;">
+            <button type="button" onclick="closeGuardNoShowModal()" class="btn btn-outline"
+                style="flex:1; padding:12px 16px; border-radius:12px;">
+                ຍົກເລີກ / Cancel
+            </button>
+            <button type="button" onclick="confirmGuardNoShow()"
+                style="flex:1; padding:12px 16px; background:#f59e0b; color:white; font-weight:600; border:none; border-radius:12px; cursor:pointer;">
+                ຢືນຢັນ / Confirm
+            </button>
+        </div>
+    </div>
+</div>

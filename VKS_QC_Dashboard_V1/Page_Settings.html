@@ -1,0 +1,640 @@
+<!-- Page_Settings.html - System Settings -->
+<div id="page-settings" class="page-content">
+
+    <!-- Settings Header -->
+    <div class="mb-6 flex items-center justify-between">
+        <div>
+            <h2 class="text-2xl font-bold" data-i18n="settings.title">System Settings</h2>
+            <p class="text-muted" data-i18n="settings.subtitle">Manage system preferences and configurations</p>
+        </div>
+        <div class="flex gap-3 hidden" id="settings-actions">
+            <button class="btn btn-secondary text-danger" onclick="resetSettings()">
+                <span class="material-symbols-outlined">restart_alt</span>
+                <span data-i18n="settings.reset">Reset to Default</span>
+            </button>
+            <button id="btn-save-settings" class="btn btn-primary" onclick="saveAllSettings()">
+                <span class="material-symbols-outlined" id="btn-settings-icon">save</span>
+                <span id="btn-settings-text" data-i18n="common.save">Save Changes</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Settings Grid -->
+    <div class="grid grid-cols-2 gap-6">
+
+        <!-- 1. Language & Display -->
+        <div class="card h-full p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="p-2 bg-blue-100 text-blue-600 rounded-lg">
+                    <span class="material-symbols-outlined">language</span>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-lg" data-i18n="settings.card.language">Language & Display</h3>
+                    <p class="text-xs text-muted" data-i18n="settings.card.language.desc">Manage region settings and UI
+                        preferences</p>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="form-group">
+                    <label class="form-label" data-i18n="settings.lang.system">System Language</label>
+                    <div class="custom-select w-full" data-select-id="setting-language">
+                        <button class="custom-select-trigger" onclick="toggleSelect('setting-language')">
+                            <span class="custom-select-value" data-i18n="option.en">English (US)</span>
+                            <span class="material-symbols-outlined">expand_more</span>
+                        </button>
+                        <div class="custom-select-menu">
+                            <div class="custom-select-item selected" data-value="en" onclick="changeLanguage('en')">
+                                <span data-i18n="option.en">English (US)</span>
+                            </div>
+                            <div class="custom-select-item" data-value="lo" onclick="changeLanguage('lo')">
+                                <span data-i18n="option.lo">Lao (ລາວ)</span>
+                            </div>
+                        </div>
+                        <input type="hidden" name="setting-language" id="setting-language" value="en">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label class="form-label" data-i18n="settings.lang.date">Date Format</label>
+                        <div class="custom-select w-full" data-select-id="setting-date-format">
+                            <button class="custom-select-trigger" onclick="toggleSelect('setting-date-format')">
+                                <span class="custom-select-value">DD/MM/YYYY</span>
+                                <span class="material-symbols-outlined">expand_more</span>
+                            </button>
+                            <div class="custom-select-menu">
+                                <div class="custom-select-item selected" data-value="DD/MM/YYYY"
+                                    onclick="selectOption('setting-date-format', 'DD/MM/YYYY', 'DD/MM/YYYY')">DD/MM/YYYY
+                                </div>
+                                <div class="custom-select-item" data-value="MM/DD/YYYY"
+                                    onclick="selectOption('setting-date-format', 'MM/DD/YYYY', 'MM/DD/YYYY')">MM/DD/YYYY
+                                </div>
+                            </div>
+                            <input type="hidden" name="setting-date-format" id="setting-date-format" value="DD/MM/YYYY">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" data-i18n="settings.lang.time">Time Format</label>
+                        <div class="custom-select w-full" data-select-id="setting-time-format">
+                            <button class="custom-select-trigger" onclick="toggleSelect('setting-time-format')">
+                                <span class="custom-select-value">24 Hour (14:30)</span>
+                                <span class="material-symbols-outlined">expand_more</span>
+                            </button>
+                            <div class="custom-select-menu">
+                                <div class="custom-select-item selected" data-value="24h"
+                                    onclick="selectOptionI18n('setting-time-format', '24h', 'option.24h')">
+                                    <span data-i18n="option.24h">24 Hour (14:30)</span>
+                                </div>
+                                <div class="custom-select-item" data-value="12h"
+                                    onclick="selectOptionI18n('setting-time-format', '12h', 'option.12h')">
+                                    <span data-i18n="option.12h">12 Hour (2:30 PM)</span>
+                                </div>
+                            </div>
+                            <input type="hidden" name="setting-time-format" id="setting-time-format" value="24h">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Notifications -->
+        <div class="card h-full p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="p-2 bg-purple-100 text-purple-600 rounded-lg">
+                    <span class="material-symbols-outlined">notifications</span>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-lg" data-i18n="settings.card.notifications">Notifications</h3>
+                    <p class="text-xs text-muted" data-i18n="settings.card.notifications.desc">Configure alert
+                        channels
+                        and recipients</p>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="p-3 bg-secondary rounded-lg flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-muted">mail</span>
+                        <span class="text-sm font-medium" data-i18n="settings.notif.email">Email Alerts</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="setting-email-alerts" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="p-3 bg-secondary rounded-lg flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-muted">smartphone</span>
+                        <span class="text-sm font-medium" data-i18n="settings.notif.push">Push Notifications</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="setting-push-notifs" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="p-3 bg-secondary rounded-lg flex items-center justify-between opacity-50">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-muted">sms</span>
+                        <span class="text-sm font-medium" data-i18n="settings.notif.sms">SMS Alerts</span>
+                        <span class="badge badge-warning text-[10px] ml-2">COMING SOON</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="setting-sms-alerts" disabled>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="form-group mt-2">
+                    <label class="form-label" data-i18n="settings.notif.recipients">Alert Recipients</label>
+                    <input type="text" id="setting-recipients" class="form-input w-full"
+                        placeholder="admin@vks.com, ops.lead@vks.com">
+                    <p class="text-xs text-muted mt-1" data-i18n="settings.notif.recipients.hint">Separate multiple
+                        email addresses with a comma.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Threshold Configuration -->
+        <div class="card h-full p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="p-2 bg-orange-100 text-orange-600 rounded-lg">
+                    <span class="material-symbols-outlined">tune</span>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-lg" data-i18n="settings.card.thresholds">Threshold Configuration
+                    </h3>
+                    <p class="text-xs text-muted" data-i18n="settings.card.thresholds.desc">Set operational limits
+                        and
+                        triggers</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="form-group">
+                    <label class="form-label text-xs uppercase text-muted font-bold"
+                        data-i18n="settings.thresh.late_patrol">Late Patrol (Min)</label>
+                    <input type="number" id="setting-late-patrol" class="form-input" value="15">
+                </div>
+                <div class="form-group">
+                    <label class="form-label text-xs uppercase text-muted font-bold"
+                        data-i18n="settings.thresh.missed_checkin">Missed Check-in (Min)</label>
+                    <input type="number" id="setting-missed-checkin" class="form-input" value="30">
+                </div>
+                <div class="form-group">
+                    <label class="form-label text-xs uppercase text-muted font-bold" data-i18n="settings.thresh.gps">GPS
+                        Accuracy (m)</label>
+                    <input type="number" id="setting-gps-accuracy" class="form-input" value="10">
+                </div>
+                <div class="form-group">
+                    <label class="form-label text-xs uppercase text-muted font-bold"
+                        data-i18n="settings.thresh.escalation">Escalation Delay (Min)</label>
+                    <input type="number" id="setting-escalation-delay" class="form-input" value="60">
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between mt-4 border-t pt-4">
+                <div>
+                    <span class="text-sm font-medium block" data-i18n="settings.thresh.auto_escalate">Auto-Escalate
+                        Incidents</span>
+                    <span class="text-xs text-muted" data-i18n="settings.thresh.auto_escalate.desc">Automatically
+                        notify
+                        supervisors if unresolved</span>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="setting-auto-escalate" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+
+
+        <!-- Patrol Configuration -->
+        <div class="card h-full p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
+                    <span class="material-symbols-outlined">local_police</span>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-lg" data-i18n="settings.card.patrol">Patrol Configuration</h3>
+                    <p class="text-xs text-muted" data-i18n="settings.card.patrol.desc">Global settings for patrol
+                        calculations</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="form-group">
+                    <label class="form-label text-xs uppercase text-muted font-bold"
+                        data-i18n="settings.patrol.rounds">Rounds per Shift</label>
+                    <input type="number" id="setting-patrol-rounds" class="form-input" value="7" min="1" max="24">
+                </div>
+                <div class="form-group">
+                    <label class="form-label text-xs uppercase text-muted font-bold"
+                        data-i18n="settings.patrol.points">Points per Round</label>
+                    <input type="number" id="setting-patrol-points" class="form-input" value="4" min="1">
+                </div>
+            </div>
+
+            <div class="mt-4 p-3 bg-secondary rounded text-xs text-muted">
+                <span class="material-symbols-outlined text-sm align-middle mr-1">info</span>
+                <span data-i18n="settings.patrol.note">Changing these values updates calculations for all active patrols
+                    immediately.</span>
+            </div>
+        </div>
+
+        <!-- 4. Data & System Info -->
+        <div class="card h-full p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="p-2 bg-slate-100 text-slate-600 rounded-lg">
+                    <span class="material-symbols-outlined">dns</span>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-lg" data-i18n="settings.card.system">Data & System Info</h3>
+                    <p class="text-xs text-muted" data-i18n="settings.card.system.desc">Refresh intervals and
+                        version
+                        details</p>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between mb-4">
+                <span class="text-sm font-medium" data-i18n="settings.sys.auto_refresh">Auto-Refresh
+                    Dashboard</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="setting-auto-refresh" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="form-group">
+                    <label class="form-label text-xs uppercase text-muted font-bold"
+                        data-i18n="settings.sys.refresh_interval">Refresh Interval</label>
+                    <div class="custom-select w-full" data-select-id="setting-refresh-interval">
+                        <button class="custom-select-trigger" onclick="toggleSelect('setting-refresh-interval')">
+                            <span class="custom-select-value">Every 30 sec</span>
+                            <span class="material-symbols-outlined">expand_more</span>
+                        </button>
+                        <div class="custom-select-menu">
+                            <div class="custom-select-item selected" data-value="30"
+                                onclick="selectOptionI18n('setting-refresh-interval', '30', 'option.every_30_sec')">
+                                <span data-i18n="option.every_30_sec">Every 30 sec</span>
+                            </div>
+                            <div class="custom-select-item" data-value="60"
+                                onclick="selectOptionI18n('setting-refresh-interval', '60', 'option.every_1_min')">
+                                <span data-i18n="option.every_1_min">Every 1 min</span>
+                            </div>
+                            <div class="custom-select-item" data-value="300"
+                                onclick="selectOptionI18n('setting-refresh-interval', '300', 'option.every_5_min')">
+                                <span data-i18n="option.every_5_min">Every 5 min</span>
+                            </div>
+                        </div>
+                        <input type="hidden" name="setting-refresh-interval" id="setting-refresh-interval" value="30">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label text-xs uppercase text-muted font-bold"
+                        data-i18n="settings.sys.retention">Log Retention</label>
+                    <div class="custom-select w-full" data-select-id="setting-log-retention">
+                        <button class="custom-select-trigger" onclick="toggleSelect('setting-log-retention')">
+                            <span class="custom-select-value">30 Days</span>
+                            <span class="material-symbols-outlined">expand_more</span>
+                        </button>
+                        <div class="custom-select-menu">
+                            <div class="custom-select-item selected" data-value="30"
+                                onclick="selectOptionI18n('setting-log-retention', '30', 'option.30_days')">
+                                <span data-i18n="option.30_days">30 Days</span>
+                            </div>
+                            <div class="custom-select-item" data-value="60"
+                                onclick="selectOptionI18n('setting-log-retention', '60', 'option.60_days')">
+                                <span data-i18n="option.60_days">60 Days</span>
+                            </div>
+                            <div class="custom-select-item" data-value="90"
+                                onclick="selectOptionI18n('setting-log-retention', '90', 'option.90_days')">
+                                <span data-i18n="option.90_days">90 Days</span>
+                            </div>
+                        </div>
+                        <input type="hidden" name="setting-log-retention" id="setting-log-retention" value="30">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-secondary p-4 rounded-lg flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-bold text-muted uppercase" data-i18n="settings.sys.version">App Version
+                    </p>
+                    <p class="font-mono text-sm" id="app-version">Loading...</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs font-bold text-muted uppercase" data-i18n="settings.sys.last_sync">Last Sync
+                    </p>
+                    <p class="text-sm text-success" id="last-sync-time">Just now</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Account Actions Footer -->
+    <div class="card mt-6 p-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="avatar bg-slate-200 text-slate-600">
+                    <span class="material-symbols-outlined">manage_accounts</span>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-lg" id="settings-user-name" data-i18n="settings.account.title">Account
+                        Actions</h3>
+                    <p class="text-sm text-muted" id="settings-user-email" data-i18n="settings.account.desc">Manage your
+                        personal security
+                        and
+                        data</p>
+                </div>
+            </div>
+
+            <div class="flex gap-3">
+                <button class="btn btn-secondary" onclick="actionChangePassword()">
+                    <span class="material-symbols-outlined">lock_reset</span>
+                    <span data-i18n="settings.account.password">Change Password</span>
+                </button>
+                <button class="btn btn-secondary" onclick="actionExportData()">
+                    <span class="material-symbols-outlined">download</span>
+                    <span data-i18n="settings.account.export">Export My Data</span>
+                </button>
+                <button class="btn btn-secondary text-danger border-danger hover:bg-danger-light"
+                    onclick="actionLogout()">
+                    <span class="material-symbols-outlined">logout</span>
+                    <span data-i18n="settings.account.logout">Logout</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize Settings page
+    const APP_VERSION = '2.1.0 (Build 2502)';
+
+    function init_settings() {
+        document.getElementById('app-version').textContent = APP_VERSION;
+        document.getElementById('last-sync-time').textContent = new Date().toLocaleTimeString();
+        loadSettings();
+
+        // Display logged-in user info
+        if (typeof SessionManager !== 'undefined' && SessionManager.isLoggedIn()) {
+            var user = SessionManager.getUser();
+            var nameEl = document.getElementById('settings-user-name');
+            var emailEl = document.getElementById('settings-user-email');
+            if (nameEl) nameEl.textContent = (user.name + ' ' + (user.surname || '')).trim();
+            if (emailEl) emailEl.textContent = user.email + ' • ' + (user.role === 'admin' ? 'Admin' : 'User');
+        }
+
+        // Connect auto-refresh toggle to RefreshManager
+        var autoRefreshToggle = document.getElementById('setting-auto-refresh');
+        if (autoRefreshToggle) {
+            autoRefreshToggle.addEventListener('change', function () {
+                RefreshManager.setEnabled(this.checked);
+                showToast(this.checked ? 'Auto-refresh enabled' : 'Auto-refresh disabled', 'info');
+            });
+        }
+    }
+
+    // Load settings from backend
+    function loadSettings() {
+        google.script.run
+            .withSuccessHandler(function (settings) {
+                if (settings) {
+                    // Language & Display
+                    var savedLang = settings.language || 'en';
+                    setSelectValue('setting-language', savedLang);
+                    setSelectValue('setting-date-format', settings.dateFormat || 'DD/MM/YYYY');
+                    setSelectValue('setting-time-format', settings.timeFormat || '24h');
+
+                    // Sync saved language to TranslationManager so localStorage matches backend
+                    // This ensures the language persists correctly on refresh
+                    if (typeof TranslationManager !== 'undefined') {
+                        var currentLang = TranslationManager.currentLang || 'en';
+                        if (currentLang !== savedLang) {
+                            TranslationManager.setLanguage(savedLang);
+                        }
+                    }
+
+                    // Notifications
+                    document.getElementById('setting-email-alerts').checked = settings.emailAlerts !== false;
+                    document.getElementById('setting-push-notifs').checked = settings.pushNotifs !== false;
+                    document.getElementById('setting-recipients').value = settings.recipients || '';
+
+                    // Thresholds
+                    document.getElementById('setting-late-patrol').value = settings.latePatrol || 15;
+                    document.getElementById('setting-missed-checkin').value = settings.missedCheckin || 30;
+                    document.getElementById('setting-gps-accuracy').value = settings.gpsAccuracy || 10;
+                    document.getElementById('setting-escalation-delay').value = settings.escalationDelay || 60;
+                    document.getElementById('setting-auto-escalate').checked = settings.autoEscalate !== false;
+
+                    // Patrol Config
+                    document.getElementById('setting-patrol-rounds').value = settings.patrolRounds || 7;
+                    document.getElementById('setting-patrol-points').value = settings.pointsPerRound || 4;
+
+                    // System
+                    document.getElementById('setting-auto-refresh').checked = settings.autoRefresh !== false;
+                    setSelectValue('setting-refresh-interval', settings.refreshInterval || '30');
+                    setSelectValue('setting-log-retention', settings.logRetention || '30');
+
+                    // Reset dirty state and attach listeners
+                    markClean();
+                    attachDirtyListeners();
+                }
+            })
+            .getSettings();
+    }
+
+    // Attach listeners to detect changes
+    function attachDirtyListeners() {
+        const inputs = document.querySelectorAll('#page-settings input, #page-settings select, #page-settings textarea');
+        inputs.forEach(input => {
+            input.onchange = markDirty;
+            input.oninput = markDirty;
+        });
+    }
+
+    function markDirty() {
+        document.getElementById('settings-actions').classList.remove('hidden');
+    }
+
+    function markClean() {
+        document.getElementById('settings-actions').classList.add('hidden');
+    }
+
+    // Helper to set custom select value
+    function setSelectValue(id, value) {
+        const input = document.getElementById(id);
+        if (input) input.value = value;
+
+        const container = document.querySelector(`[data-select-id="${id}"]`);
+        if (container) {
+            const item = container.querySelector(`.custom-select-item[data-value="${value}"]`);
+            if (item) {
+                const triggerValue = container.querySelector('.custom-select-value');
+
+                // Copy text
+                triggerValue.textContent = item.textContent.trim();
+
+                // Copy i18n key if present (support for dynamic language switching)
+                const i18nSpan = item.querySelector('[data-i18n]');
+                if (i18nSpan) {
+                    triggerValue.setAttribute('data-i18n', i18nSpan.getAttribute('data-i18n'));
+                } else if (item.hasAttribute('data-i18n')) {
+                    triggerValue.setAttribute('data-i18n', item.getAttribute('data-i18n'));
+                } else {
+                    triggerValue.removeAttribute('data-i18n');
+                }
+
+                container.querySelectorAll('.custom-select-item').forEach(i => i.classList.remove('selected'));
+                item.classList.add('selected');
+            }
+        }
+    }
+
+    // Change Language
+    function changeLanguage(lang) {
+        // Immediate preview via TranslationManager
+        if (typeof TranslationManager !== 'undefined') {
+            TranslationManager.setLanguage(lang);
+        }
+
+        // Update select UI
+        setSelectValue('setting-language', lang);
+
+        // Show save button
+        markDirty();
+    }
+
+    // Save All Settings
+    function saveAllSettings() {
+        const btn = document.getElementById('btn-save-settings');
+        const icon = document.getElementById('btn-settings-icon');
+        const text = document.getElementById('btn-settings-text');
+
+        const data = {
+            language: document.getElementById('setting-language').value,
+            dateFormat: document.getElementById('setting-date-format').value,
+            timeFormat: document.getElementById('setting-time-format').value,
+            emailAlerts: document.getElementById('setting-email-alerts').checked,
+            pushNotifs: document.getElementById('setting-push-notifs').checked,
+            recipients: document.getElementById('setting-recipients').value,
+            latePatrol: Math.max(1, parseInt(document.getElementById('setting-late-patrol').value) || 15),
+            missedCheckin: Math.max(1, parseInt(document.getElementById('setting-missed-checkin').value) || 30),
+            gpsAccuracy: Math.max(1, parseInt(document.getElementById('setting-gps-accuracy').value) || 10),
+            escalationDelay: Math.max(1, parseInt(document.getElementById('setting-escalation-delay').value) || 60),
+            autoEscalate: document.getElementById('setting-auto-escalate').checked,
+            patrolRounds: Math.max(1, parseInt(document.getElementById('setting-patrol-rounds').value) || 7),
+            pointsPerRound: Math.max(0, parseInt(document.getElementById('setting-patrol-points').value) || 4),
+            autoRefresh: document.getElementById('setting-auto-refresh').checked,
+            refreshInterval: document.getElementById('setting-refresh-interval').value,
+            logRetention: document.getElementById('setting-log-retention').value
+        };
+
+        // Button loading state
+        if (btn) {
+            btn.disabled = true;
+            if (icon) { icon.textContent = 'progress_activity'; icon.classList.add('animate-spin'); }
+            if (text) text.textContent = 'Saving...';
+        }
+
+        google.script.run
+            .withSuccessHandler(function () {
+                // Reset button
+                if (btn) {
+                    btn.disabled = false;
+                    if (icon) { icon.textContent = 'save'; icon.classList.remove('animate-spin'); }
+                    if (text) text.textContent = 'Save Changes';
+                }
+                showToast(t('common.success'), 'success');
+                markClean();
+            })
+            .withFailureHandler(function (error) {
+                // Reset button on error
+                if (btn) {
+                    btn.disabled = false;
+                    if (icon) { icon.textContent = 'save'; icon.classList.remove('animate-spin'); }
+                    if (text) text.textContent = 'Save Changes';
+                }
+                showToast('Failed to save: ' + error.message, 'error');
+            })
+            .saveSettings(data);
+    }
+
+    // Reset default settings
+    function resetSettings() {
+        showConfirm(
+            t('settings.reset'),
+            t('common.confirm'),
+            function () {
+                setSelectValue('setting-language', 'en');
+                setSelectValue('setting-date-format', 'DD/MM/YYYY');
+                setSelectValue('setting-time-format', '24h');
+
+                document.getElementById('setting-email-alerts').checked = true;
+                document.getElementById('setting-push-notifs').checked = true;
+                document.getElementById('setting-recipients').value = '';
+
+                document.getElementById('setting-late-patrol').value = 15;
+                document.getElementById('setting-missed-checkin').value = 30;
+                document.getElementById('setting-gps-accuracy').value = 10;
+                document.getElementById('setting-escalation-delay').value = 60;
+                document.getElementById('setting-auto-escalate').checked = true;
+
+                document.getElementById('setting-patrol-rounds').value = 7;
+                document.getElementById('setting-patrol-points').value = 4;
+
+                document.getElementById('setting-auto-refresh').checked = true;
+                setSelectValue('setting-refresh-interval', '30');
+                setSelectValue('setting-log-retention', '30');
+
+                if (typeof TranslationManager !== 'undefined') {
+                    TranslationManager.setLanguage('en');
+                }
+
+                showToast(t('settings.reset') + ' - ' + t('common.save'), 'info');
+                markDirty();
+            }
+        );
+    }
+
+    // --- Account Actions ---
+
+    function actionChangePassword() {
+        // Open change password modal
+        openModal('change-password');
+    }
+
+    function actionExportData() {
+        showToast(t('settings.account.msg.export'), 'info');
+        // Placeholder for future backend implementation
+        setTimeout(() => {
+            showToast('Export feature coming soon', 'warning');
+        }, 2000);
+    }
+
+    function actionLogout() {
+        showConfirm(
+            t('settings.account.logout'),
+            'Are you sure you want to logout?',
+            function () {
+                // Log the activity before clearing session
+                if (typeof SessionManager !== 'undefined') {
+                    var userId = SessionManager.getUserId();
+                    if (userId) {
+                        google.script.run.logActivity(userId, 'LOGOUT', 'System', 'Authentication', 'User logged out');
+                    }
+                    SessionManager.logout();
+                } else {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    window.location.reload();
+                }
+            }
+        );
+    }
+</script>

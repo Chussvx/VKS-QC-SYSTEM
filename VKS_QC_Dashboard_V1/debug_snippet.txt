@@ -1,0 +1,65 @@
+    function renderGroupHeaderHtml(item) {
+        const group = item.data;
+        const p = group[0]; // Representative for static site data
+        const isExpanded = expandedGroups.has(item.siteId);
+        const toggleIcon = isExpanded ? 'expand_less' : 'expand_more';
+
+        // 1. Smart Shift Display
+        const uniqueShifts = [...new Set(group.map(g => (g.shiftDisplay || '').trim()))].filter(s => s);
+        const shiftDisplay = uniqueShifts.length === 1 ? uniqueShifts[0] : (uniqueShifts.length > 1 ? 'Mixed Shifts' : '-');
+
+        // 2. Stacked Avatars
+        let avatarsHtml = '<div class="flex -space-x-2 overflow-hidden py-1">';
+        const showLimit = 3;
+        group.slice(0, showLimit).forEach(g => {
+            const name = g.guardName || '?';
+            avatarsHtml += `
+                <div class="inline-flex h-8 w-8 rounded-full ring-2 ring-white flex items-center justify-center text-xs font-bold text-white shadow-sm" 
+                     style="background-color: ${getAvatarColor(name)}; z-index: 1;"
+                     title="${escapeHtml(name)}">
+                    ${getInitials(name)}
+                </div>
+             `;
+        });
+        if (group.length > showLimit) {
+            avatarsHtml += `
+                <div class="inline-flex h-8 w-8 rounded-full ring-2 ring-white bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500 shadow-sm" style="z-index: 0;">
+                    +${group.length - showLimit}
+                </div>
+             `;
+        }
+        avatarsHtml += '</div>';
+
+        return `
+            <tr class="clickable-row bg-white border-b border-slate-100 shadow-sm hover:bg-slate-50 transition-colors" onclick="toggleGroup('${item.siteId}')">
+                <td>
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl" title="${escapeHtml(p.siteType)}">${getSiteTypeIcon(p.siteType)}</span>
+                        <div class="flex flex-col">
+                            <span class="font-bold text-slate-800 text-base">${escapeHtml(p.siteName)}</span>
+                            <span class="text-xs text-indigo-600 font-medium">${group.length} Active Guards</span>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    ${avatarsHtml}
+                </td>
+                <td class="text-slate-600 font-medium">${shiftDisplay}</td>
+                
+                <!-- Blank Columns for Cleaner UI -->
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+
+                <td>${getPatrolStatusBadge(item.status)}</td>
+                <td class="text-right">
+                    <button class="btn-icon bg-white border border-slate-200 shadow-sm text-indigo-600" onclick="event.stopPropagation(); toggleGroup('${item.siteId}')">
+                        <span class="material-symbols-outlined">${toggleIcon}</span>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }
+
+    // Get progress bar class

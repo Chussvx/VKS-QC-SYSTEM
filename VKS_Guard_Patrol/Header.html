@@ -1,0 +1,21 @@
+<header class="site-header" id="mainHeader">
+    <div class="header-container">
+        <!-- Brand / Logo (Always Visible) -->
+        <div class="flex items-center gap-3" id="brandTrigger" onclick="handleBrandClick()">
+            <div class="header-logo">
+                <img src="https://drive.google.com/thumbnail?id=1o7UGoZhLBG43hm-5eao8UYB4YjeQ_IhT&sz=w200"
+                    alt="VKS Logo">
+            </div>
+            <span class="brand-text">VKS <span class="accent">PATROL</span></span>
+        </div>
+
+        <!-- Progress Indicator (Hidden on Landing) -->
+        <div class="text-sm text-muted-foreground hidden" id="headerProgressContainer">
+            <span id="stepLabel">Step</span> <span id="currentStepNum">1</span> / <span id="totalStepsNum">7</span>
+        </div>
+    </div>
+    <!-- Progress Bar (Hidden on Landing) -->
+    <div class="progress-track hidden" id="headerProgressBarTrack">
+        <div id="progressBar" class="progress-fill" style="width: 0%;"></div>
+    </div>
+</header>

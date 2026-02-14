@@ -1,0 +1,1168 @@
+<!-- Page_QRGenerator.html - QR Code Generator for Checkpoints -->
+<div id="page-qr-generator" class="page-content">
+
+  <div class="filter-bar">
+    <div class="filter-group">
+      <!-- Search -->
+      <div class="input-group">
+        <span class="material-symbols-outlined input-icon">search</span>
+        <input type="text" id="qr-search" class="form-input" data-i18n-placeholder="qr.search"
+          placeholder="Search checkpoints..." onkeyup="filterCheckpoints()">
+      </div>
+
+      <div class="divider-v h-6 mx-2"></div>
+
+      <!-- Site Filter -->
+      <div class="custom-select w-64" data-select-id="qr-site-filter" data-onchange="loadCheckpointsForQR">
+        <button class="custom-select-trigger" onclick="toggleSelect('qr-site-filter')">
+          <span class="material-symbols-outlined text-primary mr-2">domain</span>
+          <span class="custom-select-value" id="qr-site-filter-trigger">Select Site...</span>
+          <span class="material-symbols-outlined ml-auto">expand_more</span>
+        </button>
+        <div class="custom-select-menu" id="qr-site-filter-menu">
+          <div class="custom-select-item" data-value="">Loading sites...</div>
+        </div>
+        <input type="hidden" id="qr-site-filter" name="qr-site-filter" value="">
+      </div>
+
+      <div class="divider-v h-6 mx-2"></div>
+
+      <!-- View Toggle -->
+      <button class="btn btn-secondary btn-sm" id="qr-view-toggle" onclick="toggleViewMode()" title="Toggle View Mode">
+        <span class="material-symbols-outlined" id="qr-view-icon">toc</span>
+        <span id="qr-view-label">Grouped</span>
+      </button>
+
+    </div>
+
+    <div class="flex items-center gap-3 ml-auto">
+      <button class="btn btn-secondary btn-sm" onclick="printQRSheet()">
+        <span class="material-symbols-outlined">print</span>
+        <span data-i18n="qr.print_site_qrs">Print Site QRs</span>
+      </button>
+      <div class="divider-v h-6 mx-2"></div>
+      <span class="text-muted text-sm font-medium"><strong id="qr-total-count">0</strong> <span
+          data-i18n="qr.checkpoints">Checkpoints</span></span>
+    </div>
+  </div>
+
+  <!-- Missing Checkpoints Notice -->
+  <div id="qr-missing-notice" class="mb-4" style="display: none;">
+    <div class="alert alert-warning flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="material-symbols-outlined text-warning">warning</span>
+        <div>
+          <strong class="block" data-i18n="qr.missing_notice">Missing Checkpoints Detected</strong>
+          <span class="text-sm">This site only has <span id="qr-current-count">0</span>/ <span
+              id="qr-target-count">0</span> required checkpoints.</span>
+        </div>
+      </div>
+      <button class="btn btn-warning btn-sm" onclick="batchGenerateMissing()">
+        <span class="material-symbols-outlined">auto_fix</span>
+        <span data-i18n="qr.batch_generate">Batch Generate</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Table Card -->
+  <div class="card p-0 overflow-hidden">
+    <div class="table-container">
+      <table class="data-table" id="qr-table">
+        <thead>
+          <tr>
+            <th style="width: 60px;" class="text-center" data-i18n="qr.col.route">Route</th>
+            <th data-i18n="qr.col.name">Name</th>
+            <th data-i18n="qr.col.location_desc">Location / Description</th>
+            <th class="text-center" style="width: 100px;" data-i18n="qr.col.status">Status</th>
+            <th class="text-center" style="width: 60px;" data-i18n="qr.col.required_short">Req.</th>
+            <th class="text-center" style="width: 110px;" data-i18n="qr.col.generated">Generated</th>
+          </tr>
+        </thead>
+        <tbody id="qr-tbody">
+          <tr class="loading-row">
+            <td colspan="6" class="text-center py-8 text-muted">
+              <span class="material-symbols-outlined text-5xl mb-2 opacity-50">qr_code_2</span>
+              <p data-i18n="qr.select_site_prompt">Select a site to view checkpoints</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="p-4 border-t border-border flex items-center justify-between bg-surface-50">
+      <div class="text-xs text-muted" id="qr-showing">Showing 0-0 of 0</div>
+      <div class="flex items-center gap-2" id="qr-pagination">
+        <!-- Pagination injected by JS -->
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ... (rest of functions) ...
+  // [Content Truncated]
+  let checkpointsData = [];
+  let checkpointsFiltered = [];
+  let qrCurrentPage = 1;
+  const qrRowsPerPage = 10;
+  let currentSiteOptions = [];
+  let standardLocations = [];
+  let guardAppUrl = ''; // Configured Guard App URL
+  let isGroupedView = true; // Default to Grouped View
+
+  // Initialize QR page
+  function init_qr_generator() {
+    console.log('[QR] init_qr_generator called');
+
+    // Header Actions
+    setHeaderActions(`
+      <button class="btn btn-outlined btn-sm" onclick="syncLocations()">
+        <span class="material-symbols-outlined">sync</span>
+        <span class="hidden sm:inline">Sync Locations</span>
+      </button>
+      <div class="divider-v h-6 mx-2"></div>
+      <button class="btn btn-outlined btn-sm" onclick="printQRSheet()">
+        <span class="material-symbols-outlined">print</span>
+        <span class="hidden sm:inline" data-i18n="qr.action.print">Print Sheet</span>
+      </button>
+    `);
+
+    // Fetch Guard App URL
+    google.script.run
+      .withSuccessHandler(function (url) {
+        guardAppUrl = url;
+        console.log('[QR] Guard App URL loaded:', guardAppUrl);
+      })
+      .getGuardAppUrl();
+
+    loadSitesForQR();
+    loadStandardLocations();
+  }
+
+  // ... (rest of functions) ...
+
+  function downloadQR(cpId) {
+    var cp = checkpointsData.find(function (c) { return c.id === cpId; });
+    if (!cp) return;
+
+    if (cp.driveUrl) {
+      window.open(cp.driveUrl, '_blank');
+      return;
+    }
+
+    // Use centralized logic for consistency
+    const qrText = getQRContentUrl(cp);
+    var url = 'https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=' + encodeURIComponent(qrText);
+    window.open(url, '_blank');
+  }
+
+  function printQRSheet() {
+    const input = document.getElementById('qr-site-filter');
+    const siteId = input ? input.value : null;
+    const siteName = document.getElementById('qr-site-filter-trigger').textContent;
+
+    if (!siteId || siteId === 'all-locations') {
+      showToast('Please select a specific site to print QR codes.', 'info');
+      return;
+    }
+
+    if (checkpointsData.length === 0) {
+      showToast('No checkpoints found for this site.', 'warning');
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    const targetUrl = guardAppUrl || '<?!= ScriptApp.getService().getUrl() ?>';
+
+    let html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>QR Codes - ${siteName}</title>
+            <style>
+                @page { size: A4; margin: 1cm; }
+                body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.5; padding: 0; margin: 0; }
+                .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; }
+                .header h1 { margin: 0; color: #0f172a; font-size: 24px; }
+                .header p { margin: 5px 0 0 0; color: #64748b; font-size: 14px; }
+                .qr-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+                .qr-card { border: 1px solid #e2e8f0; padding: 20px; text-align: center; page-break-inside: avoid; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+                .qr-card img { width: 150px; height: 150px; margin-bottom: 12px; }
+                .qr-name { font-weight: 700; font-size: 14px; color: #0f172a; margin-bottom: 4px; word-break: break-all; }
+                .qr-id { font-family: monospace; color: #64748b; font-size: 11px; background: #f8fafc; padding: 2px 6px; border-radius: 4px; }
+                .footer { margin-top: 40px; text-align: center; color: #94a3b8; font-size: 10px; border-top: 1px solid #f1f5f9; padding-top: 10px; }
+                @media print {
+                    .no-print { display: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>${siteName}</h1>
+                <p>VKS Patrol Checkpoints - ${checkpointsData.length} Locations</p>
+            </div>
+            <div class="qr-grid">
+    `;
+
+    checkpointsData.forEach(cp => {
+      const qrText = targetUrl + '?type=info&locId=' + cp.id + '&site=' + encodeURIComponent(cp.name || '');
+      const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(qrText);
+
+      html += `
+            <div class="qr-card">
+                <img src="${qrUrl}" />
+                <div class="qr-name">${escapeHtml(cp.name)}</div>
+                <div class="qr-id">${escapeHtml(cp.id)}</div>
+            </div>
+        `;
+    });
+
+    html += `
+            </div>
+            <div class="footer">Generated via VKS Dashboard &bull; Proprietary & Confidential</div>
+            <script>
+                window.onload = () => {
+                   // Small delay for images to load
+                   setTimeout(() => {
+                       window.print();
+                       // Optional: window.close();
+                   }, 1500);
+                }
+            <\/script>
+        </body>
+        </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+  }
+
+  // Sync locations from Patrol
+  function syncLocations() {
+    const btn = document.querySelector('button[onclick="syncLocations()"]');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loading-spinner w-4 h-4"></span> Syncing...';
+    }
+
+    showToast('Syncing locations from Patrol Dashboard...', 'info');
+
+    google.script.run
+      .withSuccessHandler(function (res) {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<span class="material-symbols-outlined">sync</span><span class="hidden sm:inline">Sync Locations</span>';
+        }
+        showToast('Synced! Added: ' + res.added + ', Updated: ' + res.updated, 'success');
+        loadSitesForQR();
+      })
+      .withFailureHandler(function (err) {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<span class="material-symbols-outlined">sync</span><span class="hidden sm:inline">Sync Locations</span>';
+        }
+        showToast('Sync failed: ' + err.message, 'error');
+      })
+      .syncLocationsFromPatrol();
+  }
+
+  // Load standard locations for dropdown
+  function loadStandardLocations() {
+    google.script.run
+      .withSuccessHandler(function (locations) {
+        standardLocations = locations || [];
+      })
+      .withFailureHandler(function (error) {
+        console.error('[QR] Failed to load standard locations', error);
+      })
+      .getStandardLocations();
+  }
+
+  // Load sites into dropdown
+  function loadSitesForQR() {
+    console.log('[QR] loadSitesForQR() called');
+
+    google.script.run
+      .withSuccessHandler(function (opts) {
+        console.log('[QR] getSiteOptions returned:', opts);
+        currentSiteOptions = opts || [];
+
+        const menu = document.getElementById('qr-site-filter-menu');
+        const input = document.getElementById('qr-site-filter');
+        const trigger = document.getElementById('qr-site-filter-trigger');
+
+        if (!menu || !input) {
+          console.error('[QR] QR Generator UI elements missing');
+          return;
+        }
+
+        let html = '';
+        let defaultOpt = null;
+
+        if (opts && opts.length > 0) {
+          opts.forEach(function (o) {
+            html += '<div class="custom-select-item" data-value="' + o.value + '" onclick="selectOption(\'qr-site-filter\', \'' + o.value + '\', this)">' + escapeHtml(o.label) + '</div>';
+          });
+
+          // Determine default option
+          const params = window.currentPageParams || {};
+          if (params.siteId) {
+            defaultOpt = opts.find(function (o) { return o.value === params.siteId || o.label === params.siteName; });
+            window.currentPageParams = {};
+          }
+
+          if (!defaultOpt) {
+            defaultOpt = opts.find(function (o) { return o.value === 'all-locations'; });
+          }
+        } else {
+          html = '<div class="custom-select-item" data-value="">No sites found</div>';
+          console.warn('[QR] No site options returned from backend');
+        }
+
+        menu.innerHTML = html;
+
+        // Apply Default Selection
+        if (defaultOpt) {
+          console.log('[QR] Auto-selecting:', defaultOpt.value, defaultOpt.label);
+
+          // Directly set the hidden input value
+          input.value = defaultOpt.value;
+          if (trigger) trigger.textContent = defaultOpt.label;
+
+          // Mark the selected item
+          var selectedItem = menu.querySelector('[data-value="' + defaultOpt.value + '"]');
+          if (selectedItem) selectedItem.classList.add('selected');
+        } else {
+          // Default to "All Locations" if no site provided
+          input.value = 'all-locations';
+          if (trigger) trigger.textContent = '--- ALL LOCATIONS ---';
+        }
+
+        // CRITICAL: Explicitly call loadCheckpointsForQR
+        console.log('[QR] Calling loadCheckpointsForQR after init');
+        loadCheckpointsForQR();
+      })
+      .withFailureHandler(function (error) {
+        console.error('[QR] getSiteOptions FAILED:', error);
+        showToast('Failed to load sites: ' + (error.message || error), 'error');
+      })
+      .getSiteOptions();
+  }
+
+  // Load checkpoints for selected site
+  function loadCheckpointsForQR() {
+    const input = document.getElementById('qr-site-filter');
+    const siteId = input ? input.value : null;
+
+    console.log('[QR] loadCheckpointsForQR called with siteId:', siteId);
+
+    if (!siteId) {
+      console.warn('[QR] No siteId selected, clearing table');
+      checkpointsData = [];
+      checkpointsFiltered = [];
+      renderCheckpointsTable();
+      updateQRCounters();
+      return;
+    }
+
+    // Show loading state
+    const tbody = document.getElementById('qr-tbody');
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8"><div class="loading-spinner"></div><p class="text-sm text-muted mt-2">Loading checkpoints...</p></td></tr>';
+    }
+
+    google.script.run
+      .withSuccessHandler(function (data) {
+        console.log('[QR] loadCheckpointsForQR received data:', data ? data.length : 'null');
+
+        checkpointsData = Array.isArray(data) ? data : [];
+        filterCheckpoints();
+        updateQRCounters();
+      })
+      .withFailureHandler(function (error) {
+        console.error('[QR] Failed to load checkpoints:', error);
+        showToast('Failed to load checkpoints', 'error');
+        if (tbody) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-danger">Error loading data: ' + error.message + '</td></tr>';
+        }
+      })
+      .getCheckpointsBySite(siteId);
+  }
+
+  function updateQRCounters() {
+    const totalEl = document.getElementById('qr-total-count');
+    if (totalEl) totalEl.textContent = checkpointsData.length;
+
+    // Check for missing checkpoints
+    const siteId = document.getElementById('qr-site-filter').value;
+    const site = currentSiteOptions.find(s => s.value === siteId);
+    const notice = document.getElementById('qr-missing-notice');
+
+    if (site && site.checkpointTarget > 0 && checkpointsData.length < site.checkpointTarget) {
+      document.getElementById('qr-current-count').textContent = checkpointsData.length;
+      document.getElementById('qr-target-count').textContent = site.checkpointTarget;
+      notice.style.display = 'block';
+    } else {
+      notice.style.display = 'none';
+    }
+  }
+
+  function batchGenerateMissing() {
+    const siteId = document.getElementById('qr-site-filter').value;
+    const site = currentSiteOptions.find(s => s.value === siteId);
+    if (!site) return;
+
+    const count = site.checkpointTarget - checkpointsData.length;
+    if (count <= 0) {
+      if (!site.checkpointTarget || site.checkpointTarget <= 0) {
+        showToast('No checkpoint target set. Please configure in Patrol Settings first.', 'warning');
+      } else {
+        showToast('This site already has enough checkpoints.', 'info');
+      }
+      return;
+    }
+
+    showConfirm('Batch Generate', `Create ${count} standard checkpoints for ${site.label}?`, function () {
+      showLoading('Generating checkpoints...');
+      google.script.run
+        .withSuccessHandler(function (res) {
+          hideLoading();
+          showToast(`Successfully created ${res.created} checkpoints`, 'success');
+          loadCheckpointsForQR();
+        })
+        .withFailureHandler(function (err) {
+          hideLoading();
+          showToast('Generation failed: ' + err.message, 'error');
+        })
+        .bulkGenerateCheckpoints(siteId, count);
+    });
+  }
+
+  function filterCheckpoints() {
+    const searchInput = document.getElementById('qr-search');
+    const query = searchInput ? searchInput.value.toLowerCase() : '';
+
+    console.log('[QR] Filtering with query:', query);
+
+    // Auto-Switch Logic: Search -> Flat Mode
+    if (query.length > 0 && isGroupedView) {
+      isGroupedView = false;
+      updateViewToggleUI();
+      // Optional: Show toast or indicator
+    } else if (query.length === 0 && !isGroupedView) {
+      // Optional: Restore Grouped View on clear? 
+      // For now, let's keep it manual to avoid jumping, or maybe restore if it WAS grouped.
+      // Let's stick to manual return for stability.
+    }
+
+    checkpointsFiltered = checkpointsData.filter(function (cp) {
+      return (cp.name && cp.name.toLowerCase().includes(query)) ||
+        (cp.location && cp.location.toLowerCase().includes(query)) ||
+        (cp.id && cp.id.toLowerCase().includes(query));
+    });
+    qrCurrentPage = 1;
+    renderCheckpointsTable();
+  }
+
+  // View Toggle Logic
+  function toggleViewMode() {
+    isGroupedView = !isGroupedView;
+    updateViewToggleUI();
+
+    // Reset pagination on toggle
+    qrCurrentPage = 1;
+    renderCheckpointsTable();
+  }
+
+  function updateViewToggleUI() {
+    const btn = document.getElementById('qr-view-toggle');
+    const icon = document.getElementById('qr-view-icon');
+    const label = document.getElementById('qr-view-label');
+
+    if (isGroupedView) {
+      btn.classList.add('btn-primary');
+      btn.classList.remove('btn-secondary');
+      icon.textContent = 'toc'; // Group icon
+      label.textContent = 'Grouped';
+    } else {
+      btn.classList.remove('btn-primary');
+      btn.classList.add('btn-secondary');
+      icon.textContent = 'list'; // List icon
+      label.textContent = 'Flat List';
+    }
+  }
+
+  // Render table
+  function renderCheckpointsTable() {
+    const tbody = document.getElementById('qr-tbody');
+    if (!tbody) return;
+
+    const total = checkpointsFiltered.length;
+    console.log('[QR] Rendering table with', total, 'rows. Mode:', isGroupedView ? 'Grouped' : 'Flat');
+
+    if (total === 0) {
+      const siteId = document.getElementById('qr-site-filter').value;
+      const isAll = siteId === 'all-locations' || !siteId;
+
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" class="text-center py-12 text-muted">
+            <span class="material-symbols-outlined text-6xl mb-4 opacity-20">qr_code_2</span>
+            <p class="font-medium text-lg">${isAll ? 'No checkpoints found' : 'This site has no checkpoints yet'}</p>
+            ${!isAll ? '<p class="text-sm mt-2">Click the "Add Checkpoint" button above to create the first one.</p>' : ''}
+          </td>
+        </tr>
+      `;
+      renderQRPagination();
+      return;
+    }
+
+    let displayItems = [];
+
+    if (isGroupedView) {
+      // --- GROUPED RENDERING ---
+      // Group by Site ID
+      const groups = {};
+      checkpointsFiltered.forEach(cp => {
+        const sId = cp.siteId || 'unknown';
+        if (!groups[sId]) groups[sId] = [];
+        groups[sId].push(cp);
+      });
+
+      Object.keys(groups).forEach(siteId => {
+        const group = groups[siteId];
+        const siteName = group[0].siteName || 'Unknown Site';
+
+        // Calculate Aggregate Stats
+        const totalCP = group.length;
+        const generatedCP = group.filter(c => c.qrStatus === 'generated').length;
+        const pct = Math.round((generatedCP / totalCP) * 100);
+
+        // Add Header Item
+        displayItems.push({
+          type: 'header',
+          siteId: siteId,
+          siteName: siteName,
+          total: totalCP,
+          generated: generatedCP,
+          pct: pct
+        });
+
+        // Add Children Items
+        group.forEach(cp => {
+          displayItems.push({ type: 'child', data: cp });
+        });
+      });
+
+      // Grouped Mode: No Pagination (Show All)
+      renderQRPagination(true); // pass true to hide/disable pagination
+
+    } else {
+      // --- FLAT RENDERING (Standard) ---
+      const start = (qrCurrentPage - 1) * qrRowsPerPage;
+      const end = start + qrRowsPerPage;
+      const pageData = checkpointsFiltered.slice(start, end);
+
+      displayItems = pageData.map(cp => ({ type: 'flat', data: cp }));
+
+      renderQRPagination(false); // pass false to show pagination
+    }
+
+    // Use DiffRenderer
+    DiffRenderer.render(tbody, displayItems, {
+      keyFn: item => {
+        if (item.type === 'header') return 'grp-' + item.siteId;
+        return 'cp-' + item.data.id;
+      },
+      renderFn: item => {
+        if (item.type === 'header') {
+          const allGenerated = item.generated === item.total && item.total > 0;
+          const btnClass = allGenerated ? 'btn-outlined bg-white' : 'btn-outlined bg-slate-100 text-muted cursor-not-allowed';
+
+          return `
+                <tr class="bg-slate-50 border-b border-slate-200">
+                    <td colspan="6" class="py-3 px-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <span class="material-symbols-outlined text-slate-400">domain</span>
+                                <span class="font-bold text-slate-700 text-lg">${escapeHtml(item.siteName)}</span>
+                                <span class="badge badge-outlined ml-2">${item.total} Checkpoints</span>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="text-sm text-slate-500">
+                                    <span class="font-medium ${allGenerated ? 'text-emerald-600' : 'text-orange-500'}">${item.generated}</span> Generated (${item.pct}%)
+                                </div>
+                                <div class="flex items-center gap-2">
+                                  <button class="btn btn-xs ${btnClass}" onclick="event.stopPropagation(); printQRSheetForSite('${item.siteId}', '${escapeHtml(item.siteName)}')">
+                                      <span class="material-symbols-outlined text-[16px]">print</span>
+                                      Print Site
+                                  </button>
+                                  <button class="btn btn-xs ${btnClass}" onclick="event.stopPropagation(); exportSitePDF('${item.siteId}', '${escapeHtml(item.siteName)}')">
+                                      <span class="material-symbols-outlined text-[16px]">picture_as_pdf</span>
+                                      Export PDF
+                                  </button>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+
+        // Common Row Rendering (Child or Flat)
+        const cp = item.data;
+        const isChild = item.type === 'child';
+
+        // Indentation for child rows
+        const indentClass = isChild ? 'pl-8 bg-white' : '';
+        const borderClass = isChild ? 'border-l-4 border-l-transparent hover:border-l-primary' : ''; // visual cue
+
+        // QR Status Badge
+        let statusBadge = '<span class="badge badge-default">Pending</span>';
+        if (cp.qrStatus === 'generated') {
+          statusBadge = '<span class="badge badge-success"><span class="status-dot bg-success"></span>Generated</span>';
+        }
+
+        // Generated At
+        let generatedAt = '-';
+        if (cp.generatedAt) {
+          try {
+            const date = new Date(cp.generatedAt);
+            generatedAt = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+          } catch (e) {
+            generatedAt = cp.generatedAt;
+          }
+        }
+
+        const locationDetail = cp.name || cp.code || 'Checkpoint';
+        const siteName = cp.siteName || '-';
+
+        return `
+          <tr class="clickable-row ${indentClass} ${borderClass}" onclick="openCheckpointDetail('${cp.id}')">
+            <td class="text-center">
+              <span class="badge badge-outlined">${cp.order || '-'}</span>
+            </td>
+            <td>
+              <div class="font-semibold text-primary">${escapeHtml(locationDetail)}</div>
+              <div class="text-xs text-muted mt-1">ID: ${cp.id}</div>
+            </td>
+            <td class="text-sm">
+              <div class="flex flex-col">
+                <span class="font-medium text-slate-700">${escapeHtml(cp.type || 'Standard')}</span>
+                ${!isChild ? `<span class="text-xs text-muted">${escapeHtml(siteName)}</span>` : ''} 
+              </div>
+            </td>
+            <td class="text-center">${statusBadge}</td>
+            <td class="text-center">
+              ${cp.required ? '<span class="material-symbols-outlined text-success text-[18px]">check_circle</span>' : '<span class="text-muted opacity-30">-</span>'}
+            </td>
+            <td class="text-center text-xs text-muted">${generatedAt}</td>
+          </tr>
+        `;
+      }
+    });
+
+
+  }
+
+  // Pagination
+  function renderQRPagination(hide = false) {
+    const container = document.getElementById('qr-pagination');
+    if (!container) return;
+
+    // Logic: In Grouped View, we show ALL (essentially infinite page). 
+    // So we hide pagination controls but maybe show a "Viewing All" label.
+    if (hide) {
+      const total = checkpointsFiltered.length;
+      container.innerHTML = `
+            <div class="text-xs text-muted">Showing all ${total} checkpoints (Grouped View)</div>
+            <div class="text-xs text-muted italic">Pagination disabled in Grouped Mode</div>
+        `;
+      return;
+    }
+
+    const total = checkpointsFiltered.length;
+    const totalPages = Math.ceil(total / qrRowsPerPage);
+
+    let html = '';
+
+    // Prev Button
+    html += '<button class="btn btn-icon btn-sm ' + (qrCurrentPage === 1 ? 'disabled' : '') + '" onclick="qrPrevPage()" ' + (qrCurrentPage === 1 ? 'disabled' : '') + '>' +
+      '<span class="material-symbols-outlined">chevron_left</span>' +
+      '</button>';
+
+    // Page Numbers
+    var maxPages = 5;
+    var startPage = Math.max(1, qrCurrentPage - 2);
+    var endPage = Math.min(totalPages, startPage + maxPages - 1);
+
+    if (endPage - startPage < maxPages - 1) {
+      startPage = Math.max(1, endPage - maxPages + 1);
+    }
+
+    for (var i = startPage; i <= endPage; i++) {
+      html += '<button class="btn btn-sm ' + (i === qrCurrentPage ? 'btn-primary' : 'btn-ghost') + '" onclick="qrGoToPage(' + i + ')">' + i + '</button>';
+    }
+
+    // Next Button
+    html += '<button class="btn btn-icon btn-sm ' + (qrCurrentPage >= totalPages ? 'disabled' : '') + '" onclick="qrNextPage()" ' + (qrCurrentPage >= totalPages ? 'disabled' : '') + '>' +
+      '<span class="material-symbols-outlined">chevron_right</span>' +
+      '</button>';
+
+    container.innerHTML = html;
+
+    var showingEl = document.getElementById('qr-showing');
+    if (showingEl) {
+      var sStart = total === 0 ? 0 : (qrCurrentPage - 1) * qrRowsPerPage + 1;
+      var sEnd = Math.min(qrCurrentPage * qrRowsPerPage, total);
+      showingEl.textContent = 'Showing ' + sStart + '-' + sEnd + ' of ' + total;
+    }
+  }
+
+  function qrPrevPage() {
+    if (qrCurrentPage > 1) {
+      qrCurrentPage--;
+      renderCheckpointsTable();
+    }
+  }
+
+  function qrNextPage() {
+    var totalPages = Math.ceil(checkpointsFiltered.length / qrRowsPerPage);
+    if (qrCurrentPage < totalPages) {
+      qrCurrentPage++;
+      renderCheckpointsTable();
+    }
+  }
+
+  function qrGoToPage(page) {
+    qrCurrentPage = page;
+    renderCheckpointsTable();
+  }
+
+  // Actions
+  function openAddCheckpoint() {
+    var siteId = document.getElementById('qr-site-filter').value;
+    if (!siteId) {
+      showToast('Please select a site first', 'warning');
+      return;
+    }
+
+    if (siteId.startsWith('route-meta')) {
+      showToast('Cannot add checkpoints to a Route view. Please select a specific Site.', 'info');
+      return;
+    }
+
+    // Reset form
+    var form = document.getElementById('form-checkpoint');
+    if (form) {
+      form.reset();
+      document.getElementById('cp-site-id').value = siteId;
+      document.getElementById('cp-id').value = '';
+      document.getElementById('cp-required').checked = true;
+
+      // Set sequence
+      var nextSeq = checkpointsData.length + 1;
+      document.getElementById('cp-sequence').value = nextSeq;
+
+      openModal('checkpoint-form');
+    } else {
+      console.error('Checkpoint form not found: form-checkpoint');
+      showToast('Error: Form not initialized', 'error');
+    }
+  }
+
+  function editCheckpoint(cpId) {
+    var cp = checkpointsData.find(function (c) { return c.id === cpId; });
+    if (!cp) return;
+
+    // Populate form
+    document.getElementById('cp-site-id').value = cp.siteId || document.getElementById('qr-site-filter').value;
+    document.getElementById('cp-id').value = cp.id;
+    document.getElementById('cp-name').value = cp.name || '';
+    document.getElementById('cp-location').value = cp.location || '';
+    document.getElementById('cp-sequence').value = cp.order || 1;
+    document.getElementById('cp-required').checked = cp.required;
+
+    openModal('checkpoint-form');
+  }
+
+  function generateQR(locId) {
+    var loc = checkpointsData.find(function (c) { return c.id === locId; });
+    if (!loc) return;
+
+    showToast('Generating QR & Saving to Drive...', 'info');
+    google.script.run
+      .withSuccessHandler(function (res) {
+        showToast('QR Generated and saved to Drive', 'success');
+        loadCheckpointsForQR();
+      })
+      .withFailureHandler(function (err) { showToast('Error: ' + err.message, 'error'); })
+      .generateQRForLocation(locId);
+  }
+
+  function downloadQR(cpId) {
+    var cp = checkpointsData.find(function (c) { return c.id === cpId; });
+    if (!cp) return;
+
+    if (cp.driveUrl) {
+      window.open(cp.driveUrl, '_blank');
+      return;
+    }
+
+    // Fallback if not yet in Drive
+    const webAppUrl = '<?!= ScriptApp.getService().getUrl() ?>';
+    const qrText = webAppUrl + '?type=info&locId=' + cp.id + '&site=' + encodeURIComponent(cp.name);
+    var url = 'https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=' + encodeURIComponent(qrText);
+    window.open(url, '_blank');
+  }
+
+  function printQRSheet() {
+    // Current generic print relies on current filter
+    // If grouped, it might be ambiguous to "Print All" unless we print all sites?
+    // Let's keep existing logic: Print whatever site is selected.
+
+    const input = document.getElementById('qr-site-filter');
+    const siteId = input ? input.value : null;
+
+    if (!siteId || siteId === 'all-locations') {
+      showToast('Please select a specific site to print QR codes.', 'info');
+      return;
+    }
+
+    // Check all generated state
+    // We can filter checkpointsData for this site
+    // Or assume standard flow
+
+    // Filter effective list to print
+    const sitePoints = checkpointsData.filter(cp => (!siteId || siteId === 'all-locations' || cp.siteId === siteId));
+
+    if (sitePoints.length === 0) {
+      showToast('No checkpoints found to print.', 'warning');
+      return;
+    }
+
+    const ungenerated = sitePoints.filter(cp => cp.qrStatus !== 'generated');
+    if (ungenerated.length > 0) {
+      showToast('Cannot print: ' + ungenerated.length + ' checkpoints are missing QR codes.', 'error');
+      return;
+    }
+
+    // Call internal print with specific site data
+    _doPrint(siteId, document.getElementById('qr-site-filter-trigger').textContent, sitePoints);
+  }
+
+  // New helper for Header Button
+  function printQRSheetForSite(siteId, siteName) {
+    const sitePoints = checkpointsData.filter(cp => cp.siteId === siteId);
+    if (sitePoints.length === 0) {
+      showToast('No checkpoints found for ' + siteName, 'warning');
+      return;
+    }
+
+    const ungenerated = sitePoints.filter(cp => cp.qrStatus !== 'generated');
+    if (ungenerated.length > 0) {
+      showToast('Cannot Print: All checkpoints must be generated first. (' + ungenerated.length + ' missing)', 'error');
+      return;
+    }
+
+    _doPrint(siteId, siteName, sitePoints);
+  }
+
+  function exportSitePDF(siteId, siteName) {
+    const sitePoints = checkpointsData.filter(cp => cp.siteId === siteId);
+    if (sitePoints.length === 0) {
+      showToast('No checkpoints found for ' + siteName, 'warning');
+      return;
+    }
+
+    const ungenerated = sitePoints.filter(cp => cp.qrStatus !== 'generated');
+    if (ungenerated.length > 0) {
+      showToast('Cannot Export: All checkpoints must be generated first. (' + ungenerated.length + ' missing)', 'error');
+      return;
+    }
+
+    // Reuse print dialog but imply PDF export
+    _doPrint(siteId, siteName, sitePoints);
+  }
+
+  // Internal Print Logic refactored to accept data
+  function _doPrint(siteId, siteName, dataPoints) {
+    if (dataPoints.length === 0) {
+      showToast('No checkpoints found.', 'warning');
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    const targetUrl = guardAppUrl || '<?!= ScriptApp.getService().getUrl() ?>';
+
+    let html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>QR Codes - ${siteName}</title>
+            <style>
+                @page { size: A4; margin: 1cm; }
+                body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.5; padding: 0; margin: 0; }
+                .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; }
+                .header h1 { margin: 0; color: #0f172a; font-size: 24px; }
+                .header p { margin: 5px 0 0 0; color: #64748b; font-size: 14px; }
+                .qr-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+                .qr-card { border: 1px solid #e2e8f0; padding: 20px; text-align: center; page-break-inside: avoid; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+                .qr-card img { width: 150px; height: 150px; margin-bottom: 12px; }
+                .qr-name { font-weight: 700; font-size: 14px; color: #0f172a; margin-bottom: 4px; word-break: break-all; }
+                .qr-id { font-family: monospace; color: #64748b; font-size: 11px; background: #f8fafc; padding: 2px 6px; border-radius: 4px; }
+                .footer { margin-top: 40px; text-align: center; color: #94a3b8; font-size: 10px; border-top: 1px solid #f1f5f9; padding-top: 10px; }
+                @media print {
+                    .no-print { display: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>${siteName}</h1>
+                <p>VKS Patrol Checkpoints - ${dataPoints.length} Locations</p>
+            </div>
+            <div class="qr-grid">
+    `;
+
+    dataPoints.forEach(cp => {
+      const qrText = getQRContentUrl(cp);
+      const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(qrText);
+
+      html += `
+            <div class="qr-card">
+                <img src="${qrUrl}" />
+                <div class="qr-name">${escapeHtml(cp.name)}</div>
+                <div class="qr-id">${escapeHtml(cp.id)}</div>
+            </div>
+        `;
+    });
+
+    html += `
+            </div>
+            <div class="footer">Generated via VKS Dashboard &bull; Proprietary & Confidential</div>
+            <` + `script>
+                window.onload = () => {
+                   // Small delay for images to load
+                   setTimeout(() => { 
+                       window.print();
+                       // Optional: window.close(); 
+                   }, 1500);
+                }
+            </` + `script>
+        </body>
+        </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+  }
+
+  // Modal handling for openCheckpointDetail moved here from Modal_Checkpoints.html
+  /**
+   * Logic for Checkpoint Detail Modal
+   */
+  let currentDetailCpId = null;
+
+  function openCheckpointDetail(cpId) {
+    currentDetailCpId = cpId;
+    const cp = checkpointsData.find(c => c.id === cpId);
+    if (!cp) return;
+
+    // Open modal first for Zero-Flicker feeling
+    // This will inject the template into the main container and set document.activeModal
+    openModal('checkpoint-detail');
+
+    const modal = document.activeModal;
+    if (!modal) {
+      console.error('[QR] document.activeModal not found!');
+      return;
+    }
+
+    // Reset UI states
+    const previewContainer = modal.querySelector('#cp-qr-preview-container');
+    const genBtn = modal.querySelector('#btn-qr-generate-large');
+    const driveBtn = modal.querySelector('#btn-qr-download-drive');
+
+    modal.querySelector('.modal-title').textContent = cp.name || 'Checkpoint Info';
+    modal.querySelector('.modal-subtitle').textContent = cp.id;
+
+    // Fill Metadata
+    modal.querySelector('#cp-detail-route').innerHTML = cp.route ? `<span class="badge badge-primary">${cp.route}</span>` : '-';
+    modal.querySelector('#cp-detail-required').textContent = cp.required ? 'Yes' : 'No';
+    modal.querySelector('#cp-detail-status').innerHTML = cp.qrStatus === 'generated'
+      ? '<span class="badge badge-success">Generated</span>'
+      : '<span class="badge badge-muted">Pending</span>';
+    modal.querySelector('#cp-detail-generated').textContent = cp.generatedAt ? new Date(cp.generatedAt).toLocaleString() : 'Never';
+    modal.querySelector('#cp-detail-desc').textContent = cp.location || 'No description provided.';
+
+    // QR Preview Logic
+    if (cp.qrStatus === 'generated') {
+      const qrContent = getQRContentUrl(cp);
+      previewContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrContent)}" class="w-64 h-64 rounded-lg">`;
+      genBtn.innerHTML = '<span class="material-symbols-outlined">refresh</span> Regenerate';
+      if (cp.driveUrl) {
+        driveBtn.href = cp.driveUrl;
+        driveBtn.classList.remove('hidden');
+      } else {
+        driveBtn.classList.add('hidden');
+      }
+    } else {
+      previewContainer.innerHTML = `
+            <div class="w-64 h-64 flex flex-col items-center justify-center text-muted opacity-20 border-2 border-dashed border-muted rounded-xl">
+                <span class="material-symbols-outlined text-8xl">qr_code_2</span>
+                <p class="text-xs mt-2 font-bold">NOT GENERATED</p>
+            </div>
+        `;
+      genBtn.innerHTML = '<span class="material-symbols-outlined">qr_code</span> Generate QR';
+      driveBtn.classList.add('hidden');
+    }
+  }
+
+  function getQRContentUrl(cp) {
+    // Match Backend Logic: Always use Guard App URL, include Route param
+    const route = (cp.route || '').trim().toUpperCase();
+
+    // Use the configured Guard App URL (from variable at top of file)
+    // defined at line 149 in this file usually, or fallback
+    const baseUrl = guardAppUrl || '<?!= ScriptApp.getService().getUrl() ?>';
+
+    let url = baseUrl + '?type=info';
+    url += '&locId=' + encodeURIComponent(cp.id);
+    url += '&cpName=' + encodeURIComponent(cp.name || '');
+    url += '&siteId=' + encodeURIComponent(cp.siteId || '');
+
+    if (route) {
+      url += '&route=' + encodeURIComponent(route);
+    }
+
+    return url;
+  }
+
+  function generateQRFromModal() {
+    if (!currentDetailCpId) return;
+
+    const modal = document.activeModal;
+    if (!modal) return;
+
+    const genBtn = modal.querySelector('#btn-qr-generate-large');
+    const previewContainer = modal.querySelector('#cp-qr-preview-container');
+    const originalBtnHtml = genBtn.innerHTML;
+
+    // Show loading state on button
+    genBtn.disabled = true;
+    genBtn.innerHTML = '<span class="material-symbols-outlined animate-spin">progress_activity</span> Generating...';
+
+    // Show loading in preview
+    previewContainer.innerHTML = `
+            <div class="w-64 h-64 flex flex-col items-center justify-center">
+                <span class="material-symbols-outlined text-6xl text-muted animate-spin">progress_activity</span>
+                <p class="text-sm text-muted mt-4">Generating QR...</p>
+            </div>
+        `;
+
+    google.script.run
+      .withSuccessHandler(function (res) {
+        // Update button back to Regenerate
+        genBtn.disabled = false;
+        genBtn.innerHTML = '<span class="material-symbols-outlined">refresh</span> Regenerate';
+
+        // Update the checkpoint in local cache
+        const cpIndex = checkpointsData.findIndex(function (c) { return c.id === currentDetailCpId; });
+        if (cpIndex !== -1) {
+          checkpointsData[cpIndex].qrStatus = 'generated';
+          checkpointsData[cpIndex].generatedAt = new Date().toISOString();
+          if (res && res.driveUrl) {
+            checkpointsData[cpIndex].driveUrl = res.driveUrl;
+          }
+        }
+
+        // Update QR preview inline
+        const cp = checkpointsData.find(function (c) { return c.id === currentDetailCpId; });
+        if (cp) {
+          const qrContent = getQRContentUrl(cp);
+          previewContainer.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(qrContent) + '" class="w-64 h-64 rounded-lg">';
+
+          // Update Drive button if URL available
+          const driveBtn = modal.querySelector('#btn-qr-download-drive');
+          if (cp.driveUrl) {
+            driveBtn.href = cp.driveUrl;
+            driveBtn.classList.remove('hidden');
+          }
+
+          // Update status in modal
+          modal.querySelector('#cp-detail-status').innerHTML = '<span class="badge badge-success">Generated</span>';
+          modal.querySelector('#cp-detail-generated').textContent = new Date().toLocaleString();
+        }
+
+        // Silently refresh table in background (no flicker)
+        renderCheckpointsTable();
+        showToast('QR Generated and saved to Drive', 'success');
+      })
+      .withFailureHandler(function (err) {
+        genBtn.disabled = false;
+        genBtn.innerHTML = originalBtnHtml;
+        previewContainer.innerHTML = `
+                    <div class="w-64 h-64 flex flex-col items-center justify-center text-danger">
+                        <span class="material-symbols-outlined text-6xl">error</span>
+                        <p class="text-sm mt-4">Generation failed</p>
+                    </div>
+                `;
+        showToast('Error: ' + err.message, 'error');
+      })
+      .generateQRForLocation(currentDetailCpId);
+  }
+
+  function editCheckpointFromDetail() {
+    if (!currentDetailCpId) return;
+    const id = currentDetailCpId;
+    closeModal('checkpoint-detail');
+    setTimeout(() => editCheckpoint(id), 200);
+  }
+
+  function deleteCheckpointFromModal() {
+    if (!currentDetailCpId) return;
+
+    var cp = checkpointsData.find(function (c) { return c.id === currentDetailCpId; });
+    var cpName = cp ? (cp.name || cp.id) : currentDetailCpId;
+
+    showConfirm(
+      'Delete Checkpoint',
+      'Are you sure you want to delete "' + escapeHtml(cpName) + '"? This will also remove its QR code from Drive. This action cannot be undone.',
+      function () {
+        var modal = document.activeModal;
+        var deleteBtn = modal ? modal.querySelector('.btn-danger, [onclick*="deleteCheckpoint"]') : null;
+
+        // Loading state
+        if (deleteBtn) {
+          deleteBtn.disabled = true;
+          deleteBtn.innerHTML = '<span class="material-symbols-outlined animate-spin">progress_activity</span> Deleting...';
+        }
+
+        google.script.run
+          .withSuccessHandler(function (res) {
+            // Remove from local cache
+            checkpointsData = checkpointsData.filter(function (c) { return c.id !== currentDetailCpId; });
+            currentDetailCpId = null;
+
+            // Close modal and refresh
+            closeModal('checkpoint-detail');
+            filterCheckpoints();
+            updateQRCounters();
+            showToast('Checkpoint deleted successfully', 'success');
+          })
+          .withFailureHandler(function (err) {
+            if (deleteBtn) {
+              deleteBtn.disabled = false;
+              deleteBtn.innerHTML = '<span class="material-symbols-outlined">delete</span> ລິບ';
+            }
+            showToast('Delete failed: ' + (err.message || err), 'error');
+          })
+          .deleteCheckpoint(currentDetailCpId);
+      }
+    );
+  }
+
+</script>

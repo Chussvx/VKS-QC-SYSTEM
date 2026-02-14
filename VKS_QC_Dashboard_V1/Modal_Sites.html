@@ -1,0 +1,379 @@
+<!-- Modal_Sites.html - Site management modals -->
+<!-- Contains: Site Detail, Add/Edit Site Form -->
+
+<!-- Modal_Sites.html - Bifurcated Site Management Templates -->
+
+<!-- 1. Site Detail Modal Template (Solid Pattern) -->
+<template id="modal-site-detail">
+    <div class="modal-card-solid">
+        <div class="modal-header-solid">
+            <div class="modal-title-group">
+                <div class="modal-icon-box success">
+                    <span class="material-symbols-outlined">domain</span>
+                </div>
+                <div>
+                    <h3 class="modal-title" id="site-det-name">SITE NAME</h3>
+                    <div class="modal-subtitle-flex">
+                        <span class="text-xs text-muted" id="site-det-code">VKS25-000 • Route A</span>
+                        <span class="badge badge-success-solid badge-xs" id="site-det-status">ACTIVE</span>
+                    </div>
+                </div>
+            </div>
+            <button class="btn-close" onclick="closeModal()">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <div class="modal-body p-0">
+            <!-- Metadata Bar (Solid White) -->
+            <div class="modal-meta-bar-solid">
+                <div class="meta-item">
+                    <span class="meta-label" data-i18n="sites.modal.route">ROUTE</span>
+                    <span class="meta-value" id="site-det-meta-route">Route A</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label" data-i18n="sites.modal.zone">ZONE</span>
+                    <span class="meta-value" id="site-det-meta-zone">East District</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label" data-i18n="sites.modal.guards">GUARDS</span>
+                    <span class="meta-value" id="site-det-meta-guards">0 Assigned</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label" data-i18n="sites.modal.last_patrol">LAST PATROL</span>
+                    <span class="meta-value" id="site-det-meta-last">N/A</span>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <div class="section-title" data-i18n="sites.modal.address">SITE ADDRESS</div>
+                <p class="text-sm text-secondary leading-relaxed mb-8" id="site-det-address">
+                    Loading address...
+                </p>
+
+                <div class="section-title" data-i18n="sites.modal.active_incidents">ACTIVE INCIDENTS</div>
+                <div id="site-det-incidents" class="space-y-3 mb-8">
+                    <div class="p-4 bg-white rounded-xl border border-dashed border-slate-200 text-center">
+                        <span class="text-xs text-muted italic" data-i18n="sites.modal.no_incidents">No active incidents
+                            at this site.</span>
+                    </div>
+                </div>
+
+                <!-- Guards at this Site Section -->
+                <div class="section-title flex items-center gap-2">
+                    <span data-i18n="sites.modal.guards_at_site">GUARDS AT THIS SITE</span>
+                    <span id="site-det-guards-count" class="text-xs font-normal text-gray-400">(loading...)</span>
+                </div>
+                <div id="site-det-guards" class="mb-8">
+                    <div class="space-y-2">
+                        <!-- Regular Guards -->
+                        <div id="site-det-guards-list" class="flex flex-wrap gap-2">
+                            <!-- Skeleton chips shown while loading -->
+                            <div class="skeleton skeleton-chip"></div>
+                            <div class="skeleton skeleton-chip"></div>
+                            <div class="skeleton skeleton-chip" style="width: 5rem;"></div>
+                        </div>
+                        <!-- Inspectors -->
+                        <div id="site-det-inspectors-section" class="mt-3 pt-3 border-t border-gray-100 hidden">
+                            <div class="text-xs text-gray-400 mb-2 flex items-center gap-1">
+                                <span class="material-symbols-outlined text-sm">verified</span>
+                                <span data-i18n="sites.modal.inspectors">INSPECTORS</span>
+                            </div>
+                            <div id="site-det-inspectors-list" class="flex flex-wrap gap-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-title" data-i18n="sites.modal.client_contact">CLIENT CONTACT</div>
+                <div class="contact-card-premium">
+                    <div>
+                        <div class="text-xs text-muted mb-1" data-i18n="sites.modal.point_of_contact">Point of Contact
+                        </div>
+                        <div class="text-sm font-bold text-slate-800" id="site-det-contact-name">Loading...</div>
+                        <div class="text-xs text-secondary mt-1 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">phone</span>
+                            <span id="site-det-contact-phone">...</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-icon btn-ghost" onclick="contactSiteByPhone()" title="Call Client"
+                        data-i18n-title="sites.modal.call_client">
+                        <span class="material-symbols-outlined">call</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer-solid">
+            <button class="btn btn-ghost" onclick="closeModal()" data-i18n="sites.modal.btn.close">CLOSE</button>
+            <div class="flex gap-2">
+                <button class="btn btn-secondary" onclick="openPatrolConfig()"
+                    data-i18n="sites.modal.btn.patrol_settings">PATROL SETTINGS</button>
+                <button class="btn btn-secondary"
+                    onclick="closeModal(); navigateTo('qr-generator', {siteId: window.activeSiteId, siteName: document.getElementById('site-det-name').innerText})"
+                    data-i18n="sites.modal.btn.manage_checkpoints">MANAGE
+                    CHECKPOINTS</button>
+                <button class="btn btn-primary" onclick="openSiteForm(window.activeSiteId)"
+                    data-i18n="sites.modal.btn.edit_site">EDIT SITE</button>
+            </div>
+        </div>
+    </div>
+</template>
+
+<!-- 2. Edit Site Form Template (Metadata Focus) -->
+<template id="modal-site-form">
+    <div class="modal-card-solid">
+        <div class="modal-header-solid">
+            <h3 class="modal-title" data-i18n="sites.form.title">SITE INFORMATION</h3>
+            <button class="btn-close" onclick="closeModal()">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="form-site" data-site-id="">
+                <div class="form-section">
+                    <h4 class="form-section-title" data-i18n="sites.form.basic">Basic Details</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-group">
+                            <label class="form-label required" data-i18n="sites.form.vks_code">VKS Code</label>
+                            <input type="text" id="site-code" class="form-input" placeholder="VKS25-XXX" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required" data-i18n="sites.form.site_type">Site Type</label>
+                            <input type="hidden" id="site-type">
+                            <div class="custom-select" id="site-type-dropdown"></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required" data-i18n="sites.form.name_en">Site Name
+                            (English)</label>
+                        <input type="text" id="site-name-en" class="form-input" placeholder="Enter site name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" data-i18n="sites.form.name_lo">Site Name (Lao)</label>
+                        <input type="text" id="site-name-lo" class="form-input" placeholder="ປ້ອນຊື່ສະຖານທີ່">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required" data-i18n="sites.form.patrol_route">Patrol Route</label>
+                        <input type="hidden" id="site-route">
+                        <div class="custom-select" id="site-route-dropdown"></div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h4 class="form-section-title" data-i18n="sites.form.location_contact">Location & Contact</h4>
+                    <div class="form-group">
+                        <label class="form-label required" data-i18n="sites.form.address">Address</label>
+                        <textarea id="site-address" class="form-textarea" rows="2" required
+                            placeholder="Full location address..."></textarea>
+                    </div>
+
+                    <!-- Google Maps Link Converter -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="material-symbols-outlined text-sm align-middle mr-1">pin_drop</span>
+                            <span data-i18n="sites.form.google_maps">Google Maps Link</span>
+                        </label>
+                        <div class="input-with-button">
+                            <input type="text" id="site-google-maps-link" class="form-input"
+                                placeholder="Paste Google Maps link here...">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="extractCoordinates()">
+                                <span class="material-symbols-outlined text-sm">my_location</span>
+                                <span data-i18n="sites.form.extract">Extract</span>
+                            </button>
+                        </div>
+                        <p class="form-hint mt-1" id="gps-extract-status"></p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="sites.form.latitude">Latitude</label>
+                            <input type="text" id="site-lat" class="form-input bg-slate-50" placeholder="e.g. 17.9685"
+                                readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="sites.form.longitude">Longitude</label>
+                            <input type="text" id="site-lng" class="form-input bg-slate-50" placeholder="e.g. 102.6300"
+                                readonly>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="sites.form.contact_name">Contact Name</label>
+                            <input type="text" id="site-contact-name" class="form-input" placeholder="Name">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="sites.form.phone">Phone</label>
+                            <input type="text" id="site-contact-phone" class="form-input" placeholder="+856 20...">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h4 class="form-section-title" data-i18n="sites.form.status_section">Status</h4>
+                    <div class="form-group">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="site-status" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label" data-i18n="sites.form.active_site">Active Site</span>
+                        </label>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer-solid">
+            <button class="btn btn-ghost" onclick="closeModal()" data-i18n="common.cancel">CANCEL</button>
+            <button id="btn-save-site" class="btn btn-primary" onclick="saveSite()">
+                <span class="material-symbols-outlined" id="btn-save-icon">save</span>
+                <span id="btn-save-text" data-i18n="sites.form.btn.save">SAVE CHANGES</span>
+            </button>
+        </div>
+    </div>
+</template>
+
+<!-- 3. Patrol Configuration Modal Template (Operational Focus) -->
+<template id="modal-patrol-config">
+    <div class="modal-card-solid">
+        <div class="modal-header-solid">
+            <h3 class="modal-title" data-i18n="sites.patrol.title">PATROL SETTINGS</h3>
+            <button class="btn-close" onclick="closeModal()">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="form-patrol-config">
+                <div class="form-section">
+                    <h4 class="form-section-title" data-i18n="sites.patrol.shift_timing">Shift Timing</h4>
+                    <div class="grid grid-cols-1 gap-4 mb-4">
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="sites.patrol.shift_duration">Shift Duration</label>
+                            <div class="radio-group h-12">
+                                <label class="radio-card flex-1">
+                                    <input type="radio" name="shift-type" value="8h" id="shift-type-8"
+                                        onchange="handleShiftDurationChange(this.value)">
+                                    <span class="radio-content justify-center" data-i18n="sites.patrol.hours_8">8
+                                        Hours</span>
+                                </label>
+                                <label class="radio-card flex-1">
+                                    <input type="radio" name="shift-type" value="12h" id="shift-type-12"
+                                        onchange="handleShiftDurationChange(this.value)">
+                                    <span class="radio-content justify-center" data-i18n="sites.patrol.hours_12">12
+                                        Hours</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="sites.patrol.start_time">Start Time</label>
+                            <div style="position:relative;">
+                                <input type="text" id="site-shift-start" class="form-input" readonly placeholder="06:00"
+                                    style="cursor:pointer; padding-right:2.5rem;" value="06:00">
+                                <span class="material-symbols-outlined"
+                                    style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);font-size:1.1rem;color:var(--text-muted);pointer-events:none;">schedule</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="sites.patrol.end_time">End Time</label>
+                            <div style="position:relative;">
+                                <input type="text" id="site-shift-end" class="form-input" readonly placeholder="18:00"
+                                    style="cursor:pointer; padding-right:2.5rem;" value="18:00">
+                                <span class="material-symbols-outlined"
+                                    style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);font-size:1.1rem;color:var(--text-muted);pointer-events:none;">schedule</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h4 class="form-section-title" data-i18n="sites.patrol.targets">Patrol Targets</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="sites.patrol.checkpoints_per_round">Checkpoints per
+                                Round</label>
+                            <input type="number" id="site-checkpoint-target" class="form-input"
+                                placeholder="Default: 4">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="sites.patrol.rounds_per_shift">Rounds target per
+                                Shift</label>
+                            <input type="number" id="site-rounds-target" class="form-input" placeholder="Default: 7">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h4 class="form-section-title" data-i18n="sites.patrol.notes">Operational Notes</h4>
+                    <div class="form-group">
+                        <label class="form-label" data-i18n="sites.patrol.conditions">Special Conditions</label>
+                        <textarea id="site-patrol-conditions" class="form-textarea" rows="2"
+                            placeholder="Instructions for guards..."></textarea>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer-solid">
+            <button class="btn btn-ghost" onclick="closeModal()" data-i18n="common.cancel">CANCEL</button>
+            <button id="btn-save-patrol-config" class="btn btn-primary" onclick="savePatrolConfig()">
+                <span class="material-symbols-outlined" id="btn-patrol-icon">check_circle</span>
+                <span id="btn-patrol-text" data-i18n="sites.patrol.btn.continue">CONTINUE TO CHECKPOINTS</span>
+            </button>
+        </div>
+    </div>
+</template>
+
+<script>
+    // Initialize premium controls for Site Form
+    function initSiteFormControls() {
+        // Site Type dropdown
+        initVKSDropdown({
+            containerId: 'site-type-dropdown',
+            hiddenInputId: 'site-type',
+            placeholder: 'Select Type...',
+            searchable: false,
+            items: [
+                { value: 'Hotel', label: '🏨 Hotel' },
+                { value: 'Office', label: '🏢 Office' },
+                { value: 'Warehouse', label: '📦 Warehouse' },
+                { value: 'Residential', label: '🏠 Residential' },
+                { value: 'Bank', label: '🏦 Bank' },
+                { value: 'Other', label: '📍 Other' }
+            ]
+        });
+
+        // Patrol Route dropdown
+        initVKSDropdown({
+            containerId: 'site-route-dropdown',
+            hiddenInputId: 'site-route',
+            placeholder: 'Select Route...',
+            searchable: false,
+            items: [
+                { value: 'A', label: '🅰️ Route A (Eastern)' },
+                { value: 'B', label: '🅱️ Route B (Western)' }
+            ]
+        });
+        // Default to Route A
+        setVKSDropdownValue('site-route-dropdown', 'A');
+    }
+
+    // Initialize premium controls for Patrol Config Form
+    function initPatrolConfigControls() {
+        // Flatpickr: Shift Start (time-only)
+        initVKSFlatpickr('site-shift-start', {
+            enableTime: true,
+            noCalendar: true,
+            dateFormat: 'H:i',
+            time_24hr: true,
+            onChange: function () {
+                if (typeof calculateAutoEndTime === 'function') calculateAutoEndTime();
+            }
+        });
+
+        // Flatpickr: Shift End (time-only)
+        initVKSFlatpickr('site-shift-end', {
+            enableTime: true,
+            noCalendar: true,
+            dateFormat: 'H:i',
+            time_24hr: true
+        });
+    }
+</script>

@@ -1,0 +1,1263 @@
+<script>
+    // ========================================
+    // GLOBAL STATE 
+    // MOVED TO State.html (Included in Head)
+    // ========================================
+
+    function restoreGuardInputs() {
+        const profile = loadGuardProfile();
+        if (profile) {
+            State.currentGuardId = profile.empId;
+            State.guardName = profile.name;
+            State.guardSurname = profile.surname;
+            State.guardPhone = profile.phone;
+
+            if (typeof updateIdentityUI === 'function') {
+                updateIdentityUI(profile);
+            }
+        }
+
+        // Restore Session (Persistence Fix)
+        const session = loadSessionState();
+        if (session) {
+            State.isOnDuty = session.isOnDuty;
+            State.patrolProgress = session.patrolProgress || {};
+            State.checkinData = session.checkinData;
+            State.currentSite = session.currentSite;
+            State.currentShift = session.currentShift;
+            State.activeRoundPoints = session.activeRoundPoints || [];
+            State.completedRounds = session.completedRounds || [];
+            State.checkpointList = session.checkpointList || [];
+            State.pointsPerRound = session.pointsPerRound || 4;
+            State.totalPatrols = session.totalPatrols || 7;
+
+            if (State.isOnDuty) {
+                updateDutyStatusUI();
+                PatrolMonitor.start(); // Start Monitoring
+                console.log('[Session] Restored on-duty state');
+
+                // AUTO-SYNC: Force refresh config from backend to self-heal stale sessions
+                if (State.currentSite) {
+                    google.script.run
+                        .withSuccessHandler(res => {
+                            if (res && res.success && res.data) {
+                                console.log('[Auto-Sync] Config refreshed:', res.data);
+                                State.pointsPerRound = res.data.checkpoints;
+                                State.totalPatrols = res.data.rounds;
+                                saveSessionState();
+
+                                // DEBUG TOAST: Verify values on screen
+                                if (typeof showToast === 'function') {
+                                    showToast(`Config Loaded: ${res.data.rounds} Rounds, ${res.data.checkpoints} Points`, 'success');
+                                }
+
+                                if (typeof updatePatrolProgress === 'function') {
+                                    updatePatrolProgress();
+                                }
+                            }
+                        })
+                        .withFailureHandler(err => console.warn('[Auto-Sync] Failed:', err))
+                        .getSiteConfig(State.currentSite);
+                }
+            }
+        }
+    }
+
+    // ========================================
+    // RELIABILITY: WAKE LOCK & NOTIFICATIONS
+    // ========================================
+    const WakeLockManager = {
+        sentinel: null,
+
+        request: async function () {
+            try {
+                if ('wakeLock' in navigator) {
+                    this.sentinel = await navigator.wakeLock.request('screen');
+                    console.log('[WakeLock] Active - Screen will stay on');
+
+                    // Re-acquire on visibility change (tab switch)
+                    document.addEventListener('visibilitychange', async () => {
+                        if (this.sentinel !== null && document.visibilityState === 'visible') {
+                            this.sentinel = await navigator.wakeLock.request('screen');
+                        }
+                    });
+                }
+            } catch (err) {
+                console.warn('[WakeLock] Failed:', err);
+            }
+        },
+
+        release: async function () {
+            if (this.sentinel) {
+                await this.sentinel.release();
+                this.sentinel = null;
+                console.log('[WakeLock] Released');
+            }
+        }
+    };
+
+    function requestNotificationPermission() {
+        if ('Notification' in window && Notification.permission !== 'granted') {
+            Notification.requestPermission();
+        }
+    }
+
+    // ========================================
+    // PATROL NOTIFICATION SYSTEM (Activity Monitor)
+    // ========================================
+    const PatrolMonitor = {
+        lastActivity: Date.now(),
+        checkInterval: null,
+
+        // Configuration (in minutes)
+        STAGE_1_SUGGEST: 55, // "5 min before 1 hour"
+        STAGE_2_WARN: 60,    // "Already 1 hour"
+        STAGE_3_CRIT: 75,    // "Critical"
+
+        start: function () {
+            if (this.checkInterval) clearInterval(this.checkInterval);
+            this.lastActivity = Date.now();
+            this.checkInterval = setInterval(() => this.check(), 60000); // Check every min
+
+            // Activate Reliability Features
+            WakeLockManager.request();
+            requestNotificationPermission();
+        },
+
+        reset: function () {
+            console.log('[Monitor] Activity Detected - Timer Reset');
+            this.lastActivity = Date.now();
+            this.hideAlerts();
+            // Start listening again if stopped
+            if (!this.checkInterval) this.start();
+        },
+
+        check: function () {
+            if (!State.isOnDuty) return;
+
+            const now = Date.now();
+            const minutesInactive = (now - this.lastActivity) / 60000;
+
+            console.log(`[Monitor] Inactive: ${Math.round(minutesInactive)}m`);
+
+            if (minutesInactive >= this.STAGE_3_CRIT) {
+                this.triggerCritical();
+            } else if (minutesInactive >= this.STAGE_2_WARN) {
+                this.triggerWarning();
+            } else if (minutesInactive >= this.STAGE_1_SUGGEST) {
+                this.triggerSuggestion();
+            }
+        },
+
+        triggerSuggestion: function () {
+            // Stage 1: Soft Nudge (Encouraging)
+            const msg = "ຮັກສາສະຖິຕິຂອງທ່ານໄວ້! ໃກ້ຮອດເວລາລາດຕະເວນແລ້ວ.";
+            showToast(msg, "info");
+            this.sendSystemNotification(msg);
+            this.playChime(); // Gentle sound
+
+            // Visual Cue
+            const btn = document.getElementById('btn-scan');
+            if (btn) btn.classList.add('animate-bounce');
+        },
+
+        triggerWarning: function () {
+            // Stage 2: Urgent Push (Motivating)
+            const msg = "ຢ່າໃຫ້ເສຍຄະແນນ! ເຖິງເວລາລາດຕະເວນແລ້ວ.";
+            showToast(msg, "warning");
+            this.sendSystemNotification(msg);
+            this.playMarimba(3);
+
+            // Vibrate: 200ms
+            if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
+        },
+
+        triggerCritical: function () {
+            // Stage 3: Critical (Encouragement + Alarm)
+            const msg = "ແຈ້ງເຕືອນດ່ວນ! ກະລຸນາລາດຕະເວນດຽວນີ້.";
+            this.sendSystemNotification(msg);
+
+            const modal = document.getElementById('critical-alert-modal');
+            if (modal) {
+                // Directly show modal
+                modal.classList.remove('hidden');
+                modal.classList.add('active');
+                this.playAlarm(5); // 5 seconds alarm
+            }
+            // Vibrate: SOS pattern
+            if ('vibrate' in navigator) navigator.vibrate([500, 200, 500, 200, 1000]);
+        },
+
+        sendSystemNotification: function (text) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                // Only send if document hidden (user in other app)
+                if (document.visibilityState === 'hidden') {
+                    new Notification("VKS STATIONARY GUARD", { body: text });
+                }
+            }
+        },
+
+        // SOUND DESIGN (Web Audio API)
+
+        playChime: function () {
+            // Gentle Major Chord Arpeggio (C Major: C5, E5, G5)
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+                const now = ctx.currentTime;
+
+                const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+
+                notes.forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + (i * 0.15));
+
+                    gain.gain.setValueAtTime(0, now + (i * 0.15));
+                    gain.gain.linearRampToValueAtTime(0.1, now + (i * 0.15) + 0.05);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + (i * 0.15) + 0.8);
+
+                    osc.start(now + (i * 0.15));
+                    osc.stop(now + (i * 0.15) + 0.9);
+                });
+            } catch (e) { console.warn("Audio error", e); }
+        },
+
+        playMarimba: function (loops = 1) {
+            // Active Rhythmic Pattern (Woody/Perussive)
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+
+                const playNote = (time, freq) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+
+                    osc.type = 'triangle'; // Woodier tone
+                    osc.frequency.setValueAtTime(freq, time);
+
+                    gain.gain.setValueAtTime(0, time);
+                    gain.gain.linearRampToValueAtTime(0.15, time + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.3);
+
+                    osc.start(time);
+                    osc.stop(time + 0.35);
+                };
+
+                const now = ctx.currentTime;
+                // Pattern: Low-High-Low (FAST)
+                for (let i = 0; i < loops; i++) {
+                    let offset = i * 0.4;
+                    playNote(now + offset, 440);       // A4
+                    playNote(now + offset + 0.1, 880); // A5
+                    playNote(now + offset + 0.2, 440); // A4
+                }
+            } catch (e) { console.warn("Audio error", e); }
+        },
+
+        playAlarm: function (durationSecs) {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+                const now = ctx.currentTime;
+
+                for (let i = 0; i < durationSecs * 2; i++) {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+
+                    osc.type = 'sawtooth'; // Harsh Siren
+                    osc.frequency.setValueAtTime(i % 2 == 0 ? 800 : 1200, now + (i * 0.5));
+                    gain.gain.setValueAtTime(0.1, now + (i * 0.5));
+
+                    osc.start(now + (i * 0.5));
+                    osc.stop(now + (i * 0.5) + 0.3);
+                }
+            } catch (e) { }
+        },
+
+        hideAlerts: function () {
+            const btn = document.getElementById('btn-scan');
+            if (btn) btn.classList.remove('animate-bounce');
+            closeCriticalModal(); // Helper to hide modal
+        }
+    };
+
+    const TEST_MODE = true; // Set to false in production
+
+    function testBypassCheckin() {
+        if (!TEST_MODE) return;
+
+        // Ensure State is populated from localStorage first
+        if (!State.currentGuardId) {
+            const profile = loadGuardProfile();
+            if (profile) {
+                State.currentGuardId = profile.empId;
+                State.guardName = profile.name;
+                State.guardSurname = profile.surname;
+                State.guardPhone = profile.phone;
+            }
+        }
+
+        if (!State.currentGuardId) {
+            showError('Data Required', 'Please enter ID and Name before testing.');
+            return;
+        }
+
+        const profile = {
+            empId: State.currentGuardId,
+            name: State.guardName,
+            surname: State.guardSurname,
+            phone: State.guardPhone
+        };
+
+        // Set check-in to 1 hour ago for realistic duration testing
+        const oneHourAgo = new Date(Date.now() - 3600000).toISOString();
+        const testSiteId = 'VKS-A-001'; // CANONICAL CODE
+        const testSiteName = 'ສູນພາສາຈີນ ມູ້ຫຼານ (ສະເພາະ ເສົາ-ທິດ) VKS25-061';
+
+        State.checkinData = {
+            locationId: testSiteId,
+            locationName: testSiteName,
+            serverTime: new Date().toLocaleTimeString(),
+            checkinTime: oneHourAgo,
+            shift: determineCurrentShift()
+        };
+        State.isOnDuty = true;
+        State.currentSite = testSiteId;
+        State.currentShift = determineCurrentShift();
+
+        // Add dummy checkpoints for testing
+        State.checkpointList = [
+            { id: 1, name: 'Main Gate', nameLao: 'ປະຕູໃຫຍ່' },
+            { id: 2, name: 'Office Entrance', nameLao: 'ທາງເຂົ້າຫ້ອງການ' },
+            { id: 3, name: 'Back Perimeter', nameLao: 'ເຂດດ້ານຫຼັງ' },
+            { id: 4, name: 'Storage Room', nameLao: 'ຫ້ອງສາງ' }
+        ];
+
+        // RESET patrol state to ensure check-in doesn't count as a round
+        State.activeRoundPoints = [];
+        State.completedRounds = [];
+        State.patrolProgress = {}; // Backward compatibility
+
+        saveSessionState();
+        updateDutyStatusUI();
+
+        // Record CHECKIN to backend Scans tab
+        const testQR = `VKS|${testSiteId}|0|TEST_BYPASS`;
+
+        showLoading('Simulating Check-in...');
+
+        google.script.run
+            .withSuccessHandler(res => {
+                hideLoading();
+                if (res.success) {
+                    // SYNC CONFIG from Backend Response
+                    if (res.checkpointTarget) State.pointsPerRound = res.checkpointTarget;
+                    if (res.roundsTarget) State.totalPatrols = res.roundsTarget;
+
+                    // Update derived state
+                    State.checkinData.locationName = res.locationName || testSiteName;
+                    State.checkinData.shift = res.shift;
+
+                    saveSessionState();
+                    updateDutyStatusUI();
+
+                    showSuccess("Elite Test Bypass", `Checked in at ${res.locationName}. Config: ${State.totalPatrols} Rounds.`);
+                } else {
+                    showError("Bypass Failed", res.message);
+                }
+            })
+            .withFailureHandler(err => {
+                hideLoading();
+                showError("Bypass Error", err.toString());
+            })
+            .processScan(testQR, profile, null, 'CHECKIN', {
+                isOT: false,
+                lat: 17.9757,
+                lng: 102.6331,
+                accuracy: 10
+            });
+    }
+
+    function testBypassPatrol() {
+        if (!TEST_MODE) return;
+
+        if (!State.isOnDuty) {
+            showError('Not On Duty', 'Please test CHECKIN first before testing PATROL.');
+            return;
+        }
+
+        // --- NEW: Sync with 7-Round System ---
+        const currentRoundNum = State.completedRounds.length + 1;
+        const currentPointNum = State.activeRoundPoints.length + 1;
+
+        if (currentRoundNum > State.totalPatrols) {
+            showToast('All 7 rounds completed!', 'info');
+            return;
+        }
+
+        const pointName = `Point ${currentPointNum}`;
+        const testQR = `VKS|${State.currentSite}|${currentRoundNum}|${pointName}`;
+
+        showLoading(`Testing Scan: Round ${currentRoundNum} - ${pointName}...`);
+
+        google.script.run
+            .withSuccessHandler(function (response) {
+                hideLoading();
+                if (response && response.success) {
+                    // Update Local State
+                    const pointData = {
+                        id: Date.now(),
+                        name: pointName,
+                        nameLao: 'ຈຸດທົດສອບ',
+                        time: new Date().toLocaleTimeString()
+                    };
+
+                    State.activeRoundPoints.push(pointData);
+
+                    // Check for Round Completion (4 points)
+                    if (State.activeRoundPoints.length >= State.pointsPerRound) {
+                        const roundData = {
+                            roundNum: currentRoundNum,
+                            completedAt: new Date().toLocaleTimeString(),
+                            points: [...State.activeRoundPoints]
+                        };
+                        State.completedRounds.push(roundData);
+                        State.activeRoundPoints = [];
+                        showToast(`Round ${currentRoundNum} Completed!`, 'success');
+                    }
+
+                    saveSessionState();
+                    updatePatrolProgressUI();
+
+                    showSuccess("Patrol Verified", `Round ${currentRoundNum} - Point ${currentPointNum} saved.`);
+                } else {
+                    showError('Test Failed', response ? response.message : 'Unknown error');
+                }
+            })
+            .withFailureHandler(function (err) {
+                hideLoading();
+                showError('Test Error', err.toString());
+            })
+            .processScan(testQR, State.currentGuardId, State.currentSite, 'PATROL', {
+                lat: 17.9757,
+                lng: 102.6331,
+                accuracy: 10,
+                assessment: 'NORMAL',
+                note: 'Developer Sandbox Auto-Test'
+            });
+    }
+
+    function testBypassCheckout() {
+        if (!TEST_MODE) return;
+
+        if (!State.isOnDuty) {
+            showError('Not On Duty', 'Please test CHECKIN first before testing CHECKOUT.');
+            return;
+        }
+
+        showLoading('Testing Checkout...');
+
+        google.script.run
+            .withSuccessHandler(function (response) {
+                hideLoading();
+                if (response && response.success) {
+                    State.isOnDuty = false;
+                    State.activeRoundPoints = [];
+                    State.completedRounds = [];
+                    clearSessionState();
+                    updateDutyStatusUI();
+                    showSuccess("Shift Finalized", "Report submitted. Session cleared.", () => {
+                        navigateTo('success');
+                    });
+                } else {
+                    showError('Test Failed', response ? response.message : 'Unknown error');
+                }
+            })
+            .withFailureHandler(function (err) {
+                hideLoading();
+                showError('Test Error', err.toString());
+            })
+            .submitCheckoutReport({
+                guardId: State.currentGuardId,
+                locationId: State.currentSite,
+                lat: 17.9757,
+                lng: 102.6331,
+                accuracy: 10
+            });
+    }
+
+    function determineCurrentShift() {
+        const hour = new Date().getHours();
+        if (hour >= 6 && hour < 14) return 1;
+        if (hour >= 14 && hour < 22) return 2;
+        return 3;
+    }
+
+    // ========================================
+    // NETWORK & OFFLINE HANDLING
+    // ========================================
+    let isNetworkOnline = navigator.onLine;
+    const OFFLINE_QUEUE_KEY = 'vks_guard_offline_queue';
+
+    function initNetworkMonitoring() {
+        window.addEventListener('online', () => {
+            isNetworkOnline = true;
+            updateNetworkUI();
+            attemptOfflineSync();
+        });
+        window.addEventListener('offline', () => {
+            isNetworkOnline = false;
+            updateNetworkUI();
+        });
+        updateNetworkUI();
+    }
+
+    function updateNetworkUI() {
+        const banner = document.getElementById('networkStatusBanner');
+        if (banner) {
+            if (isNetworkOnline) {
+                banner.classList.add('hidden');
+                document.body.classList.remove('offline-mode');
+            } else {
+                banner.classList.remove('hidden');
+                document.body.classList.add('offline-mode');
+            }
+        }
+    }
+
+    /**
+     * Submit Scan Data - Handles both Online and Offline modes
+     */
+    function submitScanData(scanPayload) {
+        return new Promise((resolve, reject) => {
+            if (isNetworkOnline) {
+                google.script.run
+                    .withSuccessHandler((response) => {
+                        if (response && response.success) {
+                            resolve(response);
+                        } else {
+                            reject(response ? response.message : 'Unknown error');
+                        }
+                    })
+                    .withFailureHandler((err) => {
+                        console.warn("Connection failed, queuing offline...", err);
+                        queueOfflineScan(scanPayload);
+                        resolve({ success: true, offline: true, message: "Saved offline" });
+                    })
+                    .processScan(scanPayload.qrString, scanPayload.guardId, scanPayload.locationId, scanPayload.scanType, scanPayload.meta);
+            } else {
+                queueOfflineScan(scanPayload);
+                resolve({ success: true, offline: true, message: "Saved offline" });
+            }
+        });
+    }
+
+    function queueOfflineScan(data) {
+        try {
+            const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+            data.timestamp = new Date().toISOString();
+            queue.push(data);
+            localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+            showToast('Saved to Offline Queue', 'info');
+        } catch (e) {
+            console.error("Storage full or error", e);
+            showToast('Error saving offline', 'error');
+        }
+    }
+
+    function attemptOfflineSync() {
+        const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+        if (queue.length === 0) return;
+
+        showToast(`Syncing ${queue.length} offline records...`, 'info');
+
+        const record = queue[0];
+        google.script.run
+            .withSuccessHandler((res) => {
+                if (res && res.success) {
+                    const currentQ = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+                    currentQ.shift();
+                    localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(currentQ));
+
+                    if (currentQ.length > 0) {
+                        setTimeout(attemptOfflineSync, 500);
+                    } else {
+                        showToast('All offline data synced!', 'success');
+                    }
+                }
+            })
+            .withFailureHandler(() => {
+                // Keep in queue, try later
+            })
+            .processScan(record.qrString, record.guardId, record.locationId, record.scanType, record.meta);
+    }
+
+    // ========================================
+    // NAVIGATION
+    // ========================================
+    const pages = ['home', 'scanner', 'checkin', 'patrol', 'patrol-scan', 'checkout', 'success', 'history', 'profile'];
+
+    function navigateTo(pageId) {
+        // Hide all pages (containers inside main)
+        const mainPages = document.querySelectorAll('.page-container');
+        mainPages.forEach(el => el.classList.add('hidden'));
+
+        // Handle Layout (Header Visibility)
+        const header = document.getElementById('app-header');
+        const scannerContainer = document.getElementById('page-scanner');
+
+        if (pageId === 'scanner') {
+            if (header) header.classList.add('opacity-0', 'pointer-events-none');
+            if (scannerContainer) scannerContainer.classList.remove('hidden');
+            startScanner();
+        } else {
+            if (header) header.classList.remove('opacity-0', 'pointer-events-none');
+            if (scannerContainer) scannerContainer.classList.add('hidden');
+            stopScanner();
+
+            // Show target page
+            const target = document.getElementById('page-' + pageId);
+            if (target) {
+                target.classList.remove('hidden');
+                target.classList.add('animate-fadeInUp');
+            }
+
+            if (pageId === 'patrol') {
+                updatePatrolProgressUI();
+                if (typeof updatePatrolProgress === 'function') updatePatrolProgress();
+            }
+            if (pageId === 'checkin') {
+                if (typeof initCheckinData === 'function') initCheckinData();
+            }
+            if (pageId === 'checkout') {
+                if (typeof initCheckoutData === 'function') initCheckoutData();
+            }
+            if (pageId === 'history') {
+                if (typeof loadHistory === 'function') loadHistory();
+            } else if (pageId === 'profile') {
+                if (typeof loadProfile === 'function') loadProfile();
+            }
+        }
+
+        window.scrollTo(0, 0);
+    }
+
+    // ========================================
+    // GLOBAL SHIFT TIMER
+    // ========================================
+    function startShiftTimer() {
+        const update = () => {
+            if (State.isOnDuty && State.checkinData?.checkinTime) {
+                const now = new Date();
+                const checkin = new Date(State.checkinData.checkinTime);
+                const diffMs = now - checkin;
+                const hours = Math.floor(diffMs / 3600000);
+                const minutes = Math.floor((diffMs % 3600000) / 60000);
+
+                const durationStr = `${hours}ຊມ ${minutes}ນ`;
+                const timerStr = `${hours}:${String(minutes).padStart(2, '0')}`;
+
+                // Update Home Dashboard
+                const homeTimer = document.getElementById('home-timer');
+                if (homeTimer) homeTimer.innerText = timerStr;
+
+                // Update Checkout Step
+                const checkoutDuration = document.getElementById('checkout-duration');
+                const checkoutTimer = document.getElementById('checkout-timer');
+                if (checkoutDuration) checkoutDuration.innerText = durationStr;
+                if (checkoutTimer) checkoutTimer.innerText = timerStr;
+            }
+        };
+        update(); // Run immediately
+        setInterval(update, 15000); // Pulse every 15 seconds
+    }
+
+    // ========================================
+    // QR SCANNER (html5-qrcode)
+    // ========================================
+    let html5QrCode = null;
+
+    function startScanner() {
+        const readerId = 'qr-reader';
+        const readerEl = document.getElementById(readerId);
+        if (!readerEl) {
+            console.error("QR Reader element not found");
+            return;
+        }
+
+        if (html5QrCode) {
+            // Already exists, just resume if needed
+            return;
+        }
+
+        html5QrCode = new Html5Qrcode(readerId);
+        html5QrCode.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            onScanSuccess,
+            onScanFailure
+        ).catch(err => {
+            console.error("Scanner start error:", err);
+            showError(
+                "Camera Access",
+                "ບໍ່ສາມາດເປີດກ້ອງໄດ້ (Cannot access camera). Please check permissions.",
+                () => navigateTo('home')
+            );
+        });
+    }
+
+    function stopScanner() {
+        if (html5QrCode) {
+            html5QrCode.stop().then(() => {
+                html5QrCode.clear();
+                html5QrCode = null;
+            }).catch(err => console.warn("Scanner stop error:", err));
+        }
+    }
+
+    function onScanSuccess(qrCodeMessage) {
+        stopScanner();
+        PatrolMonitor.reset(); // ACTIVITY DETECTED
+        State.lastScannedQR = qrCodeMessage;
+
+        // Vibrate for feedback
+        if (navigator.vibrate) navigator.vibrate(100);
+
+        // PARSE QR DATA FIRST
+        let scanData = {
+            siteCode: '',
+            locId: '',
+            checkpointName: '',
+            isUrl: false
+        };
+
+        if (qrCodeMessage && (qrCodeMessage.startsWith('http') || qrCodeMessage.includes('?type=info'))) {
+            scanData.isUrl = true;
+            try {
+                const url = new URL(qrCodeMessage.startsWith('http') ? qrCodeMessage : 'https://fake.com/' + qrCodeMessage);
+                // get cpName or fallback
+                scanData.checkpointName = url.searchParams.get('cpName') || url.searchParams.get('site') || 'Checkpoint';
+                // siteId for Check-in / Config
+                scanData.siteCode = url.searchParams.get('siteId') || '';
+                // locId for Duplicate Check (Unique ID of the point)
+                scanData.locId = url.searchParams.get('locId') || '';
+
+                // Fallback if siteId is missing (Legacy QRs might put locId in site param sometimes? No, standard is siteId)
+                if (!scanData.siteCode && !scanData.locId) {
+                    scanData.siteCode = url.searchParams.get('site') || '';
+                }
+            } catch (e) {
+                console.warn("QR Parse Error", e);
+                scanData.checkpointName = 'Checkpoint';
+            }
+        } else {
+            const parts = qrCodeMessage.split('|');
+            if (parts[0] === 'VKS') {
+                scanData.siteCode = parts[1];
+                scanData.locId = parts[3] ? '' : parts[2]; // Legacy might use parts[2] as ID?
+                scanData.checkpointName = parts[3] || 'Checkpoint';
+            } else {
+                scanData.checkpointName = 'Unknown QR';
+            }
+        }
+
+        // CHECK FOR DUPLICATES (If in Patrol Mode)
+        if (State.scanMode !== 'checkin') {
+            const alreadyScanned = State.activeRoundPoints.some(p => {
+                // Check by ID (preferred)
+                if (scanData.locId && p.checkpointId === scanData.locId) return true;
+                // Check by Name (fallback)
+                if (scanData.checkpointName && p.name === scanData.checkpointName) return true;
+                // Check by siteCode (Legacy fallback)
+                if (scanData.siteCode && p.checkpointId === scanData.siteCode) return true;
+                return false;
+            });
+
+            if (alreadyScanned) {
+                showError("ສະແກນຊ້ຳ (Duplicate)", "ຈຸດນີ້ໄດ້ຖືກບັນທຶກແລ້ວໃນຮອບນີ້ (Already Scanned in this round).");
+                return; // Stop processing immediately
+            }
+        }
+
+        // IF NOT DUPLICATE -> SHOW SUCCESS
+        showSuccess("ຢືນຢັນສຳເລັດ (Verified)", "ອ່ານຂໍ້ມູນຈຸດກວດກາສຳເລັດ.", () => {
+            // Route based on mode
+            if (State.scanMode === 'checkin') {
+                State.lastScanCode = scanData.siteCode; // Save for Site Name resolution
+                State.checkinData = {
+                    locationName: scanData.checkpointName || 'Unknown Site',
+                    serverTime: new Date().toLocaleTimeString()
+                };
+                navigateTo('checkin');
+            } else {
+                if (typeof loadAssessment === 'function') {
+                    loadAssessment(scanData.checkpointName);
+                }
+                navigateTo('patrol-scan');
+            }
+        });
+    }
+
+    function onScanFailure(error) {
+        // Ignore - continuous scanning
+    }
+
+    // ========================================
+    // UI HELPERS
+    // ========================================
+    function showLoading(msg) {
+        const overlay = document.getElementById('loading-overlay');
+        const text = document.getElementById('loading-text');
+        if (text) text.innerText = msg || 'Processing...';
+        if (overlay) overlay.classList.remove('hidden');
+    }
+
+    function hideLoading() {
+        const overlay = document.getElementById('loading-overlay');
+        if (overlay) overlay.classList.add('hidden');
+    }
+
+    function showToast(message, type = 'info') {
+        const existingToasts = document.querySelectorAll('.vks-toast');
+        existingToasts.forEach(t => t.remove());
+
+        const toast = document.createElement('div');
+        toast.className = `vks-toast fixed top-24 left-1/2 transform -translate-x-1/2 px-6 py-4 rounded-2xl shadow-2xl z-[1500] text-sm font-bold flex items-center gap-3 animate-bounce-in max-w-[90%] whitespace-nowrap backdrop-blur-md border transition-all duration-300 scale-90 opacity-0`;
+
+        // Add specific styles
+        if (type === 'success') {
+            toast.classList.add('bg-emerald-500/95', 'text-white', 'border-emerald-400');
+            toast.innerHTML = `<span class="material-symbols-outlined text-lg">check_circle</span> ${message}`;
+        } else if (type === 'warning') {
+            toast.classList.add('bg-amber-500/95', 'text-white', 'border-amber-400');
+            toast.innerHTML = `<span class="material-symbols-outlined text-lg">warning</span> ${message}`;
+        } else if (type === 'error') {
+            toast.classList.add('bg-red-500/95', 'text-white', 'border-red-400');
+            toast.innerHTML = `<span class="material-symbols-outlined text-lg">error</span> ${message}`;
+        } else {
+            // Info / Default
+            toast.classList.add('bg-slate-800/95', 'text-white', 'border-slate-700');
+            toast.innerHTML = `<span class="material-symbols-outlined text-lg">info</span> ${message}`;
+        }
+
+        document.body.appendChild(toast);
+
+        // Animate In
+        requestAnimationFrame(() => {
+            toast.classList.remove('scale-90', 'opacity-0');
+            toast.classList.add('scale-100', 'opacity-100');
+        });
+
+        // Auto Dismiss
+        setTimeout(() => {
+            toast.classList.remove('scale-100', 'opacity-100');
+            toast.classList.add('scale-90', 'opacity-0');
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
+    }
+
+    // Legacy fallback
+    function toast(msg) {
+        showToast(msg, 'info');
+    }
+
+    // ========================================
+    // INITIALIZATION
+    // ========================================
+
+
+
+
+    // ========================================
+    // NOTIFICATION & FEEDBACK UI
+    // ========================================
+    function showSuccess(title, message, nextAction) {
+        const modal = document.getElementById('success-modal');
+        const titleEl = document.getElementById('success-title');
+        const msgEl = document.getElementById('success-message');
+        const doneBtn = document.getElementById('success-done-btn');
+
+        if (titleEl) titleEl.innerText = title || 'Verified';
+        if (msgEl) msgEl.innerText = message || 'Action processed successfully.';
+
+        if (doneBtn) {
+            doneBtn.onclick = () => {
+                closeSuccess();
+                if (typeof nextAction === 'function') nextAction();
+            };
+        }
+
+        if (modal) modal.classList.add('active');
+        if (navigator.vibrate) navigator.vibrate([50, 20, 50]);
+    }
+
+    function closeSuccess() {
+        const modal = document.getElementById('success-modal');
+        if (modal) modal.classList.remove('active');
+    }
+
+    let onErrorCloseCallback = null;
+
+    function showError(title, message, onClose) {
+        document.getElementById('error-title').innerText = title || 'Error Occurred';
+        document.getElementById('error-message').innerText = message || 'Something went wrong.';
+        document.getElementById('error-modal').classList.add('active');
+
+        onErrorCloseCallback = onClose;
+
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+    }
+
+    function closeError() {
+        document.getElementById('error-modal').classList.remove('active');
+        if (typeof onErrorCloseCallback === 'function') {
+            const cb = onErrorCloseCallback;
+            onErrorCloseCallback = null;
+            cb();
+        }
+    }
+
+    // ========================================
+    // PATROL UI MANAGEMENT
+    // ========================================
+    function updatePatrolProgressUI() {
+        const list = document.getElementById('checkpoint-list');
+        const countText = document.getElementById('progress-text');
+        const percentText = document.getElementById('progress-percent');
+        const progressBar = document.getElementById('progress-bar');
+
+        if (!list) return;
+
+        const doneCount = Object.keys(State.patrolProgress).length;
+        const total = State.totalPatrols;
+        const percent = Math.round((doneCount / total) * 100);
+
+        if (countText) countText.innerText = `${doneCount} / ${total} Checkpoints`;
+        if (percentText) percentText.innerText = `${percent}%`;
+        if (progressBar) progressBar.style.width = `${percent}%`;
+
+        const checkoutProgress = document.getElementById('checkout-patrol-progress');
+        if (checkoutProgress) checkoutProgress.innerText = `${percent}% Complete`;
+
+        list.innerHTML = '';
+
+        for (let i = 1; i <= total; i++) {
+            const isDone = State.patrolProgress[i];
+            const div = document.createElement('div');
+
+            if (isDone) {
+                div.className = "glass-card rounded-[1.5rem] p-4 flex items-center gap-4 transition-all opacity-100";
+                div.innerHTML = `
+                <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 glow-emerald">
+                    <span class="material-symbols-outlined text-2xl">check_circle</span>
+                </div>
+                <div class="flex-1">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Patrol Round</p>
+                    <h4 class="font-bold text-slate-900">Round #${i} Verified</h4>
+                </div>
+                <span class="text-[10px] font-bold text-slate-400">${isDone.assessment || 'Normal'}</span>
+            `;
+            } else {
+                div.className = "glass-card rounded-[1.5rem] p-4 flex items-center gap-4 border-dashed border-slate-300 opacity-60";
+                div.innerHTML = `
+                <div class="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400">
+                    <span class="material-symbols-outlined text-2xl">radio_button_unchecked</span>
+                </div>
+                <div class="flex-1">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Scheduled Round</p>
+                    <h4 class="font-bold text-slate-400">Round #${i} Pending</h4>
+                </div>
+            `;
+            }
+            list.appendChild(div);
+        }
+    }
+
+    // ========================================
+    // DUTY STATUS MANAGEMENT
+    // ========================================
+    function updateDutyStatusUI() {
+        const statusPulse = document.getElementById('status-pulse');
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('home-status-text');
+
+        const btnCheckin = document.getElementById('btn-checkin');
+        const checkinIcon = document.getElementById('checkin-icon');
+        const checkinBadge = document.getElementById('checkin-badge');
+
+        const btnPatrol = document.getElementById('btn-patrol');
+        const btnCheckout = document.getElementById('btn-checkout');
+        const lockIconCheckout = document.getElementById('lock-icon-checkout');
+        const homeTimerContainer = document.getElementById('home-timer-container');
+
+        if (State.isOnDuty) {
+            if (homeTimerContainer) homeTimerContainer.classList.remove('hidden');
+            if (statusPulse) statusPulse.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75';
+            if (statusDot) statusDot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500';
+            if (statusText) statusText.innerText = 'On Duty: ' + (State.checkinData?.locationName || 'Active');
+
+            if (btnCheckin) {
+                btnCheckin.classList.add('opacity-60', 'pointer-events-none');
+                if (checkinIcon) checkinIcon.innerText = 'check_circle';
+                if (checkinBadge) {
+                    checkinBadge.innerText = 'Completed';
+                    checkinBadge.className = 'block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1';
+                }
+            }
+
+            if (btnPatrol) {
+                btnPatrol.classList.remove('opacity-60');
+                const pIcon = btnPatrol.querySelector('.material-symbols-outlined');
+                const pBadge = btnPatrol.querySelector('span:first-child');
+                const pTitle = btnPatrol.querySelector('h3');
+                if (pIcon) pIcon.className = 'material-symbols-outlined text-3xl text-emerald-600';
+                if (pBadge) pBadge.className = 'block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1';
+                if (pTitle) pTitle.className = 'text-lg font-bold text-slate-900';
+            }
+
+            if (btnCheckout) {
+                const roundsCompleted = (State.completedRounds || []).length;
+                if (roundsCompleted >= State.totalPatrols) {
+                    // Unlock Checkout
+                    btnCheckout.classList.remove('opacity-60', 'pointer-events-none');
+                    if (lockIconCheckout) lockIconCheckout.innerText = 'logout';
+                    if (lockIconCheckout) lockIconCheckout.classList.remove('text-slate-400');
+                    if (lockIconCheckout) lockIconCheckout.classList.add('text-emerald-500');
+                } else {
+                    // Lock Checkout
+                    btnCheckout.classList.add('opacity-60', 'pointer-events-none');
+                    if (lockIconCheckout) lockIconCheckout.innerText = 'lock';
+                    if (lockIconCheckout) lockIconCheckout.classList.remove('text-emerald-500');
+                    if (lockIconCheckout) lockIconCheckout.classList.add('text-slate-400');
+                }
+            }
+
+        } else {
+            if (homeTimerContainer) homeTimerContainer.classList.add('hidden');
+            if (statusPulse) statusPulse.className = 'absolute inline-flex h-full w-full rounded-full bg-slate-400 opacity-0';
+            if (statusDot) statusDot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-slate-400';
+            if (statusText) statusText.innerText = 'Off Duty';
+
+            if (btnCheckin) {
+                btnCheckin.classList.remove('opacity-60', 'pointer-events-none');
+                if (checkinIcon) checkinIcon.innerText = 'login';
+                if (checkinBadge) {
+                    checkinBadge.innerText = 'Begin';
+                    checkinBadge.className = 'block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1';
+                }
+            }
+
+            if (btnPatrol) {
+                btnPatrol.classList.add('opacity-60');
+                const pIcon = btnPatrol.querySelector('.material-symbols-outlined');
+                const pBadge = btnPatrol.querySelector('span:first-child');
+                const pTitle = btnPatrol.querySelector('h3');
+                if (pIcon) pIcon.className = 'material-symbols-outlined text-3xl text-slate-400';
+                if (pBadge) pBadge.className = 'block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1';
+                if (pTitle) pTitle.className = 'text-lg font-bold text-slate-500';
+            }
+            if (btnCheckout) {
+                btnCheckout.classList.add('opacity-60');
+                if (lockIconCheckout) lockIconCheckout.innerText = 'lock';
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initNetworkMonitoring();
+        navigateTo('home');
+        updateDutyStatusUI();
+        restoreGuardInputs();
+        startShiftTimer();
+
+        if (typeof google !== 'undefined' && google.script) {
+            google.script.run
+                .withSuccessHandler(guards => {
+                    if (typeof populateGuardData === 'function') {
+                        populateGuardData(guards);
+                        return;
+                    }
+                })
+                .withFailureHandler(err => console.warn("Failed to load guards:", err))
+                .getGuardList();
+        }
+    });
+
+    // ========================================
+    // STREAK MANAGER (Gamification)
+    // ========================================
+    const StreakManager = {
+        STORAGE_KEY: 'vks_guard_streak_v1',
+
+        get: function () {
+            try {
+                const data = localStorage.getItem(this.STORAGE_KEY);
+                return data ? JSON.parse(data) : { count: 0, lastDate: null };
+            } catch (e) { return { count: 0, lastDate: null }; }
+        },
+
+        render: function () {
+            const streak = this.get();
+            const el = document.getElementById('streak-counter');
+            const icon = document.getElementById('streak-icon');
+            const container = document.getElementById('streak-container');
+
+            if (el) el.innerText = streak.count;
+
+            // Visual State
+            if (streak.count > 0) {
+                if (container) {
+                    container.classList.remove('hidden', 'grayscale', 'opacity-50');
+                    container.classList.add('text-orange-500');
+                }
+                if (icon) {
+                    icon.classList.add('animate-pulse');
+                }
+            } else {
+                // Empty State (Show gray or hide?) -> Show Gray to encourage starting
+                if (container) {
+                    container.classList.remove('hidden', 'text-orange-500');
+                    container.classList.add('grayscale', 'opacity-50', 'text-slate-400');
+                }
+                if (icon) icon.classList.remove('animate-pulse');
+            }
+        },
+
+        checkIncrement: function (isPerfectShift) {
+            console.log('[Streak] Checking Increment. Perfect?', isPerfectShift);
+            if (!isPerfectShift) return false;
+
+            const streak = this.get();
+            const today = new Date().toDateString();
+
+            if (streak.lastDate === today) {
+                console.log('[Streak] Already counted today');
+                return false;
+            }
+
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+
+            let newCount = 1;
+            if (streak.lastDate === yesterday.toDateString()) {
+                newCount = streak.count + 1;
+            } else if (streak.lastDate) {
+                // Was not yesterday -> Reset
+                newCount = 1;
+            }
+
+            const newState = { count: newCount, lastDate: today };
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(newState));
+
+            this.render();
+            return true;
+        }
+    };
+
+    // Initialize Streak (Restored)
+    setTimeout(() => StreakManager.render(), 1000);
+
+    // ========================================
+    // BADGE MANAGER (Gamification Phase 2)
+    // ========================================
+    const BadgeManager = {
+        STORAGE_KEY: 'vks_guard_badges_v1',
+
+        DEFINITIONS: [
+            { id: 'first_step', name: 'ກ້າວທຳອິດ (First Step)', icon: 'footprint', desc: 'Complete your first patrol.' },
+            { id: 'early_bird', name: 'ນົກຕື່ນເຊົ້າ (Early Bird)', icon: 'wb_twilight', desc: 'Check-in 15+ min before shift starts.' },
+            { id: 'perfect_patrol', name: 'ລາດຕະເວນດີເດັ່ນ (Perfect Patrol)', icon: 'star', desc: 'Complete 100% of rounds in a shift.' },
+            // New Badges
+            { id: 'night_owl', name: 'ນົກເຄົ້າຄືນ (Night Owl)', icon: 'bedtime', desc: 'Complete a night shift (22:00 - 06:00).' },
+            { id: 'weekend_warrior', name: 'ນັກຮົບວັນພັກ (Weekend Warrior)', icon: 'weekend', desc: 'Work on Saturday or Sunday.' },
+            { id: 'clean_sheet', name: 'ບໍ່ມີທີ່ຕິ (Clean Sheet)', icon: 'check_circle', desc: 'No missed checkpoints in 7 days.' },
+            { id: 'streak_master', name: 'ເຈົ້າຂອງສະຖິຕິ (Streak Master)', icon: 'local_fire_department', desc: 'Reach a 7-day streak.' },
+            { id: 'quick_response', name: 'ຕອບສະໜອງໄວ (Quick Response)', icon: 'bolt', desc: 'Acknowledge an alert within 30 seconds.' },
+            { id: 'safety_first', name: 'ຄວາມປອດໄພຕ້ອງມາກອນ (Safety First)', icon: 'shield', desc: 'Report 10 incidents.' },
+            { id: 'loyal_guard', name: 'ພະນັກງານດີເດັ່ນ (Loyal Guard)', icon: 'loyalty', desc: 'Active for 30 consecutive days.' },
+            { id: 'shift_leader', name: 'ຫົວໜ້າທີມ (Shift Leader)', icon: 'groups', desc: 'Manual Award: Leadership excellence.' },
+            { id: 'holiday_hero', name: 'ຮີໂຣ່ວັນພັກ (Holiday Hero)', icon: 'celebration', desc: 'Work on a public holiday.' },
+            { id: 'elite_guardian', name: 'ຍອດຜູ້ພິທັກ (Elite Guardian)', icon: 'military_tech', desc: 'Reach 100 Perfect Patrols.' }
+        ],
+
+        getEarned: function () {
+            try {
+                const data = localStorage.getItem(this.STORAGE_KEY);
+                return data ? JSON.parse(data) : [];
+            } catch (e) { return []; }
+        },
+
+        isEarned: function (id) {
+            return this.getEarned().includes(id);
+        },
+
+        award: function (badgeId) {
+            const earned = this.getEarned();
+            if (earned.includes(badgeId)) return false; // Already earned
+
+            // New Badge!
+            earned.push(badgeId);
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(earned));
+
+            // Notification
+            const badge = this.DEFINITIONS.find(b => b.id === badgeId);
+            if (badge) {
+                // Use showSuccess or custom Badge Modal? Use showSuccess for now with specific formatting
+                showSuccess('🏆 ໄດ້ຮັບຫຼຽນລາງວັນ!', badge.name + '\n' + badge.desc);
+
+                // Play Sound?
+                if (typeof PatrolMonitor !== 'undefined') PatrolMonitor.playBeep(3);
+            }
+            return true;
+        },
+
+        checkCheckin: function (shiftStartHour) {
+            // Early Bird: Check-in at least 15 minutes before shift start
+            // shiftStartHour should be passed from the check-in logic (e.g., 6 for morning, 14 for afternoon, 22 for night)
+            var now = new Date();
+            var currentHour = now.getHours();
+            var currentMinutes = now.getMinutes();
+
+            // Default shift starts: 06:00, 14:00, 22:00
+            var shiftStart = shiftStartHour || 6;
+
+            // Calculate total minutes from midnight
+            var currentTotalMinutes = currentHour * 60 + currentMinutes;
+            var shiftStartMinutes = shiftStart * 60;
+
+            // Check if current time is at least 15 minutes before shift start
+            // Also handle wrap-around for night shift (e.g., checking in at 21:45 for 22:00 shift)
+            var minutesBeforeShift = shiftStartMinutes - currentTotalMinutes;
+
+            // Handle day wrap (for night shift starting at 22:00, if check-in at 21:45)
+            if (minutesBeforeShift < 0) {
+                minutesBeforeShift += 24 * 60; // Add a full day
+            }
+
+            // Award if within reasonable window (15-120 minutes before shift)
+            if (minutesBeforeShift >= 15 && minutesBeforeShift <= 120) {
+                this.award('early_bird');
+            }
+        },
+
+        checkPerfectShift: function (isPerfect) {
+            if (isPerfect) {
+                this.award('perfect_patrol');
+            }
+            // Always award 'First Step' on any checkout if not earned
+            this.award('first_step');
+        }
+    };
+</script>

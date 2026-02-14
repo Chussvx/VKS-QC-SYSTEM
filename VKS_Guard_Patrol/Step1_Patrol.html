@@ -1,0 +1,85 @@
+<!-- 1. PATROL MODE FORM (Extracted) -->
+<div id="patrol-mode-form" class="hidden pt-4">
+    <div class="card border-blue">
+        <div class="card-header">
+            <div class="flex justify-between items-center mb-4 gap-2">
+                <h2 class="card-title flex-1 min-w-0"><span class="material-symbols-outlined">location_on</span>
+                    ເລີ່ມຕົ້ນການລົງກວດກາ <span
+                        class="text-[10px] text-slate-400 font-normal ml-2 opacity-70">v155</span></h2>
+            </div>
+
+            <div class="info-box mt-2">
+                <span class="material-symbols-outlined info-icon">lightbulb</span>
+                <p class="text-xs">ເລືອກຊື່ຂອງທ່ານ ແລະ ເວລາທີ່ເລີ່ມລົງມືກວດກາຕົວຈິງ ເພື່ອບັນທຶກສະຖິຕິການເຮັດວຽກ.
+                </p>
+            </div>
+        </div>
+        <div class="card-content">
+            <!-- Patrol Name -->
+            <div class="input-group">
+                <div class="flex justify-between items-center mb-1">
+                    <label><span class="material-symbols-outlined">person</span> ຊື່ຫົວໜ້າທີມ / ຜູ້ກວດກາ</label>
+                </div>
+                <div class="custom-select" id="patrolName-select">
+                    <input type="hidden" id="patrolName" name="patrolName" value="">
+                    <div class="custom-select-trigger" onclick="toggleCustomSelect('patrolName-select')">
+                        <span class="custom-select-value">ກຳລັງໂຫຼດ...</span>
+                        <i class="fa fa-chevron-down">▼</i>
+                    </div>
+                    <div class="custom-select-dropdown" id="patrolName-options">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual Start Time -->
+            <div class="input-group">
+                <label><span class="material-symbols-outlined">schedule</span> ເວລາເລີ່ມຕົ້ນການກວດກາ</label>
+                <input type="hidden" id="startTimeManual" name="startTimeManual" value="">
+                <div class="ios-time-picker" id="startTimePicker">
+                    <div class="ios-time-display" onclick="openTimePicker('startTimePicker', 'startTimeManual')">
+                        <span class="ios-time-value" id="startTimeDisplay">05:30 AM</span>
+                        <span class="material-symbols-outlined ios-time-icon">schedule</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Route Selection -->
+            <div class="input-group">
+                <label class="mb-2 block font-medium">ເລືອກເສັ້ນທາງລາດຕະເວນ</label>
+                <div class="grid-cols-2">
+                    <label class="radio-card">
+                        <input type="radio" id="routeA" name="route" value="A" onchange="updatePatrolSiteList()">
+                        <div class="radio-card-content">
+                            <span class="text-xl text-primary-icon">A</span>
+                            <span class="font-medium">ສາຍ A</span>
+                        </div>
+                    </label>
+                    <label class="radio-card">
+                        <input type="radio" id="routeB" name="route" value="B" onchange="updatePatrolSiteList()">
+                        <div class="radio-card-content">
+                            <span class="text-xl text-primary-icon">B</span>
+                            <span class="font-medium">ສາຍ B</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Site Selection -->
+            <div class="input-group">
+                <label><span class="material-symbols-outlined">location_on</span> ຈຸດກວດ / ສະຖານທີ່</label>
+                <div class="custom-select" id="siteName-select">
+                    <input type="hidden" id="siteName" name="siteName" value="">
+                    <div class="custom-select-trigger" onclick="toggleCustomSelect('siteName-select')">
+                        <span class="custom-select-value">ເລືອກເສັ້ນທາງກ່ອນ</span>
+                        <i class="fa fa-chevron-down">▼</i>
+                    </div>
+                    <div class="custom-select-dropdown" id="siteName-options">
+                        <div class="custom-select-option" data-value="">ກະລຸນາເລືອກເສັ້ນທາງກ່ອນ...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Patrol Card -->
+</div>

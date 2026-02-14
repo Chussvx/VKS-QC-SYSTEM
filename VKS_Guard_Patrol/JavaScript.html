@@ -1,0 +1,3303 @@
+<!-- JavaScript.html (Force Push v64) -->
+<script>
+    let currentStep = 1;
+    const totalSteps = 7;
+    let configData = { routeA: [], routeB: [], patrolNames: [], currentComments: {} };
+    let formState = {
+        issues: [],
+        uploadedPhotos: [],
+        uploadingCount: 0
+    };
+
+    // --- STATE TRACKING ---
+    let isConfigLoaded = false;  // Prevents interaction until config loads
+    let isNetworkOnline = navigator.onLine; // Track network status
+    const LOCALSTORAGE_KEY = 'vks_patrol_form_state';
+
+    // --- REAL-TIME DATA REFRESH ---
+    // Refresh interval in milliseconds (60 seconds)
+    const REFRESH_INTERVAL_MS = 60000;
+    let refreshIntervalId = null;
+    let isRefreshing = false;
+
+    // --- NETWORK STATUS MONITORING ---
+    function initNetworkMonitoring() {
+        window.addEventListener('online', () => {
+            isNetworkOnline = true;
+            updateNetworkStatusUI();
+            console.log('[Network] Back online');
+            // Refresh config when coming back online
+            refreshConfigData();
+        });
+        window.addEventListener('offline', () => {
+            isNetworkOnline = false;
+            updateNetworkStatusUI();
+            console.log('[Network] Gone offline');
+        });
+        updateNetworkStatusUI();
+    }
+
+    function updateNetworkStatusUI() {
+        const banner = document.getElementById('networkStatusBanner');
+        const submitBtn = document.getElementById('btnSubmit');
+        if (banner) {
+            if (isNetworkOnline) {
+                banner.classList.add('hidden');
+            } else {
+                banner.classList.remove('hidden');
+            }
+        }
+        // Disable submit when offline
+        if (submitBtn && currentStep === 6) {
+            submitBtn.disabled = !isNetworkOnline;
+        }
+    }
+
+    // --- LOCALSTORAGE FORM STATE PERSISTENCE ---
+    function saveFormStateToStorage() {
+        try {
+            const state = {
+                currentStep: currentStep,
+                appMode: window.APP_MODE || 'PATROL',
+                patrolName: document.getElementById('patrolName')?.value || '',
+                siteName: document.getElementById('siteName')?.value || '',
+                route: document.querySelector('input[name="route"]:checked')?.value || '',
+                guardName: document.getElementById('guardName')?.value || '',
+                // Special Duty Persistence
+                specialData: window.SPECIAL_DATA || null,
+                timestamp: Date.now()
+            };
+            localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(state));
+            console.log('[Storage] Saved state (Step ' + currentStep + ' | Mode: ' + state.appMode + ')');
+        } catch (e) {
+            console.warn('[Storage] Failed to save:', e);
+        }
+    }
+
+    function loadFormStateFromStorage() {
+        try {
+            const raw = localStorage.getItem(LOCALSTORAGE_KEY);
+            if (!raw) return null;
+
+            const state = JSON.parse(raw);
+            // Expiry check (12 hours)
+            const age = Date.now() - (state.timestamp || 0);
+            if (age > 12 * 60 * 60 * 1000) {
+                console.log('[Storage] State expired, clearing.');
+                localStorage.removeItem(LOCALSTORAGE_KEY);
+                return null;
+            }
+            return state;
+        } catch (e) {
+            console.warn('[Storage] Failed to load:', e);
+            return null;
+        }
+    }
+
+    function clearFormStateStorage() {
+        try {
+            localStorage.removeItem(LOCALSTORAGE_KEY);
+            // Also clear specific specialized keys if any exist in future
+            console.log('[Storage] Cleared form state completely');
+        } catch (e) {
+            console.warn('[Storage] Failed to clear:', e);
+        }
+    }
+
+    // --- LOADING OVERLAY CONTROL ---
+    function showLoadingOverlay(message) {
+        const overlay = document.getElementById('loadingOverlay');
+        const text = document.getElementById('loadingText');
+        if (overlay) {
+            if (text) text.textContent = message || 'ກຳລັງໂຫຼດຂໍ້ມູນ...';
+            overlay.classList.remove('hidden');
+        }
+    }
+
+    function hideLoadingOverlay() {
+        const overlay = document.getElementById('loadingOverlay');
+        if (overlay) overlay.classList.add('hidden');
+        isConfigLoaded = true;
+    }
+
+    // --- NAME LOCK LOGIC (REMOVED) ---
+    // User requested "Fresh Start" every time. No locking.
+    function togglePatrolNameLock() {
+        console.log("Lock feature removed");
+    }
+
+    function lockPatrolNameUI(locked) {
+        // No-op
+    }
+
+    // --- PERSISTENT SELECTION INDICATOR ---
+    function updateSelectionIndicator(overrideSite, overrideRoute) {
+        const indicator = document.getElementById('selectionIndicator');
+        const landing = document.getElementById('step-1-landing');
+
+        // Check if on Landing Page (Step 1 Mode Selection)
+        // If the landing div is visible (not hidden), we should NEVER show the banner
+        if (landing && !landing.classList.contains('hidden')) {
+            if (indicator) indicator.classList.add('hidden');
+            return;
+        }
+
+        // Use overrides if provided (even empty string), otherwise read DOM
+        const siteValue = (overrideSite !== undefined) ? overrideSite : (document.getElementById('siteName')?.value || '');
+        const routeValue = (overrideRoute !== undefined) ? overrideRoute : (document.querySelector('input[name="route"]:checked')?.value || '');
+
+        // Update Summary displays in Step 6 if they exist
+        const summarySite = document.getElementById('summary-siteName');
+        const summaryPatrol = document.getElementById('summary-patrolName');
+        const patrolValue = document.getElementById('patrolName')?.value || '--';
+
+        if (summarySite) summarySite.textContent = siteValue || '--';
+        if (summaryPatrol) summaryPatrol.textContent = patrolValue || '--';
+
+        if (indicator) {
+            if (siteValue) {
+                indicator.innerHTML = '<span class="indicator-badge success">📍 ' + siteValue + ' (ສາຍ ' + routeValue + ')</span>';
+                indicator.classList.remove('hidden');
+            } else if (routeValue) {
+                indicator.innerHTML = '<span class="indicator-badge warning">⚠️ ສາຍ ' + routeValue + ' - ຍັງບໍ່ໄດ້ເລືອກສະຖານທີ່</span>';
+                indicator.classList.remove('hidden');
+            } else {
+                indicator.classList.add('hidden');
+            }
+        }
+    }
+
+    // Refresh config data from backend without disrupting user input
+    function refreshConfigData() {
+        if (isRefreshing) return; // Prevent multiple concurrent refreshes
+        isRefreshing = true;
+
+        google.script.run
+            .withSuccessHandler(function (data) {
+                isRefreshing = false;
+                if (data && !data.error) {
+                    // Store current selections before refresh
+                    const currentPatrol = document.getElementById('patrolName')?.value || '';
+                    const currentSite = document.getElementById('siteName')?.value || '';
+                    const currentRoute = document.querySelector('input[name="route"]:checked')?.value || '';
+
+                    // Update config data (preserves existing data until new data arrives)
+                    configData = data;
+
+                    // Re-populate patrol names dropdown
+                    const patrolOptions = document.getElementById('patrolName-options');
+                    const patrolDisplay = document.querySelector('#patrolName-select .custom-select-value');
+
+                    if (patrolOptions && data.patrolNames && data.patrolNames.length > 0) {
+                        patrolOptions.innerHTML = '';
+                        data.patrolNames.forEach((name) => {
+                            const opt = document.createElement('div');
+                            opt.className = 'custom-select-option';
+                            opt.dataset.value = name;
+                            opt.textContent = name;
+                            opt.onclick = function () { selectCustomOption(this, 'patrolName'); };
+                            patrolOptions.appendChild(opt);
+                        });
+
+                        // Restore previous selection if it still exists
+                        if (currentPatrol && data.patrolNames.includes(currentPatrol)) {
+                            document.getElementById('patrolName').value = currentPatrol;
+                        }
+                    }
+
+                    // Re-populate site list if a route is selected
+                    if (currentRoute) {
+                        // Pass currentSite to updateSiteList for atomic restoration
+                        updateSiteList(currentSite);
+                    }
+                    // Update selection indicator
+                    updateSelectionIndicator();
+                    // NO SAVING TO LOCALSTORAGE (Fresh Start Policy)
+                    // saveFormStateToStorage();
+
+                    console.log('[Refresh] Config data updated at', new Date().toLocaleTimeString());
+                }
+            })
+            .withFailureHandler(function (err) {
+                isRefreshing = false;
+                console.warn('[Refresh] Failed to refresh config:', err);
+            })
+            .getFormConfig();
+    }
+
+    // --- RETRY HELPER FOR FLAKIENESS ---
+    function runGoogleScript(fnName, argsArray = []) {
+        return new Promise((resolve, reject) => {
+            const runner = google.script.run
+                .withSuccessHandler(resolve)
+                .withFailureHandler(reject);
+
+            // Call the function dynamically
+            runner[fnName](...argsArray);
+        });
+    }
+
+    async function runWithRetry(fnName, argsArray = [], retries = 3, delay = 2000) {
+        for (let i = 0; i < retries; i++) {
+            try {
+                return await runGoogleScript(fnName, argsArray);
+            } catch (err) {
+                console.warn(`[Retry] ${fnName} failed (attempt ${i + 1}/${retries}):`, err);
+                if (i === retries - 1) throw err;
+                await new Promise(r => setTimeout(r, delay));
+            }
+        }
+    }
+
+    // --- MANUAL REFRESH (Replaces Auto-Refresh) ---
+    function triggerManualRefresh() {
+        const btn = document.getElementById('btnRefresh');
+        const icon = btn ? btn.querySelector('span') : null; // Assuming icon is inside span or is the first child
+
+        if (btn) btn.disabled = true;
+        if (icon) icon.classList.add('location-spinner'); // Reuse spinner class
+
+        showLoadingOverlay('ກຳລັງອັບເດດຂໍ້ມູນ...');
+
+        runWithRetry('getFormConfig')
+            .then(data => {
+                populateConfig(data);
+                hideLoadingOverlay();
+                showModal('ສຳເລັດ', 'ອັບເດດຂໍ້ມູນລ່າສຸດແລ້ວ', 'success');
+            })
+            .catch(err => {
+                hideLoadingOverlay();
+                showModal('ຜິດພາດ', 'ບໍ່ສາມາດອັບເດດຂໍ້ມູນໄດ້: ' + err.message, 'error');
+            })
+            .finally(() => {
+                if (btn) btn.disabled = false;
+                if (icon) icon.classList.remove('location-spinner');
+            });
+    }
+
+    // Disable old auto-refresh logic
+    function startRealTimeRefresh() {
+        console.log('[Refresh] Auto-refresh is disabled by design.');
+    }
+    function stopRealTimeRefresh() { }
+
+
+    // Auto-refresh page after submission (reset form and reload data without page reload)
+    function autoRefreshAfterSubmission(delayMs) {
+        delayMs = delayMs || 3000; // Default 3 seconds
+        const seconds = Math.ceil(delayMs / 1000);
+        let remaining = seconds;
+
+        console.log('[Refresh] Auto-refresh scheduled in ' + seconds + 's');
+
+        // Update countdown display
+        const countdownEl = document.getElementById('countdownSeconds');
+        if (countdownEl) {
+            countdownEl.textContent = remaining;
+        }
+
+        // Start countdown interval
+        const countdownInterval = setInterval(function () {
+            remaining--;
+            if (countdownEl) {
+                countdownEl.textContent = remaining;
+            }
+            if (remaining <= 0) {
+                clearInterval(countdownInterval);
+
+                // Instead of window.location.reload() which causes white page in GAS,
+                // manually reset the form and reload config data
+                console.log('[Refresh] Resetting form and reloading data...');
+
+                // Reset the form to initial state
+                resetForm();
+
+                // Reload config data from backend
+                google.script.run
+                    .withSuccessHandler(function (data) {
+                        console.log('[Refresh] Config data reloaded successfully');
+                        populateConfig(data);
+                        startRealTimeRefresh();
+                    })
+                    .withFailureHandler(function (err) {
+                        console.error('[Refresh] Failed to reload config:', err);
+                    })
+                    .getFormConfig();
+            }
+        }, 1000);
+    }
+
+
+    // --- IMAGE COMPRESSION ---
+    // Compresses image using canvas to reduce file size
+    // maxWidth: maximum width in pixels (height scales proportionally)
+    // quality: JPEG quality 0.0 to 1.0 (0.6 = 60% quality, good balance)
+    function compressImage(file, maxWidth = 800, quality = 0.6) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const img = new Image();
+                img.onload = function () {
+                    // Calculate new dimensions
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    }
+
+                    // Create canvas and draw resized image
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // Convert to JPEG with compression
+                    const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                    const base64 = dataUrl.split(',')[1];
+
+                    // Calculate compressed size
+                    const compressedSize = Math.round((base64.length * 3) / 4);
+
+                    resolve({
+                        base64: base64,
+                        size: compressedSize,
+                        width: width,
+                        height: height
+                    });
+                };
+                img.onerror = reject;
+                img.src = e.target.result;
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // --- CUSTOM SELECT HELPERS (From VKS Dashboard) ---
+    function toggleCustomSelect(id) {
+        const select = document.getElementById(id);
+        const isOpen = select.classList.contains('open');
+        const isMobile = window.innerWidth < 768;
+
+        // Close all other custom selects
+        document.querySelectorAll('.custom-select.open').forEach(s => {
+            if (s.id !== id) s.classList.remove('open');
+        });
+
+        if (!isOpen) {
+            select.classList.add('open');
+
+            // Mobile: Show overlay and lock body scroll
+            if (isMobile) {
+                showMobileOverlay();
+                document.body.style.overflow = 'hidden';
+            }
+        } else {
+            select.classList.remove('open');
+
+            // Mobile: Hide overlay and unlock body scroll
+            if (isMobile) {
+                hideMobileOverlay();
+                document.body.style.overflow = '';
+            }
+        }
+    }
+
+    // Mobile overlay for dropdowns
+    function showMobileOverlay() {
+        let overlay = document.getElementById('mobileSelectOverlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'mobileSelectOverlay';
+            overlay.className = 'mobile-select-overlay';
+            overlay.onclick = () => {
+                document.querySelectorAll('.custom-select.open').forEach(s => s.classList.remove('open'));
+                hideMobileOverlay();
+                document.body.style.overflow = '';
+            };
+            document.body.appendChild(overlay);
+        }
+        overlay.classList.add('show');
+    }
+
+    function hideMobileOverlay() {
+        const overlay = document.getElementById('mobileSelectOverlay');
+        if (overlay) overlay.classList.remove('show');
+    }
+
+    function selectCustomOption(option, inputId) {
+        try {
+            console.log("selectCustomOption called for:", inputId);
+
+            if (!option) throw new Error("Option element is null");
+            const selectContainer = option.closest('.custom-select');
+            const input = document.getElementById(inputId);
+            const display = selectContainer?.querySelector('.custom-select-value');
+
+            if (!selectContainer || !input || !display) {
+                console.error("Missing elements:", { container: selectContainer, input: input, display: display });
+                return;
+            }
+
+            // Update hidden input value
+            // FALLBACK: If data-value is missing, use textContent
+            const newValue = option.dataset.value || option.textContent.trim();
+            const oldValue = input.value;
+
+            console.log(`[Selection] ${inputId} changed from "${oldValue}" to "${newValue}"`);
+
+            input.value = newValue;
+            input.setAttribute('value', newValue); // Force attribute update for semantic reliability
+
+            // Update display text
+            display.textContent = option.textContent.trim();
+
+            // Update selected state visual
+            selectContainer.querySelectorAll('.custom-select-option').forEach(o => o.classList.remove('selected'));
+            option.classList.add('selected');
+
+            // Close dropdown
+            selectContainer.classList.remove('open');
+
+            // Mobile: Hide overlay and restore scroll
+            hideMobileOverlay();
+            document.body.style.overflow = '';
+
+            // Update persistent selection indicator
+            if (inputId === 'siteName') {
+                console.log('[Selection] Updating indicator for site:', newValue);
+                updateSelectionIndicator(newValue);
+            } else {
+                updateSelectionIndicator();
+            }
+
+            // Trigger change event if value changed
+            if (oldValue !== newValue) {
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+
+                // Special handling for site selection handover popup
+                if (inputId === 'siteName' && newValue) {
+                    try {
+                        checkHandoverComment(newValue);
+                    } catch (err) {
+                        console.warn('Handover check failed:', err);
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("selectCustomOption failed:", e);
+            showError("Selection Error: " + e.message);
+        }
+    }
+
+    function checkHandoverComment(siteName) {
+        if (!configData.currentComments || !configData.currentComments[siteName]) return;
+
+        const data = configData.currentComments[siteName];
+        if (!data.comment || data.comment === "None" || data.comment.trim() === "") return;
+
+        // Recency check (48 hours)
+        const commentTime = new Date(data.timestamp).getTime();
+        const now = new Date().getTime();
+        const diffHours = (now - commentTime) / (1000 * 60 * 60);
+
+        if (diffHours > 48) return;
+
+        // Show glassy popup
+        showHandoverPopup(data);
+    }
+
+    function showHandoverPopup(data) {
+        // Use existing showModal logic but customized for handover
+        const title = "📝 ຂໍ້ຄວາມສົ່ງມອບຈຸດ (Handover)";
+        const msg = `ຈາກທ່ານ: ${data.guard}\nຂໍ້ຄວາມ: ${data.comment}`;
+
+        // Update Step 5 target site display
+        const targetSiteDisplay = document.getElementById('handoverTargetSite');
+        if (targetSiteDisplay) targetSiteDisplay.textContent = document.getElementById('siteName').value;
+
+        showModal(title, msg, 'info');
+    }
+
+    // Close custom selects on outside click
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.custom-select')) {
+            document.querySelectorAll('.custom-select.open').forEach(s => s.classList.remove('open'));
+        }
+    });
+
+    // --- RESTORE APP STATE ---
+    function restoreAppState() {
+        const state = loadFormStateFromStorage();
+        if (!state) return;
+
+        console.log("[Storage] Restoring state...", state);
+
+        // 1. Restore Values (PATROL MODE)
+        // Only restore if we are NOT in a fresh start scenario
+        // But for now, let's keep it. The user wants "Refresh" to NOT show previous data? 
+        // If user actively refreshed, they might expect data to persist. 
+        // BUT if they "Cancel"ed, they expect it GONE.
+
+        if (state.patrolName) {
+            const el = document.getElementById('patrolName');
+            if (el) el.value = state.patrolName;
+            const display = document.querySelector('#patrolName-select .custom-select-value');
+            if (display) display.textContent = state.patrolName;
+        }
+
+        if (state.route) {
+            const rb = document.querySelector(`input[name="route"][value="${state.route}"]`);
+            if (rb) rb.checked = true;
+
+            // Trigger site list update (with atomic preservation)
+            if (typeof updatePatrolSiteList === 'function') {
+                updatePatrolSiteList(state.siteName);
+            }
+        }
+
+        if (state.guardName) {
+            const el = document.getElementById('guardName');
+            if (el) el.value = state.guardName;
+        }
+
+        // 2. Restore Step / Navigation
+
+        // --- SPECIAL MODE RESTORE ---
+        if (state.appMode === 'SPECIAL' && state.specialData) {
+            console.log('[Storage] Restoring Special Duty Mode...');
+
+            // SECURITY CHECK: If data is suspect (no start time), abort
+            if (!state.specialData.startTime) {
+                console.warn('[Storage] Corrupt Special Data (No StartTime). Aborting restore.');
+                clearFormStateStorage();
+                return;
+            }
+
+            // 1. Switch Mode UI
+            selectMode('special');
+
+            // 2. Restore Internal Data
+            window.SPECIAL_DATA = state.specialData;
+            // Date objects become strings in JSON, convert back
+            if (window.SPECIAL_DATA.startTime) {
+                window.SPECIAL_DATA.startTime = new Date(window.SPECIAL_DATA.startTime);
+            }
+
+            // 3. Restore Inputs (Step 1 form inputs, just in case user goes back to edit)
+            if (document.getElementById('sp-patrolName')) document.getElementById('sp-patrolName').value = state.specialData.patrol || '';
+            if (document.getElementById('sp-siteName')) document.getElementById('sp-siteName').value = state.specialData.site || '';
+            if (document.getElementById('targetGuardName')) document.getElementById('targetGuardName').value = state.specialData.target || '';
+
+            // 4. Update Status Detail (v105 logic)
+            const statusDetail = document.getElementById('special-status-detail');
+            if (statusDetail && window.SPECIAL_DATA) {
+                const typeStat = window.SPECIAL_DATA.type === 'Stationary';
+                if (typeStat) {
+                    statusDetail.innerText = window.SPECIAL_DATA.site + ' • ' + (window.SPECIAL_DATA.target !== 'No Guard' ? window.SPECIAL_DATA.target : window.SPECIAL_DATA.patrol);
+                } else {
+                    statusDetail.innerText = window.SPECIAL_DATA.site + ' • ' + window.SPECIAL_DATA.target;
+                }
+            }
+
+            // 5. Jump to Active Step
+            if (state.currentStep >= 2) {
+                document.getElementById('step-1').classList.add('hidden');
+                document.getElementById('step-2-special').classList.remove('hidden');
+                currentStep = 2; // Force to 2 (Timer)
+
+                updateHeaderUI();
+                updateNavButtons();
+
+                // v178: Restore Guard Not Coming button visibility
+                const noShowSection = document.getElementById('guard-no-show-section');
+                if (noShowSection) {
+                    // Show only if Onboarding and hasn't already been marked as no-show
+                    if (window.SPECIAL_DATA.type === 'Onboarding' && !window.SPECIAL_DATA.guardNoShow) {
+                        noShowSection.classList.remove('hidden');
+                    } else {
+                        noShowSection.classList.add('hidden');
+                    }
+                }
+
+                // RESUME TIMER
+                startTimerTicker();
+                showToast('Session Restored (Timer Resumed) ⏱️', 'success');
+            }
+            return; // Exit, don't run Patrol restore logic below
+        }
+
+        // --- PATROL MODE RESTORE ---
+        // Only restore if valid step > 1 and matches saved mode
+        if (state.currentStep > 1 && state.currentStep <= 7 && state.appMode === 'PATROL') {
+
+            // Hide everything first
+            document.getElementById('step-1-landing').classList.add('hidden');
+            document.getElementById('step-1').classList.add('hidden');
+            for (let i = 1; i <= 7; i++) {
+                const step = document.getElementById('step-' + i);
+                if (step) step.classList.add('hidden');
+            }
+
+            // Show target step
+            currentStep = state.currentStep;
+            const target = document.getElementById('step-' + currentStep);
+            if (target) target.classList.remove('hidden');
+
+            updateNavButtons();
+            updateProgressBar();
+            updateSelectionIndicator(state.siteName, state.route);
+
+            showToast('Restore Session: Step ' + currentStep);
+        }
+    }
+
+    // --- POPULATE CONFIG FROM BACKEND ---
+    function populateConfig(data) {
+        console.log("=== Config Received ===");
+        console.log("Sheet used:", data.sheetUsed);
+        console.log("Route A:", data.routeA ? data.routeA.length + " items" : "MISSING");
+        console.log("Route B:", data.routeB ? data.routeB.length + " items" : "MISSING");
+        console.log("Patrol Names:", data.patrolNames ? data.patrolNames.length + " items" : "MISSING");
+        console.log("Full data:", data);
+
+        if (data.error) {
+            console.error("Backend error:", data.error);
+            showModal('ຜິດພາດ', data.error, 'error');
+            return;
+        }
+
+        configData = data;
+
+        // Cache config for offline usage
+        try {
+            localStorage.setItem('vks_config_cache', JSON.stringify(data));
+            console.log('[Cache] Config saved to localStorage');
+        } catch (e) {
+            console.warn('[Cache] Failed to save config:', e);
+        }
+
+        // 1. Delegate to Patrol Module
+        if (typeof populatePatrolDropdowns === 'function') {
+            populatePatrolDropdowns(data);
+        } else {
+            console.warn("populatePatrolDropdowns function not found (JS_Patrol.html missing?)");
+        }
+
+        // 2. Delegate to Special Module (if active or just pre-load?)
+        // Special module usually uses global configData, so we just let it be lazy-loaded 
+        // when selectMode is called, OR we can pre-populate if it's already active.
+        if (window.APP_MODE === 'SPECIAL' && typeof populateSpecialDropdowns === 'function') {
+            populateSpecialDropdowns();
+        }
+
+        // 3. Attempt Restore
+        restoreAppState();
+    }
+
+    // --- UPDATE SITE LIST ---
+    // Moved to JS_Patrol.html (as updatePatrolSiteList)
+    function updateSiteList(preservedSite) {
+        if (typeof updatePatrolSiteList === 'function') {
+            updatePatrolSiteList(preservedSite);
+        } else {
+            console.warn("Legacy updateSiteList called but updatePatrolSiteList missing.");
+        }
+    }
+
+    // --- 2. NAVIGATION ---
+    function changeStep(direction) {
+        // SPECIAL MODE INTERCEPTION
+        if (currentStep === 1 && direction === 1 && window.APP_MODE === 'SPECIAL') {
+            if (validateStep(1)) {
+                startSpecialDuty();
+            }
+            return;
+        }
+
+        const newStep = currentStep + direction;
+        if (newStep < 1 || newStep > 7) return;
+
+        if (direction === 1) {
+            if (formState.uploadingCount > 0) {
+                return showError('ກະລຸນາລໍຖ້າໃຫ້ຮູບພາບອັບໂຫຼດສຳເລັດກ່ອນ (' + formState.uploadingCount + ' ຮູບທີ່ຍັງເຫຼືອ)');
+            }
+            if (!validateStep(currentStep)) return;
+        }
+
+        document.getElementById('step-' + currentStep).classList.add('hidden');
+        currentStep = newStep;
+        document.getElementById('step-' + currentStep).classList.remove('hidden');
+
+        updateProgressBar();
+        updateNavButtons();
+        window.scrollTo(0, 0);
+        saveFormStateToStorage();
+
+    }
+
+
+    // --- UI HELPERS ---
+    function updateProgressBar() {
+        // Redesigned for v72 (Dual-Track)
+        if (typeof updateHeaderUI === 'function') {
+            updateHeaderUI();
+        }
+    }
+
+    function updateNavButtons() {
+        const btnBack = document.getElementById('btnBack');
+        const btnNext = document.getElementById('btnNext');
+        const btnSubmit = document.getElementById('btnSubmit');
+        const navBar = document.getElementById('navigationBar');
+        const landing = document.getElementById('step-1-landing');
+
+        // Fix v97: ALWAYS re-enable buttons when updating state
+        if (btnNext) btnNext.disabled = false;
+        if (btnBack) btnBack.disabled = false;
+        if (btnSubmit) btnSubmit.disabled = false;
+        const isLandingVisible = landing && !landing.classList.contains('hidden');
+
+        if (!navBar || !btnBack || !btnNext || !btnSubmit) return;
+
+        // Hide NavBar ONLY on Landing Page (Step 1)
+        if (currentStep === 1 && isLandingVisible) {
+            navBar.classList.add('hidden');
+            return;
+        }
+        navBar.classList.remove('hidden');
+
+        // SPECIAL MODE ADJUSTMENT (v76)
+        if (window.APP_MODE === 'SPECIAL') {
+
+            if (currentStep === 1) {
+                // Step 1: Show HOME + START DUTY
+                btnBack.innerHTML = '<span class="material-symbols-outlined" style="font-size: 1.25rem; margin-right: 4px;">home</span> ໜ້າຫຼັກ';
+                btnBack.onclick = function () { backToLanding(); };
+                btnBack.classList.remove('hidden');
+
+                btnNext.classList.remove('hidden');
+                btnNext.innerText = 'ເລີ່ມໜ້າທີ່ ▶️';
+                btnNext.onclick = function () { startSpecialDuty(); };
+
+                btnSubmit.classList.add('hidden');
+            } else if (currentStep === 2) {
+                // Stage 2: ACTIVE TIMER
+                // User wants DESIGN SAME AS FIRST STAGE (Side-by-side buttons in global bar)
+                navBar.classList.remove('hidden');
+
+                // LEFT BUTTON: EDIT (White/Gray style)
+                btnBack.innerHTML = '<span class="material-symbols-outlined" style="font-size: 1rem; margin-right: 4px;">edit</span> <span data-key="edit">ແກ້ໄຂ</span>';
+                btnBack.onclick = function () { backToSpecialSetup(); };
+                btnBack.classList.remove('hidden');
+                btnBack.className = 'btn btn-outline flex-1'; // Standard outline style
+                btnBack.style.backgroundColor = '#f9fafb';
+                btnBack.style.borderColor = '#e5e7eb';
+                btnBack.style.color = '#4b5563';
+                btnBack.style.width = '100%'; // Inside flex-1 container
+
+                // RIGHT BUTTON: FINISH DUTY (Standard Blue - No Gradient)
+                btnNext.innerHTML = '<span class="material-symbols-outlined" style="font-size: 1rem; margin-right: 4px;">task_alt</span> <span data-key="finish_duty">ສຳເລັດໜ້າທີ່</span>';
+                btnNext.onclick = function () { finishSpecialDuty(); };
+                btnNext.classList.remove('hidden');
+                btnNext.className = 'btn btn-primary flex-1'; // Standard primary style
+                // Removed custom gradient to match Stage 1
+                btnNext.style.width = '100%';
+
+                btnSubmit.classList.add('hidden');
+                return;
+            } else {
+                // Stage 3: REPORT
+                // Bottom Bar: Show "Submit Report"
+                btnBack.innerHTML = '<span class="material-symbols-outlined" style="font-size: 1.25rem; margin-right: 4px;">arrow_back</span> ແກ້ໄຂ';
+                btnBack.onclick = function () {
+                    // Go BACK to Stage 2 (Timer) to resume/edit
+                    resumeSpecialDuty();
+                };
+                btnBack.classList.remove('hidden');
+
+                // FORCE SHOW SUBMIT
+                btnNext.classList.remove('hidden');
+                btnNext.style.display = 'block'; // force display (fix for v86 bug)
+                btnNext.innerText = 'ສົ່ງບົດລາຍງານ 🚀';
+
+                // Reset styles from Stage 2 (Red) to Green
+                btnNext.className = 'btn btn-primary w-full bg-green-600 hover:bg-green-700 text-white';
+                btnNext.style.backgroundColor = '#16a34a'; // Force Green
+                btnNext.onclick = function () { submitSpecialReport(); };
+
+                btnSubmit.classList.add('hidden'); // Default submit is for Patrol Form
+            }
+            return;
+        }
+
+        // --- STANDARD PATROL LOGIC ---
+        if (currentStep === 7) {
+            btnBack.classList.add('hidden');
+            btnSubmit.classList.add('hidden');
+            btnNext.classList.remove('hidden');
+            btnNext.innerText = '🔄 ເລີ່ມຕົ້ນໃໝ່';
+            btnNext.onclick = resetForm;
+            return;
+        }
+
+        btnNext.innerText = 'ຕໍ່ໄປ ➡️';
+        btnNext.onclick = function () { changeStep(1); };
+
+        if (currentStep === 1) {
+            // STEP 1: Show HOME Button instead of Back
+            btnBack.classList.remove('hidden');
+            btnBack.innerHTML = '<span class="material-symbols-outlined" style="font-size: 1.25rem; margin-right: 4px;">home</span> ໜ້າຫຼັກ';
+            btnBack.onclick = function () { backToLanding(); };
+        } else {
+            // OTHER STEPS: Standard Back Button
+            btnBack.classList.remove('hidden');
+            btnBack.innerHTML = '⬅️ ກັບຄືນ';
+            btnBack.onclick = function () { changeStep(-1); };
+        }
+
+        btnNext.classList.toggle('hidden', currentStep >= 6);
+        btnSubmit.classList.toggle('hidden', currentStep !== 6);
+
+        if (currentStep === 6) {
+            btnSubmit.classList.add('pulse-btn');
+        } else {
+            btnSubmit.classList.remove('pulse-btn');
+        }
+    }
+
+    // --- 3. VALIDATION ---
+    function validateStep(step) {
+        if (step === 1) {
+            // SPECIAL MODE CHECKS
+            if (window.APP_MODE === 'SPECIAL') {
+                if (!document.getElementById('sp-patrolName').value) return showError('ກະລຸນາເລືອກຜູ້ປະຕິບັດງານ');
+                const routeA = document.getElementById('sp-routeA').checked;
+                const routeB = document.getElementById('sp-routeB').checked;
+                if (!routeA && !routeB) return showError('ກະລຸນາເລືອກເສັ້ນທາງ');
+                if (!document.getElementById('sp-siteName').value) return showError('ກະລຸນາເລືອກຈຸດປະຈຳ');
+
+                const isOnboarding = document.getElementById('typeOnboarding').checked;
+                if (!isOnboarding && !document.getElementById('targetGuardName').value.trim()) {
+                    // Normally Stationary logic validation, maybe optional?
+                    // Assuming mandatory for now as per 'Missing Guard' label
+                }
+                return true;
+            }
+
+            // PATROL MODE CHECKS
+            if (!document.getElementById('patrolName').value) return showError('\u0e81\u0ea5\u0eb8\u0e99\u0eb2\u0ec0\u0ea5\u0eb7\u0ead\u0e81\u0ea5\u0eb2\u0e8d\u0e8a\u0eb7\u0ec8\u0e9c\u0eb9\u0ec9\u0e81\u0ea7\u0e94\u0e81\u0eb2');
+            if (!document.querySelector('input[name="route"]:checked')) return showError('\u0e81\u0ea5\u0eb8\u0e99\u0eb2\u0ec0\u0ea5\u0eb7\u0ead\u0ec0\u0eaa\u0eb1\u0ec9\u0e99\u0e97\u0eb2\u0e87\u0e81\u0eb2\u0e99\u0e81\u0ea7\u0e94\u0e81\u0eb2');
+            if (!document.getElementById('siteName').value) return showError('\u0e81\u0ea5\u0eb8\u0e99\u0eb2\u0ec0\u0ea5\u0eb7\u0ead\u0e81\u0eaa\u0eb0\u0e96\u0eb2\u0e99\u0e97\u0eb5\u0ec8');
+        }
+        if (step === 2) {
+            if (!document.getElementById('guardName').value.trim()) return showError('ກະລຸນາລະບຸຊື່ພະນັກງານປ້ອງກັນ');
+        }
+        if (step === 3) {
+            // 1. UNIFORM CHECKS
+            const uniformStatus = document.querySelector('input[name="uniformStatus"]:checked')?.value;
+            if (uniformStatus === 'No') {
+                const checkedItems = document.querySelectorAll('input[name="uniformMissing"]:checked');
+                if (checkedItems.length === 0) return showError('ກະລຸນາເລືອກລາຍການເຄື່ອງແບບທີ່ບໍ່ຄົບຖ້ວນ.');
+            }
+
+            // 2. DEFENSE CHECKS
+            const defenseStatus = document.querySelector('input[name="defenseStatus"]:checked')?.value;
+            if (defenseStatus === 'No') {
+                const checkedItems = document.querySelectorAll('input[name="defenseMissing"]:checked');
+                if (checkedItems.length === 0) return showError('ກະລຸນາເລືອກອຸປະກອນປ້ອງກັນຕົວທີ່ຂາດ.');
+            }
+
+            // 3. SLEEP CHECKS
+            const sleepStatus = document.querySelector('input[name="sleepStatus"]:checked')?.value;
+            if (sleepStatus === 'Yes') {
+                const reason = document.getElementById('sleepReason').value;
+                if (!reason) return showError('ກະລຸນາເລືອກເຫດຜົນການນອນຫຼັບ.');
+            }
+
+            // 4. POSITION CHECKS
+            const positionStatus = document.querySelector('input[name="positionStatus"]:checked')?.value;
+            if (positionStatus === 'No') {
+                const reason = document.getElementById('positionReason').value;
+                if (!reason) return showError('ກະລຸນາເລືອກເຫດຜົນທີ່ບໍ່ຢູ່ຈຸດ.');
+            }
+        }
+        if (step === 4) {
+            const hasProblem = document.querySelector('input[name="siteStatus"]:checked')?.value === 'Issue';
+            if (hasProblem) {
+                const notes = document.getElementById('notes')?.value || '';
+                if (!notes.trim()) {
+                    return showError('⚠️ ກະລຸນາປ້ອນລາຍລະອຽດບັນຫາກ່ອນ!');
+                }
+                if (formState.uploadedPhotos.length === 0) {
+                    return showError('📷 ກະລຸນາຖ່າຍຮູບຫຼັກຖານກ່ອນ! (ຕ້ອງມີຢ່າງນ້ອຍ 1 ຮູບ)');
+                }
+            }
+        }
+        return true;
+    }
+
+    function showError(msg) {
+        showModal('ແຈ້ງເຕືອນ', msg, 'error');
+        return false;
+    }
+
+    function toggleIssues(isIssue) {
+        const section = document.getElementById('issueDetails');
+        if (isIssue) section.classList.remove('hidden');
+        else section.classList.add('hidden');
+    }
+    // Toggle sub-options for Yes/No fields (uniform, defense, sleep, position)
+    function toggleSubOptions(type, show) {
+        const section = document.getElementById(type + '-suboptions');
+        if (section) {
+            if (show) section.classList.remove('hidden');
+            else section.classList.add('hidden');
+        }
+    }
+
+    // Update slider value display
+    function updateSliderValue(slider) {
+        const displayId = slider.id + '-value';
+        const display = document.getElementById(displayId);
+        if (display) {
+            display.textContent = slider.value;
+        }
+    }
+
+    // Capture photo using camera
+    function capturePhoto() {
+        const cameraInput = document.getElementById('cameraInput');
+        if (cameraInput) {
+            cameraInput.click();
+        }
+    }
+
+    // --- 5. SUBMISSION ---
+    function submitForm() {
+        // DEFENSIVE CHECK: Validate siteName is not empty
+        const siteNameCheck = document.getElementById('siteName')?.value || '';
+        if (!siteNameCheck.trim()) {
+            console.error('[Submit] siteName is EMPTY at submission time!');
+            return showError('⚠️ ກະລຸນາກັບໄປເລືອກສະຖານທີ່ກ່ອນ. ສະຖານທີ່ເປົ່າຍັງຫວ່າງ!');
+        }
+
+        // DEFENSIVE CHECK: Validate patrolName is not empty
+        const patrolNameCheck = document.getElementById('patrolName')?.value || '';
+        if (!patrolNameCheck.trim()) {
+            console.error('[Submit] patrolName is EMPTY at submission time!');
+            return showError('⚠️ ກະລຸນາກັບໄປເລືອກຊື່ສາຍກວດກ່ອນ!');
+        }
+
+        // DEFENSIVE CHECK: Validate guardName is not empty
+        const guardNameCheck = document.getElementById('guardName')?.value || '';
+        if (!guardNameCheck.trim()) {
+            console.error('[Submit] guardName is EMPTY at submission time!');
+            return showError('⚠️ ກະລຸນາປ້ອນຊື່ຍາມກ່ອນ!');
+        }
+
+        // Check network status
+        if (!isNetworkOnline) {
+            return showError('📶 ເຄືອຂ່າຍອອຟລາຍ. ກະລຸນາກວດສອບອິນເຕີເນັດ ແລ້ວລອງໃໝ່.');
+        }
+
+        if (formState.uploadingCount > 0) {
+            return showError('ກະລຸນາລໍຖ້າໃຫ້ຮູບພາບອັບໂຫຼດສຳເລັດກ່ອນ (' + formState.uploadingCount + ' ຮູບທີ່ຍັງເຫຼືອ)');
+        }
+
+        const mapLink = document.getElementById('gpsLink')?.value || '';
+        if (!mapLink.trim()) return showError('ກະລຸນາວາງລິ້ງ Google Maps');
+
+        const btn = document.getElementById('btnSubmit');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerText = "ກຳລັງສົ່ງຂໍ້ມູນ...";
+        }
+
+        const getRadio = (name) => {
+            const el = document.querySelector(`input[name="${name}"]:checked`);
+            return el ? el.value : "None";
+        };
+
+        const getChecks = (name) => {
+            const checkboxes = document.querySelectorAll(`input[name="${name}"]:checked`);
+            return Array.from(checkboxes).map(cb => cb.parentNode.textContent.trim()).join(', ');
+        };
+
+        // DEBUG: Check siteName value at submission time
+        const siteNameInput = document.getElementById('siteName');
+        console.log("=== SUBMIT DEBUG - siteName ===");
+        console.log("siteName input element:", siteNameInput);
+        console.log("siteName.value:", siteNameInput?.value);
+        console.log("siteName.getAttribute('value'):", siteNameInput?.getAttribute('value'));
+
+        const formData = {
+            startTime: document.getElementById('startTime')?.value || '',
+            patrolName: document.getElementById('patrolName')?.value || '',
+            route: getRadio("route"),
+            siteName: document.getElementById('siteName')?.value || '',
+            guardName: document.getElementById('guardName')?.value || '',
+            shift: document.getElementById('shift')?.value || 'Unknown',
+            empType: getRadio("empType"),
+            rating: document.getElementById('ratingInput')?.value || '5',
+            gpsLocation: mapLink,
+            siteStatus: document.querySelector('input[name="siteStatus"]:checked')?.value || 'Normal',
+            ratingCommunication: document.getElementById('ratingCommunication')?.value || '3',
+            ratingUniform: document.getElementById('ratingUniform')?.value || '3',
+            notes: document.getElementById('notes')?.value || '',
+            handoverComment: document.getElementById('handoverComment')?.value || '',
+            startTimeManual: document.getElementById('startTimeManual')?.value || '00:00',
+            finishTime: document.getElementById('finishTime')?.value || '00:00',
+            photoUrls: formState.uploadedPhotos,
+            // Evaluation Status
+            equip_flashlight: getRadio("flashlightStatus") === "Yes" ? "✓" : "✗",
+            equip_uniform: getRadio("uniformStatus") === "Yes" ? "✓" : "✗",
+            equip_defense: getRadio("defenseStatus") === "Yes" ? "✓" : "✗",
+            logbookStatus: getRadio("logbookStatus") === "Yes" ? "✓" : "✗",
+            // Security Checks
+            check_gates: document.getElementById('check_door')?.checked ? "✓" : "—",
+            check_lights: document.getElementById('check_lights')?.checked ? "✓" : "—",
+            check_fire: document.getElementById('check_fire_extinguisher')?.checked ? "✓" : "—",
+            issues: ''
+        };
+
+        // Flashlight logic (if any)
+        // Since flashlight isn't explicitly in Step3, we'll check if any issue is drunk/sleep
+
+        const foundIssues = [];
+
+        // 1. Uniform Issues
+        if (getRadio("uniformStatus") === "No") {
+            const missing = getChecks("uniformMissing");
+            foundIssues.push("ເຄື່ອງແບບບໍ່ຄົບ: " + (missing || "ບໍ່ໄດ້ລະບຸ"));
+        }
+
+        // 2. Defense Issues
+        if (getRadio("defenseStatus") === "No") {
+            const missing = getChecks("defenseMissing");
+            foundIssues.push("ອຸປະກອນປ້ອງກັນບໍ່ຄົບ: " + (missing || "ບໍ່ໄດ້ລະບຸ"));
+        }
+
+        // 3. Sleep Issues
+        if (getRadio("sleepStatus") === "Yes") {
+            const reason = document.getElementById('sleepReason')?.value || "ບໍ່ໄດ້ລະບຸ";
+            foundIssues.push("😴 ນອນຫຼັບ (ເຫດຜົນ: " + reason + ")");
+        }
+
+        // 4. Position Issues
+        if (getRadio("positionStatus") === "No") {
+            const reason = document.getElementById('positionReason')?.value || "ບໍ່ໄດ້ລະບຸ";
+            foundIssues.push("❌ ບໍ່ຢູ່ຈຸດ (ເຫດຜົນ: " + reason + ")");
+        }
+
+        // 5. Site Security Issues
+        if (formData.siteStatus === "Issue") {
+            const securityIssues = [];
+            if (!document.getElementById('check_camera')?.checked) securityIssues.push("ກ້ອງວົງຈອນປິດບໍ່ປົກກະຕິ");
+            if (securityIssues.length > 0) foundIssues.push(securityIssues.join(', '));
+        }
+
+        formData.issues = foundIssues.length > 0 ? foundIssues.join(' | ') : 'ບໍ່ມີບັນຫາ';
+
+        // --- OFFLINE QUEUE HANDLE ---
+        if (!navigator.onLine) {
+            saveToOfflineQueue(formData);
+            return;
+        }
+
+        sendData(formData);
+    }
+
+    // --- OFFLINE QUEUE LOGIC ---
+    function saveToOfflineQueue(data) {
+        try {
+            const queue = JSON.parse(localStorage.getItem('vks_offline_queue') || '[]');
+            data.queuedAt = Date.now();
+            queue.push(data);
+            localStorage.setItem('vks_offline_queue', JSON.stringify(queue));
+
+            showModal('Saved Offline', 'ບໍ່ມີສັນຍານອິນເຕີເນັດ. ຂໍ້ມູນຖືກບັນທຶກໄວ້ໃນເຄື່ອງແລ້ວ ແລະ ຈະສົ່ງອັດຕະໂນມັດເມື່ອມີສັນຍານ.', 'success');
+
+            // Reset form as if submitted
+            resetFormWithSuccess();
+        } catch (e) {
+            showError('Offline Save Failed: ' + e.message);
+        }
+    }
+
+    function processOfflineQueue() {
+        if (!navigator.onLine) return;
+
+        const queue = JSON.parse(localStorage.getItem('vks_offline_queue') || '[]');
+        if (queue.length === 0) return;
+
+        console.log(`[Offline] Processing ${queue.length} items...`);
+        showToast(`ກຳລັງສົ່ງຂໍ້ມູນ offline (${queue.length})...`); // Need showToast helper or use modal
+
+        const currentItem = queue[0]; // Process one by one
+
+        runWithRetry('processForm', [currentItem])
+            .then(res => {
+                if (res.success) {
+                    // Remove first item
+                    queue.shift();
+                    localStorage.setItem('vks_offline_queue', JSON.stringify(queue));
+                    console.log('[Offline] Item sent successfully');
+
+                    if (queue.length > 0) {
+                        setTimeout(processOfflineQueue, 1000); // Next item
+                    } else {
+                        showModal('Offline Sync', 'ສົ່ງຂໍ້ມູນ Offline ທັງໝົດສຳເລັດແລ້ວ! ✅', 'success');
+                    }
+                } else {
+                    console.error('[Offline] Failed to send item:', res.error);
+                }
+            })
+            .catch(err => {
+                console.error('[Offline] Network error during sync:', err);
+            });
+    }
+
+    // Helper to reset form without the full "Success Page" flow for offline
+    function resetFormWithSuccess() {
+        document.getElementById('step-' + currentStep).classList.add('hidden');
+        resetForm(); // Existing reset
+        // Maybe show a quick "Saved" badge instead of full reset?
+        // For now, reset is safer to prevent double entry.
+    }
+
+    function sendData(data) {
+
+        // --- MOCK SUBMIT TEST ---
+        if (window.MOCK_SUBMIT) {
+            console.log('[Mock] Submitting data...', data);
+            const btn = document.getElementById('btnSubmit');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = "Simulating Send...";
+            }
+
+            setTimeout(() => {
+                showSummary(data);
+                document.getElementById('step-' + currentStep).classList.add('hidden');
+                currentStep = 7;
+                document.getElementById('step-7').classList.remove('hidden');
+                document.getElementById('currentStepNum').innerText = '7';
+                updateNavButtons();
+                updateProgressBar();
+                window.scrollTo(0, 0);
+                showToast('Mock Submission Success 🚀');
+                stopRealTimeRefresh();
+
+                // SHOW TEST REPORT
+                document.getElementById('refreshCountdown').classList.add('hidden'); // Hide auto-refresh
+                const reportDiv = document.getElementById('testReport');
+                const jsonPre = document.getElementById('testReportJson');
+
+                if (reportDiv && jsonPre) {
+                    reportDiv.classList.remove('hidden');
+                    // Format JSON beautifully
+                    jsonPre.innerHTML = SyntaxHighlight(JSON.stringify(data, null, 2));
+                }
+            }, 2000);
+            return;
+        }
+
+        const timeoutId = setTimeout(() => {
+            showModal('ໝົດເວລາ', 'ບໍ່ສາມາດເຊື່ອມຕໍ່ກັບເຊີບເວີໄດ້. ກະລຸນາລອງໃໝ່.', 'error');
+            const btn = document.getElementById('btnSubmit');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = "🚀 ສົ່ງບົດລາຍງານ";
+            }
+        }, 30000);
+
+        google.script.run
+            .withSuccessHandler(res => {
+                clearTimeout(timeoutId);
+                if (res && res.success) {
+                    showSummary(data);
+                    document.getElementById('step-' + currentStep).classList.add('hidden');
+                    currentStep = 7;
+                    document.getElementById('step-7').classList.remove('hidden');
+                    document.getElementById('currentStepNum').innerText = '7';
+                    updateNavButtons();
+                    updateProgressBar();
+                    window.scrollTo(0, 0);
+
+                    // Clear localStorage after successful submission
+                    clearFormStateStorage();
+
+                    // Stop real-time refresh while showing success page
+                    stopRealTimeRefresh();
+
+                    // Auto-refresh page after 5 seconds to reset with fresh data
+                    autoRefreshAfterSubmission(5000);
+                } else {
+                    showModal('ຜິດພາດ', res ? res.error : 'ເກີດຂໍ້ຜິດພາດທີ່ບໍ່ຮູ້ສາເຫດ', 'error');
+                    const btn = document.getElementById('btnSubmit');
+                    btn.disabled = false;
+                    btn.innerText = "🚀 ສົ່ງບົດລາຍງານ";
+                }
+            })
+            .withFailureHandler(err => {
+                clearTimeout(timeoutId);
+                console.error('Submission error:', err);
+                showModal('ຜິດພາດ', 'ບໍ່ສາມາດສົ່ງຂໍ້ມູນໄດ້: ' + (err.message || err), 'error');
+                const btn = document.getElementById('btnSubmit');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = "🚀 ສົ່ງບົດລາຍງານ";
+                }
+            })
+            .processForm(data);
+    }
+
+    function summaryItem(icon, label, value) {
+        // Compact Layout (Flex Row)
+        return '<div class="summary-item" style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #eee;">' +
+            '<div style="display:flex;align-items:center;gap:8px;">' +
+            '<span class="icon" style="font-size:18px;">' + icon + '</span>' +
+            '<span class="label" style="font-size:13px;color:#666;font-weight:500;">' + label + '</span>' +
+            '</div>' +
+            '<div class="value" style="font-size:13px;font-weight:600;text-align:right;">' + (value || '-') + '</div>' +
+            '</div>';
+    }
+
+    // Helper: Streak Logic
+    function updateStreak() {
+        try {
+            const today = new Date();
+            const todayKey = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+
+            const lastKey = localStorage.getItem('vks_last_patrol_date');
+            let streak = parseInt(localStorage.getItem('vks_streak_count') || '0', 10);
+
+            if (lastKey === todayKey) {
+                // Already counted today, maintain streak
+            } else {
+                // Check if yesterday
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yesterdayKey = yesterday.getFullYear() + '-' + (yesterday.getMonth() + 1) + '-' + yesterday.getDate();
+
+                if (lastKey === yesterdayKey) {
+                    streak++;
+                } else {
+                    streak = 1; // Reset or Start new
+                }
+
+                localStorage.setItem('vks_last_patrol_date', todayKey);
+                localStorage.setItem('vks_streak_count', streak);
+            }
+            return streak;
+        } catch (e) {
+            console.warn('Streak update failed', e);
+            return 1; // Fallback
+        }
+    }
+
+    function showSummary(data) {
+        const summaryDiv = document.getElementById('submissionSummary');
+
+        // GAMIFICATION: Play Sound & Fire Confetti
+        try {
+            if (typeof playSuccessSound === 'function') playSuccessSound();
+            if (typeof fireConfetti === 'function') fireConfetti();
+        } catch (e) { console.warn('Gamification error:', e); }
+
+        // GAMIFICATION: Update & Get Streak
+        const streakCount = updateStreak();
+
+        // Calculate Duration
+        let durationStr = "N/A";
+        try {
+            if (data.startTimeManual && data.finishTime) {
+                const parseTime = function (t) {
+                    const parts = t.split(':');
+                    return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+                };
+                const s = parseTime(data.startTimeManual);
+                const f = parseTime(data.finishTime);
+                let diff = f - s;
+                if (diff < 0) diff += 1440;
+                durationStr = diff + " Mins";
+            }
+        } catch (e) { }
+
+        let html = '<div class="summary-list" style="display:flex;flex-direction:column;gap:4px;">';
+
+        // Basic Info
+        html += summaryItem('👮', 'Guard Name', data.guardName);
+        html += summaryItem('📍', 'Site', data.siteName);
+        html += summaryItem('🕒', 'Start - Finish', data.startTimeManual + ' - ' + data.finishTime);
+        html += summaryItem('⏱️', 'Duration', durationStr);
+        html += summaryItem('🔥', 'Day Streak', streakCount + ' Days');
+        html += summaryItem('🛡️', 'Status', data.siteStatus === 'Normal' ? '✅ Normal' : '❌ Issues Found');
+
+        if (data.issues && data.issues !== 'ບໍ່ມີບັນຫາ') {
+            html += summaryItem('⚠️', 'Issues', data.issues);
+        }
+
+        html += '</div>';
+
+        summaryDiv.innerHTML = html;
+    }
+
+
+    function resetForm() {
+        document.getElementById('patrolForm').reset();
+        clearFormStateStorage();
+        document.getElementById('step-' + currentStep).classList.add('hidden');
+        currentStep = 1;
+        document.getElementById('step-1').classList.remove('hidden');
+        document.getElementById('startTime').value = new Date().getTime();
+        document.getElementById('issueDetails').classList.add('hidden');
+        initializeManualTimes();
+
+        // Reset dropdowns display
+        document.querySelector('#patrolName-select .custom-select-value').textContent = 'ເລືອກຊື່ຜູ້ກວດກາ...';
+        document.querySelector('#siteName-select .custom-select-value').textContent = 'ເລືອກເສັ້ນທາງກ່ອນ';
+
+        // Reset Step3 sub-options panels (hide them all)
+        ['uniform-suboptions', 'defense-suboptions', 'sleep-suboptions', 'position-suboptions', 'logbook-suboptions'].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) el.classList.add('hidden');
+        });
+
+        // Reset Step3 custom selects (sleepReason, positionReason)
+        ['sleepReason-select', 'positionReason-select'].forEach(function (id) {
+            var container = document.getElementById(id);
+            if (container) {
+                var display = container.querySelector('.custom-select-value');
+                if (display) display.textContent = 'ເລືອກເຫດຜົນ';
+                var input = container.querySelector('input[type="hidden"]');
+                if (input) input.value = '';
+            }
+        });
+
+        // Reset file previews
+        formState.uploadedPhotos = [];
+        formState.uploadingCount = 0;
+        const previewsContainer = document.getElementById('filePreviewsContainer');
+        if (previewsContainer) previewsContainer.innerHTML = '';
+        const counter = document.getElementById('photoCounter');
+        if (counter) counter.textContent = 'ຮູບພາບ: 0 / 5';
+
+        const btn = document.getElementById('btnSubmit');
+        btn.disabled = false;
+        btn.innerText = "🚀 ສົ່ງບົດລາຍງານ";
+
+        updateProgressBar();
+        updateNavButtons();
+        window.scrollTo(0, 0);
+    }
+
+    // --- 6. MODAL ---
+    // --- LEGACY SHOW MODAL REMOVED ---
+    // Use the comprehensive version in Modal.html instead.
+    // --- LEGACY CLOSE MODAL REMOVED ---
+    // Use Modal.html version
+
+    function handleMultiFileChange(input) {
+        if (!input.files || input.files.length === 0) return;
+
+        const files = Array.from(input.files);
+        const remainingSlots = 5 - formState.uploadedPhotos.length - formState.uploadingCount;
+
+        if (remainingSlots <= 0) {
+            return showError('ອັບໂຫຼດໄດ້ສູງສຸດ 5 ຮູບເທົ່ານັ້ນ');
+        }
+
+        const filesToUpload = files.slice(0, remainingSlots);
+
+        filesToUpload.forEach(file => {
+            uploadFile(file);
+        });
+
+        // Reset input value so same file can be selected again if needed
+        input.value = '';
+    }
+
+    function uploadFile(file) {
+        const previewsContainer = document.getElementById('filePreviewsContainer');
+        const photoCounter = document.getElementById('photoCounter');
+
+        // Generate a unique ID for this upload preview
+        const uploadId = 'upload-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+        formState.uploadingCount++;
+
+        // Create preview element
+        const previewEl = document.createElement('div');
+        previewEl.id = uploadId;
+        previewEl.className = 'file-preview';
+        previewEl.innerHTML = `
+            <div class="file-preview-icon">🖼️</div>
+            <div class="file-preview-info">
+                <span class="file-preview-name">${file.name}</span>
+                <div class="file-preview-progress">
+                    <div class="file-preview-progress-bar" style="width: 10%"></div>
+                </div>
+            </div>
+            <button type="button" class="file-preview-remove" disabled>✕</button>
+        `;
+        previewsContainer.appendChild(previewEl);
+        updatePhotoCounter();
+
+        const progressBar = previewEl.querySelector('.file-preview-progress-bar');
+        const fileNameDisplay = previewEl.querySelector('.file-preview-name');
+
+        compressImage(file, 800, 0.6)
+            .then(compressed => {
+                const siteName = document.getElementById('siteName').value || 'Unknown';
+                const patrolName = document.getElementById('patrolName').value || 'Unknown';
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                const photoIndex = formState.uploadedPhotos.length + 1;
+                const safeSite = siteName.replace(/[^a-zA-Z0-9-_\u0E80-\u0EFF]/g, '');
+                const safePatrol = patrolName.replace(/[^a-zA-Z0-9-_\u0E80-\u0EFF]/g, '');
+
+                const fileName = `${safeSite}_${safePatrol}_${timestamp}_P${photoIndex}.jpg`;
+
+                progressBar.style.width = '40%';
+
+                google.script.run
+                    .withSuccessHandler(res => {
+                        formState.uploadingCount--;
+                        if (res.success) {
+                            formState.uploadedPhotos.push(res.url);
+                            progressBar.style.width = '100%';
+                            progressBar.style.backgroundColor = 'var(--success)';
+                            fileNameDisplay.textContent += ' ✓';
+
+                            // Enable remove button
+                            const removeBtn = previewEl.querySelector('.file-preview-remove');
+                            removeBtn.disabled = false;
+                            removeBtn.onclick = () => removePhoto(uploadId, res.url);
+                        } else {
+                            fileNameDisplay.textContent += ' ❌ (Error)';
+                            progressBar.style.backgroundColor = 'var(--destructive)';
+                            showError('Upload failed: ' + res.error);
+                        }
+                        updatePhotoCounter();
+                    })
+                    .withFailureHandler(err => {
+                        formState.uploadingCount--;
+                        fileNameDisplay.textContent += ' ❌ (Failed)';
+                        progressBar.style.backgroundColor = 'var(--destructive)';
+                        showError('Upload failed: ' + err.message);
+                        updatePhotoCounter();
+                    })
+                    .uploadPatrolPhoto(compressed.base64, 'image/jpeg', fileName);
+            })
+            .catch(err => {
+                formState.uploadingCount--;
+                showError('Compression failed');
+                previewEl.remove();
+                updatePhotoCounter();
+            });
+    }
+
+    function removePhoto(id, url) {
+        const previewEl = document.getElementById(id);
+        if (previewEl) previewEl.remove();
+
+        formState.uploadedPhotos = formState.uploadedPhotos.filter(u => u !== url);
+        updatePhotoCounter();
+    }
+
+    function updatePhotoCounter() {
+        const counter = document.getElementById('photoCounter');
+        if (counter) {
+            const count = formState.uploadedPhotos.length;
+            const uploading = formState.uploadingCount;
+            let text = `ຮູບພາບ: ${count} / 5`;
+            if (uploading > 0) {
+                text += ` (ກຳລັງອັບໂຫຼດ ${uploading}...)`;
+            }
+            counter.textContent = text;
+        }
+    }
+
+    // Drag and drop handlers
+    function setupUploadZone() {
+        const uploadZone = document.getElementById('uploadZone');
+        if (!uploadZone) return;
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('drag-over');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('drag-over');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const photoInput = document.getElementById('photoInput');
+                photoInput.files = files;
+                handleFileChange(photoInput);
+            }
+        });
+    }
+
+    // =====================================================
+    // iOS-STYLE TIME PICKER
+    // =====================================================
+    let activeTimePickerId = null;
+    let activeTimeInputId = null;
+    let timePickerState = { hour: 0, minute: 0 };
+
+    function openTimePicker(pickerId, inputId) {
+        activeTimePickerId = pickerId;
+        activeTimeInputId = inputId;
+
+        // Parse current value if exists
+        const input = document.getElementById(inputId);
+        if (input && input.value) {
+            const parts = input.value.split(':');
+            if (parts.length === 2) {
+                timePickerState.hour = parseInt(parts[0]);
+                timePickerState.minute = parseInt(parts[1]);
+            }
+        }
+
+        // Create and show modal
+        showTimePickerModal();
+    }
+
+    function showTimePickerModal() {
+        // Create overlay
+        let overlay = document.getElementById('iosTimeOverlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'iosTimeOverlay';
+            overlay.className = 'ios-time-overlay';
+            overlay.onclick = closeTimePicker;
+            document.body.appendChild(overlay);
+        }
+        overlay.classList.remove('hidden');
+
+        // Create modal
+        let modal = document.getElementById('iosTimeModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'iosTimeModal';
+            modal.className = 'ios-time-modal';
+            modal.innerHTML = `
+                <div class="ios-time-header">
+                    <span class="ios-time-title">ເລືອກເວລາ (24ຊມ)</span>
+                    <button type="button" class="ios-time-done" onclick="confirmTimePicker()">ຕົກລົງ</button>
+                </div>
+                <div class="ios-time-wheels">
+                    <div class="ios-wheel" id="hourWheel"></div>
+                    <div class="ios-wheel" id="minuteWheel"></div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        modal.classList.remove('hidden');
+
+        // Populate wheels
+        populateWheels();
+        document.body.style.overflow = 'hidden';
+
+        // Prevent background scrolling on touch devices
+        overlay.addEventListener('touchmove', function (e) {
+            e.preventDefault();
+        }, { passive: false });
+    }
+
+    function populateWheels() {
+        const hourWheel = document.getElementById('hourWheel');
+        const minuteWheel = document.getElementById('minuteWheel');
+
+        // Clear and populate hours (00-23)
+        hourWheel.innerHTML = '';
+        var spacer1 = document.createElement('div');
+        spacer1.className = 'ios-wheel-spacer';
+        hourWheel.appendChild(spacer1);
+        for (var i = 0; i <= 23; i++) {
+            var item = document.createElement('div');
+            item.className = 'ios-wheel-item' + (i === timePickerState.hour ? ' selected' : '');
+            item.textContent = String(i).padStart(2, '0');
+            item.setAttribute('data-value', i);
+            item.setAttribute('data-type', 'hour');
+            hourWheel.appendChild(item);
+        }
+        var spacer2 = document.createElement('div');
+        spacer2.className = 'ios-wheel-spacer';
+        hourWheel.appendChild(spacer2);
+
+        // Populate minutes (00-59)
+        minuteWheel.innerHTML = '';
+        var spacer3 = document.createElement('div');
+        spacer3.className = 'ios-wheel-spacer';
+        minuteWheel.appendChild(spacer3);
+        for (var j = 0; j < 60; j++) {
+            var mItem = document.createElement('div');
+            mItem.className = 'ios-wheel-item' + (j === timePickerState.minute ? ' selected' : '');
+            mItem.textContent = String(j).padStart(2, '0');
+            mItem.setAttribute('data-value', j);
+            mItem.setAttribute('data-type', 'minute');
+            minuteWheel.appendChild(mItem);
+        }
+        var spacer4 = document.createElement('div');
+        spacer4.className = 'ios-wheel-spacer';
+        minuteWheel.appendChild(spacer4);
+
+        // Add click handlers using event delegation
+        setupWheelClickHandlers();
+
+        // Add Scroll Listeners for Auto-Selection
+        setupWheelScrollListeners(hourWheel, 'hour');
+        setupWheelScrollListeners(minuteWheel, 'minute');
+
+        // Scroll to selected items
+        setTimeout(function () {
+            scrollToSelected(hourWheel, timePickerState.hour);
+            scrollToSelected(minuteWheel, timePickerState.minute);
+        }, 50);
+    }
+
+    function setupWheelScrollListeners(wheel, type) {
+        let scrollTimeout;
+        wheel.onscroll = function () {
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(function () {
+                const itemHeight = 44;
+                const index = Math.round(wheel.scrollTop / itemHeight);
+                let value;
+
+                if (type === 'hour') {
+                    value = index;
+                    if (value < 0) value = 0; if (value > 23) value = 23;
+                } else if (type === 'minute') {
+                    value = index;
+                    if (value < 0) value = 0; if (value > 59) value = 59;
+                }
+
+                if (timePickerState[type] !== value) {
+                    timePickerState[type] = value;
+                    // Update visual selection without rebuilding DOM
+                    const items = wheel.querySelectorAll('.ios-wheel-item');
+                    items.forEach((item, i) => {
+                        item.classList.toggle('selected', i === index);
+                    });
+                }
+            }, 50); // Reduced to 50ms for snappier feedback
+        };
+    }
+
+    function getWheelValueFromScroll(wheelId, type) {
+        const wheel = document.getElementById(wheelId);
+        if (!wheel) return timePickerState[type];
+        const itemHeight = 44;
+        const index = Math.round(wheel.scrollTop / itemHeight);
+        if (type === 'hour') {
+            let val = index;
+            if (val < 0) val = 0; if (val > 23) val = 23;
+            return val;
+        } else if (type === 'minute') {
+            let val = index;
+            if (val < 0) val = 0; if (val > 59) val = 59;
+            return val;
+        }
+        return timePickerState[type];
+    }
+
+    function setupWheelClickHandlers() {
+        document.querySelectorAll('.ios-wheel-item').forEach(function (item) {
+            item.onclick = function () {
+                var type = this.getAttribute('data-type');
+                var value = this.getAttribute('data-value');
+                if (type === 'hour' || type === 'minute') {
+                    value = parseInt(value);
+                }
+                selectWheelItem(type, value);
+            };
+        });
+    }
+
+    function scrollToSelected(wheel, index) {
+        const itemHeight = 44;
+        const scrollTop = index * itemHeight;
+        wheel.scrollTop = scrollTop;
+    }
+
+    function selectWheelItem(type, value) {
+        const wheel = document.getElementById(type + 'Wheel');
+        if (wheel) {
+            const itemHeight = 44;
+            let index = value;
+
+            wheel.scrollTo({
+                top: index * itemHeight,
+                behavior: 'smooth'
+            });
+
+            // Note: timePickerState and visuals will be updated by the scroll listener
+        }
+    }
+
+    function confirmTimePicker() {
+        // Force update state from current scroll positions just in case
+        timePickerState.hour = getWheelValueFromScroll('hourWheel', 'hour');
+        timePickerState.minute = getWheelValueFromScroll('minuteWheel', 'minute');
+
+        const timeValue = String(timePickerState.hour).padStart(2, '0') + ':' + String(timePickerState.minute).padStart(2, '0');
+
+        // Update hidden input
+        const input = document.getElementById(activeTimeInputId);
+        if (input) input.value = timeValue;
+
+        // Update display
+        const displayId = activeTimeInputId === 'startTimeManual' ? 'startTimeDisplay' : 'finishTimeDisplay';
+        const display = document.getElementById(displayId);
+        if (display) {
+            display.textContent = timeValue;
+        }
+
+        // Sync finish time if updating start time
+        if (activeTimeInputId === 'startTimeManual') {
+            const finishInput = document.getElementById('finishTime');
+            const finishDisplay = document.getElementById('finishTimeDisplay');
+            if (finishInput) finishInput.value = timeValue;
+            if (finishDisplay) finishDisplay.textContent = display.textContent;
+        }
+
+        closeTimePicker();
+    }
+
+    function closeTimePicker() {
+        const overlay = document.getElementById('iosTimeOverlay');
+        const modal = document.getElementById('iosTimeModal');
+        if (overlay) overlay.classList.add('hidden');
+        if (modal) modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    // =====================================================
+    // SLIDER COLOR FILL
+    // =====================================================
+    function updateSliderFill(slider) {
+        const min = parseFloat(slider.min) || 0;
+        const max = parseFloat(slider.max) || 100;
+        const val = parseFloat(slider.value) || 0;
+        const percentage = ((val - min) / (max - min)) * 100;
+        slider.style.setProperty('--slider-fill', percentage + '%');
+    }
+
+    function setupSliders() {
+        const sliders = document.querySelectorAll('.shadcn-input-slider');
+        sliders.forEach(slider => {
+            updateSliderFill(slider);
+            slider.addEventListener('input', () => updateSliderFill(slider));
+        });
+    }
+
+    function showToast(message, type = 'info') {
+        let toast = document.getElementById('toastNotification');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'toastNotification';
+            toast.className = 'toast';
+            document.body.appendChild(toast);
+        }
+
+        toast.textContent = message;
+        if (type === 'error') toast.classList.add('error');
+        else toast.classList.remove('error');
+
+        // Trigger reflow
+        void toast.offsetWidth;
+        toast.classList.add('show');
+
+        // Hide after 3s
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
+
+    // =====================================================
+    // INITIALIZATION
+    // =====================================================
+    function initializeManualTimes() {
+        const now = new Date();
+        const HH = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        const timeStr = HH + ':' + mm;
+
+        // Set hidden inputs
+        const startInput = document.getElementById('startTimeManual');
+        const finishInput = document.getElementById('finishTime');
+        if (startInput) startInput.value = timeStr;
+        if (finishInput) finishInput.value = timeStr;
+
+        const startDisplay = document.getElementById('startTimeDisplay');
+        const finishDisplay = document.getElementById('finishTimeDisplay');
+        if (startDisplay) startDisplay.textContent = timeStr;
+        if (finishDisplay) finishDisplay.textContent = timeStr;
+
+        // Initialize time picker state
+        timePickerState.hour = now.getHours();
+        timePickerState.minute = parseInt(mm);
+    }
+
+    // Initialize
+    window.onload = () => {
+        // Show loading overlay
+        showLoadingOverlay('\u0e81\u0eb3\u0ea5\u0eb1\u0e87\u0ec2\u0eab\u0ebc\u0e94\u0e82\u0ecd\u0ec9\u0ea1\u0eb9\u0e99\u0eaa\u0eb0\u0e96\u0eb2\u0e99\u0e97\u0eb5\u0ec8...');
+
+        // Initialize network monitoring
+        initNetworkMonitoring();
+
+        const sysStart = new Date().getTime();
+        const startTimeEl = document.getElementById('startTime');
+        if (startTimeEl) startTimeEl.value = sysStart;
+
+        // Load saved form state from localStorage
+        const savedState = loadFormStateFromStorage();
+
+        // --- NAME PERSISTENCE & LOCKING ---
+        const savedPatrolName = localStorage.getItem('vks_patrol_name_locked');
+        if (savedPatrolName) {
+            document.getElementById('patrolName').value = savedPatrolName;
+            // We will visually update this after config load
+        }
+
+        // --- OFFLINE BOOTSTRAP: Load Cached Config ---
+        const cachedConfig = localStorage.getItem('vks_config_cache');
+        if (cachedConfig) {
+            try {
+                const parsed = JSON.parse(cachedConfig);
+                console.log('[Cache] Bootstrapping with cached config...');
+                populateConfig(parsed);
+                // If we have cache, we could technically hide overlay, but let's wait for network check
+                // unless we are offline
+                if (!navigator.onLine) {
+                    hideLoadingOverlay();
+                    showToast('Using cached data (Offline Mode)');
+                }
+            } catch (e) {
+                console.error('[Cache] Failed to parse cached config', e);
+            }
+        }
+
+        // Use Retry Logic for Initial Load
+        runWithRetry('getFormConfig')
+            .then(data => {
+                populateConfig(data);
+                hideLoadingOverlay();
+                // NO STATE RESTORATION (Fresh Start Policy)
+
+                updateSelectionIndicator();
+
+                // Check for Offline Queue
+                processOfflineQueue();
+            })
+            .catch(err => {
+                hideLoadingOverlay();
+                showModal('ຜິດພາດ', 'ບໍ່ສາມາດໂຫຼດຂໍ້ມູນ. ກະລຸນາກົດ Refresh.', 'error');
+            });
+
+        // Initialize Upload Queue Listener
+        window.addEventListener('online', processOfflineQueue);
+
+
+        updateProgressBar();
+        initializeManualTimes();
+        setupUploadZone();
+        setupMobileSlider();
+
+        // Start live clock updates every minute
+        startLiveClockUpdates();
+
+        // 2026-01-25 FIX: Ensure Nav Buttons are initialized (Home Button Label)
+        updateNavButtons();
+    };
+
+    // Live clock update - updates time displays every minute
+    let liveClockIntervalId = null;
+
+    function startLiveClockUpdates() {
+        // Update immediately, then every minute
+        updateLiveClock();
+
+        // Calculate milliseconds until the next minute boundary for precise sync
+        const now = new Date();
+        const msUntilNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+
+        // Start after next minute, then repeat every 60 seconds
+        setTimeout(function () {
+            updateLiveClock();
+            liveClockIntervalId = setInterval(updateLiveClock, 60000);
+        }, msUntilNextMinute);
+
+        console.log('[Clock] Live clock started, next update in ' + Math.round(msUntilNextMinute / 1000) + 's');
+    }
+
+    function updateLiveClock() {
+        const now = new Date();
+        const HH = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        const timeStr = HH + ':' + mm;
+
+        // Update both time displays and hidden inputs
+        const startDisplay = document.getElementById('startTimeDisplay');
+        const finishDisplay = document.getElementById('finishTimeDisplay');
+        const startInput = document.getElementById('startTimeManual');
+        const finishInput = document.getElementById('finishTime');
+
+        if (startDisplay) startDisplay.textContent = timeStr;
+        if (finishDisplay) finishDisplay.textContent = timeStr;
+        if (startInput) startInput.value = timeStr;
+        if (finishInput) finishInput.value = timeStr;
+
+        // Update time picker state
+        timePickerState.hour = now.getHours();
+        timePickerState.minute = now.getMinutes();
+
+        console.log('[Clock] Updated to ' + timeStr);
+    }
+
+    function stopLiveClockUpdates() {
+        if (liveClockIntervalId) {
+            clearInterval(liveClockIntervalId);
+            liveClockIntervalId = null;
+        }
+    }
+
+    // =====================================================
+    // MOBILE SLIDER COMPONENT
+    // =====================================================
+    function setSliderValue(value) {
+        const percentage = ((value - 1) / 4) * 100;
+
+        document.getElementById('ratingInput').value = value;
+        document.getElementById('scoreVal').textContent = value.toFixed(1);
+        document.getElementById('sliderFill').style.width = percentage + '%';
+        document.getElementById('sliderThumb').style.left = percentage + '%';
+
+        // Update step indicators
+        document.querySelectorAll('.mobile-slider-step').forEach(step => {
+            step.classList.toggle('active', parseFloat(step.dataset.value) === value);
+        });
+    }
+
+    function handleSliderClick(event) {
+        const track = event.currentTarget;
+        const rect = track.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
+
+        // Snap to nearest 0.5 step (1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5)
+        const rawValue = 1 + (percentage / 100) * 4;
+        const snappedValue = Math.round(rawValue * 2) / 2;
+        const finalValue = Math.max(1, Math.min(5, snappedValue));
+
+        setSliderValue(finalValue);
+    }
+
+    function setupMobileSlider() {
+        const thumb = document.getElementById('sliderThumb');
+        const track = document.querySelector('.mobile-slider-track');
+        if (!thumb || !track) return;
+
+        let isDragging = false;
+
+        const startDrag = (e) => {
+            isDragging = true;
+            thumb.style.transition = 'none';
+            document.getElementById('sliderFill').style.transition = 'none';
+        };
+
+        const doDrag = (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+
+            const rect = track.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const x = clientX - rect.left;
+            const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
+
+            const rawValue = 1 + (percentage / 100) * 4;
+            const snappedValue = Math.round(rawValue * 2) / 2;
+            const finalValue = Math.max(1, Math.min(5, snappedValue));
+
+            const snapPercentage = ((finalValue - 1) / 4) * 100;
+
+            document.getElementById('ratingInput').value = finalValue;
+            document.getElementById('scoreVal').textContent = finalValue.toFixed(1);
+            document.getElementById('sliderFill').style.width = snapPercentage + '%';
+            document.getElementById('sliderThumb').style.left = snapPercentage + '%';
+
+            document.querySelectorAll('.mobile-slider-step').forEach(step => {
+                step.classList.toggle('active', parseFloat(step.dataset.value) === finalValue);
+            });
+        };
+
+        const endDrag = () => {
+            isDragging = false;
+            thumb.style.transition = '';
+            document.getElementById('sliderFill').style.transition = '';
+        };
+
+        // Mouse events
+        thumb.addEventListener('mousedown', startDrag);
+        document.addEventListener('mousemove', doDrag);
+        document.addEventListener('mouseup', endDrag);
+
+        // Touch events
+        thumb.addEventListener('touchstart', startDrag, { passive: true });
+        document.addEventListener('touchmove', doDrag, { passive: false });
+        document.addEventListener('touchend', endDrag);
+
+        // Initialize with value 5
+        setSliderValue(5);
+    }
+
+    // =====================================================
+    // GPS LOCATION CAPTURE
+    // =====================================================
+    function getMyLocation() {
+        const btn = document.getElementById('getLocationBtn');
+        const btnIcon = document.getElementById('locationBtnIcon');
+        const btnText = document.getElementById('locationBtnText');
+        const card = document.getElementById('locationCard');
+        const statusIcon = card.querySelector('.location-icon');
+        const statusText = card.querySelector('.location-text');
+        const coordsDiv = document.getElementById('locationCoords');
+        const coordsValue = document.getElementById('coordsValue');
+
+        // Check if geolocation is supported
+        if (!navigator.geolocation) {
+            showLocationError('ບຣາວເຊີບໍ່ຮອງຮັບ GPS');
+            return;
+        }
+
+        // Set loading state
+        btn.disabled = true;
+        btnIcon.innerHTML = '<span class="location-spinner"></span>';
+        btnText.textContent = 'ກຳລັງຮັບສະຖານທີ່...';
+        card.classList.remove('success', 'error');
+        statusIcon.textContent = '⏳';
+        statusText.textContent = 'ກຳລັງຊອກຫາສະຖານທີ່...';
+
+        // Get current position
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                const accuracy = Math.round(position.coords.accuracy);
+
+                // Create Google Maps link
+                const mapsLink = 'https://www.google.com/maps?q=' + lat + ',' + lng;
+
+                // Update hidden inputs
+                document.getElementById('gpsLink').value = mapsLink;
+                document.getElementById('gpsLat').value = lat;
+                document.getElementById('gpsLng').value = lng;
+
+                // Update UI with success
+                card.classList.add('success');
+                statusIcon.textContent = '✅';
+                statusText.textContent = 'ຮັບສະຖານທີ່ສຳເລັດແລ້ວ!';
+
+                coordsDiv.classList.remove('hidden');
+                coordsValue.textContent = lat.toFixed(6) + ', ' + lng.toFixed(6) + ' (±' + accuracy + 'm)';
+
+                // Reset button
+                btn.disabled = false;
+                btnIcon.textContent = '🔄';
+                btnText.textContent = 'ຮັບສະຖານທີ່ໃໝ່';
+            },
+            (error) => {
+                let errorMsg = 'ບໍ່ສາມາດຮັບສະຖານທີ່ໄດ້';
+
+                // Show manual input as fallback
+                const manualInputDiv = document.querySelector('#gpsLinkManual')?.parentNode;
+                if (manualInputDiv) manualInputDiv.classList.remove('hidden');
+
+                switch (error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMsg = 'ກະລຸນາອະນຸຍາດການເຂົ້າເຖິງ GPS ຫຼື ວາງລິ້ງ Map ດ້ວຍຕົນເອງ';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMsg = 'ບໍ່ພົບສັນຍານ GPS. ກະລຸນາວາງລິ້ງ Map ດ້ວຍຕົນເອງ';
+                        break;
+                    case error.TIMEOUT:
+                        errorMsg = 'ໝົດເວລາຊອກຫາສະຖານທີ່. ກະລຸນາວາງລິ້ງ Map ດ້ວຍຕົນເອງ';
+                        break;
+                }
+                showLocationError(errorMsg);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 30000,
+                maximumAge: 0
+            }
+        );
+    }
+
+
+    function showLocationError(message) {
+        const btn = document.getElementById('getLocationBtn');
+        const btnIcon = document.getElementById('locationBtnIcon');
+        const btnText = document.getElementById('locationBtnText');
+        const card = document.getElementById('locationCard');
+        const statusIcon = card.querySelector('.location-icon');
+        const statusText = card.querySelector('.location-text');
+
+        card.classList.remove('success');
+        card.classList.add('error');
+        statusIcon.textContent = '❌';
+        statusText.textContent = message;
+
+        btn.disabled = false;
+        btnIcon.textContent = '📍';
+        btnText.textContent = 'ລອງໃໝ່';
+    }
+
+    function syncGpsLink(value) {
+        // STRICT GPS: Manual input is disabled/hidden, but keeping this function 
+        // in case we need to re-enable it strictly for admins later.
+        // For now, it just syncs to hidden field.
+        document.getElementById('gpsLink').value = value;
+    }
+
+    // =====================================================
+    // NAVIGATION & MODE SELECT (Dual-Track Header v72)
+    // =====================================================
+    window.TOTAL_STEPS = 7; // Default
+
+    window.updateHeaderUI = function () {
+        const container = document.getElementById('headerProgressContainer');
+        const barTrack = document.getElementById('headerProgressBarTrack');
+        const currentNum = document.getElementById('currentStepNum');
+        const totalNum = document.getElementById('totalStepsNum');
+        const barFill = document.getElementById('progressBar');
+
+        if (!container || !currentNum) return;
+
+        // 1. Visibility Check
+        if (window.APP_MODE === 'LANDING') {
+            container.classList.add('hidden');
+            if (barTrack) barTrack.classList.add('hidden');
+            return;
+        }
+
+        // 2. Show Header
+        container.classList.remove('hidden');
+        if (barTrack) barTrack.classList.remove('hidden');
+
+        // 3. Update Text
+        const step = window.currentStep || 1;
+        currentNum.innerText = step;
+        totalNum.innerText = window.TOTAL_STEPS;
+
+        // 4. Update Bar
+        if (barFill) {
+            const pct = (step / window.TOTAL_STEPS) * 100;
+            barFill.style.width = pct + '%';
+        }
+    };
+
+    window.selectMode = function (mode) {
+        console.log("Selecting Mode:", mode);
+
+        // 1. Update Global State
+        if (mode === 'special') {
+            window.APP_MODE = 'SPECIAL';
+            window.TOTAL_STEPS = 3;
+            window.currentStep = 1; // Stage 1: Input
+            document.getElementById('stepLabel').innerText = "Stage";
+        } else {
+            window.APP_MODE = 'PATROL';
+            window.TOTAL_STEPS = 7;
+            window.currentStep = 1; // Step 1: Input
+            document.getElementById('stepLabel').innerText = "Step";
+        }
+
+        // 2. UI Navigation (Landing -> Form)
+        const landing = document.getElementById('step-1-landing');
+        const formContainer = document.getElementById('step-1-form-container');
+
+        if (landing) landing.classList.add('hidden');
+        if (formContainer) formContainer.classList.remove('hidden');
+
+        // 3. Toggle Correct Form & Update Header
+        const patrolForm = document.getElementById('patrol-mode-form');
+        const specialForm = document.getElementById('special-mode-form');
+
+        updateHeaderUI(); // <--- UPDATE HEADER
+
+        if (mode === 'special') {
+            if (patrolForm) patrolForm.classList.add('hidden');
+            if (specialForm) specialForm.classList.remove('hidden');
+
+            // DISABLE BROWSER VALIDATION (Fixes "invalid form control" error)
+            const form = document.getElementById('patrolForm');
+            if (form) form.noValidate = true;
+
+            // Initialize Special Dropdowns (via JS_Special.html)
+            if (typeof populateSpecialDropdowns === 'function') {
+                // FORCE RESET inputs before populating to ensure clean slate
+                if (document.getElementById('sp-patrolName')) document.getElementById('sp-patrolName').value = '';
+                if (document.getElementById('sp-siteName')) document.getElementById('sp-siteName').value = '';
+
+                populateSpecialDropdowns();
+            } else {
+                console.warn("populateSpecialDropdowns not found. Is JS_Special.html included?");
+            }
+
+        } else {
+            if (patrolForm) patrolForm.classList.remove('hidden');
+            if (specialForm) specialForm.classList.add('hidden');
+
+            // RE-ENABLE VALIDATION
+            const form = document.getElementById('patrolForm');
+            if (form) form.noValidate = false;
+
+            // Trigger Patrol Site List Update
+            if (typeof updatePatrolSiteList === 'function') {
+                updatePatrolSiteList();
+            }
+        }
+
+        // Update Nav for Step 1 Form
+        updateNavButtons();
+    };
+
+    window.backToLanding = function () {
+        window.APP_MODE = 'LANDING'; // Set mode to Landing
+        currentStep = 1; // Reset Step Counter
+        updateHeaderUI(); // Hide Header
+
+        // Step 1: Ensure Landing is VISIBLE
+        // Fix v94: Must unhide PARENT container 'step-1' first!
+        const step1Container = document.getElementById('step-1');
+        if (step1Container) step1Container.classList.remove('hidden');
+
+        const landing = document.getElementById('step-1-landing');
+        if (landing) {
+            landing.classList.remove('hidden');
+            landing.style.display = 'block'; // Force display
+        }
+
+        // Step 2: Hide everything else
+        document.getElementById('step-1-form-container').classList.add('hidden');
+
+        // Hide Special Duty Steps
+        const step2 = document.getElementById('step-2-special');
+        const step3 = document.getElementById('step-3-special');
+        if (step2) step2.classList.add('hidden');
+        if (step3) step3.classList.add('hidden');
+
+        // Reset Nav
+        // Reset Nav
+        updateNavButtons();
+
+        // Ensure Banner is Hidden
+        updateSelectionIndicator();
+
+        // Fix v95: Reset Special Duty Form State
+        resetSpecialDutyForm();
+
+        // Fix v160: Force Clear Storage for Persistence
+        clearFormStateStorage();
+    };
+
+    window.resetSpecialDutyForm = function () {
+        // 1. Reset Internal Data
+        window.SPECIAL_DATA = null;
+        if (window.SPECIAL_TIMER_INTERVAL) {
+            clearInterval(window.SPECIAL_TIMER_INTERVAL);
+            window.SPECIAL_TIMER_INTERVAL = null;
+        }
+
+        // 2. Reset Inputs
+        const inputs = ['sp-patrolName', 'sp-siteName', 'targetGuardName', 'specialNotes', 'specialPhotoBase64', 'riskLevel', 'ratingUniform', 'ratingCommunication'];
+        inputs.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+
+        // 3. Reset Radios (Default: Stationary)
+        const typeStat = document.getElementById('typeStationary');
+        if (typeStat) {
+            typeStat.checked = true;
+            if (typeof toggleSpecialTargetInput === 'function') toggleSpecialTargetInput();
+        }
+
+        // Reset Routes
+        const rA = document.getElementById('sp-routeA');
+        const rB = document.getElementById('sp-routeB');
+        if (rA) rA.checked = false;
+        if (rB) rB.checked = false;
+
+        // 4. Reset Dropdown UI
+        const patrolTrigger = document.querySelector('#sp-patrolName-select .custom-select-value');
+        if (patrolTrigger) patrolTrigger.textContent = 'Select Patrol...';
+
+        const siteTrigger = document.querySelector('#sp-siteName-select .custom-select-value');
+        if (siteTrigger) siteTrigger.textContent = 'ເລືອກເສັ້ນທາງກ່ອນ'; // Select Route First
+
+        const siteOptions = document.getElementById('sp-siteName-options');
+        if (siteOptions) siteOptions.innerHTML = ''; // Clear site options
+
+        // 5. Reset Photo UI
+        const preview = document.getElementById('specialPhotoPreview');
+        const placeholder = document.getElementById('specialPhotoPlaceholder');
+        if (preview) preview.classList.add('hidden');
+        if (placeholder) placeholder.classList.remove('hidden');
+    };
+
+    window.resetModeSelection = function () {
+        backToLanding();
+    };
+    // =====================================================
+    window.SPECIAL_TIMER_INTERVAL = null;
+
+    window.startSpecialDuty = function () {
+        const typeStat = document.getElementById('typeStationary').checked;
+        const typeOnb = document.getElementById('typeOnboarding').checked;
+
+        const patrol = document.getElementById('sp-patrolName').value;
+        const site = document.getElementById('sp-siteName').value;
+        const target = document.getElementById('targetGuardName').value;
+
+        if (!patrol) { showToast('Select Patrol', 'error'); return; }
+        if (!site) { showToast('Select Site', 'error'); return; }
+        if (!target && typeOnb) { showToast('Enter Trainee Name', 'error'); return; }
+
+        // Store Data
+        if (window.IS_SPECIAL_EDITING && window.SPECIAL_DATA) {
+            // UPDATE MODE: Update metadata but KEEP startTime
+            window.SPECIAL_DATA.type = typeStat ? 'Stationary' : 'Onboarding';
+            window.SPECIAL_DATA.patrol = patrol;
+            window.SPECIAL_DATA.site = site;
+            window.SPECIAL_DATA.target = target || 'No Guard';
+
+            showToast('Setup Updated! 🛰️', 'success');
+        } else {
+            // NEW START MODE
+            window.SPECIAL_DATA = {
+                type: typeStat ? 'Stationary' : 'Onboarding',
+                patrol: patrol,
+                site: site,
+                target: target || 'No Guard', // Fallback for stationary if empty
+                startTime: new Date()
+            };
+            showToast('Duty Started! ⏱️');
+
+            // Start Timer Ticker only if new
+            startTimerTicker();
+        }
+
+        // Reset Editing Flag
+        window.IS_SPECIAL_EDITING = false;
+
+        const statusDetail = document.getElementById('special-status-detail');
+        if (statusDetail) {
+            if (typeStat) {
+                // Stationary: Site • Target (or Patrol if Target is generic)
+                statusDetail.innerText = site + ' • ' + (target !== 'No Guard' ? target : patrol);
+            } else {
+                // Onboarding: Site • Target Name
+                statusDetail.innerText = site + ' • ' + target;
+            }
+        }
+
+        // Update v105 Labels (Manual i18n)
+        // Check if there's a global isLao check (typically by looking at a button text or var)
+        // For now, we'll use Lao as primary with English subtext for maximum clarity
+        const labels = {
+            'special_active': 'ພວມປະຕິບັດໜ້າທີ່ (SPECIAL DUTY ACTIVE)',
+            'elapsed_time': 'ເວລາຜ່ານໄປ (ELAPSED TIME)',
+            'exception': 'ກໍລະນີຍົກເວັ້ນ (EXCEPTION)',
+            'finish_duty': 'ສຳເລັດໜ້າທີ່ (FINISH DUTY)'
+        };
+
+        Object.keys(labels).forEach(key => {
+            const els = document.querySelectorAll(`[data-key="${key}"]`);
+            els.forEach(el => el.innerText = labels[key]);
+        });
+
+        // Navigation
+        document.getElementById('step-1').classList.add('hidden');
+        document.getElementById('step-2-special').classList.remove('hidden');
+
+        // HEADER UPDATE: Stage 2/3
+        currentStep = 2; // Active Stage
+        updateHeaderUI();
+        updateNavButtons(); // Refresh Bottom Bar (Start -> Finish)
+
+        // Show/hide Guard Not Coming button based on mode (v171)
+        const noShowSection = document.getElementById('guard-no-show-section');
+        if (noShowSection) {
+            if (typeOnb) {
+                noShowSection.classList.remove('hidden');
+            } else {
+                noShowSection.classList.add('hidden');
+            }
+        }
+
+        // Start Timer
+        startTimerTicker();
+        showToast('Duty Started! ⏱️');
+
+        // Persist State
+        saveFormStateToStorage();
+    };
+
+    window.backToSpecialSetup = function () {
+        // Confirmation Modal (v118)
+        showModal(
+            'Confirm Edit / ຢືນຢັນການແກ້ໄຂ',
+            'Do you want to edit the setup information? (Timer will be reset) / ທ່ານຕ້ອງການແກ້ໄຂຂໍ້ມູນບໍ? (ເວລາຈະຖືກນັບໃໝ່)',
+            'confirm',
+            function () {
+                // 1. RESET TIMER LOGIC
+                if (window.SPECIAL_TIMER_INTERVAL) {
+                    clearInterval(window.SPECIAL_TIMER_INTERVAL);
+                    window.SPECIAL_TIMER_INTERVAL = null;
+                }
+                const display = document.getElementById('special-timer-display');
+                if (display) display.innerText = '00:00:00';
+
+                // 2. CLEAR SESSION STATE (Force New Start)
+                window.IS_SPECIAL_EDITING = false;
+                window.SPECIAL_DATA = null;
+
+                // 3. Navigation: Go back to Setup Page (Step 1)
+                document.getElementById('step-2-special').classList.add('hidden');
+                document.getElementById('step-1').classList.remove('hidden');
+
+                currentStep = 1;
+                updateHeaderUI();
+                updateNavButtons();
+
+                // 4. Force OVERWRITE Storage (Since removeItem is failing)
+                // We save a "Clean" state to ensure restoreAppState does nothing
+                const cleanState = {
+                    currentStep: 1,
+                    appMode: 'PATROL',
+                    timestamp: Date.now()
+                };
+                localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(cleanState));
+                console.log('[Storage] Force Overwritten with clean state');
+
+                // 5. Manual DOM Reset (Since reload is unreliable in sandbox)
+                // Clear all Special Mode inputs so they don't persist in memory/DOM
+                if (document.getElementById('sp-patrolName')) document.getElementById('sp-patrolName').value = '';
+                if (document.getElementById('sp-siteName')) document.getElementById('sp-siteName').value = '';
+                if (document.getElementById('targetGuardName')) document.getElementById('targetGuardName').value = '';
+
+                // Clear Standard Inputs too just in case
+                if (document.getElementById('patrolName')) document.getElementById('patrolName').value = '';
+                if (document.getElementById('siteName')) document.getElementById('siteName').value = '';
+
+                showToast('Timer Reset. Ready to start new duty.', 'info');
+            }
+        );
+    };
+
+    function startTimerTicker() {
+        if (window.SPECIAL_TIMER_INTERVAL) clearInterval(window.SPECIAL_TIMER_INTERVAL);
+        const display = document.getElementById('special-timer-display');
+
+        window.SPECIAL_TIMER_INTERVAL = setInterval(() => {
+            const now = new Date();
+            const diff = now - window.SPECIAL_DATA.startTime;
+
+            // Format HH:MM:SS
+            const hrs = Math.floor(diff / 3600000);
+            const mins = Math.floor((diff % 3600000) / 60000);
+            const secs = Math.floor((diff % 60000) / 1000);
+
+            if (display) {
+                display.innerText =
+                    (hrs < 10 ? "0" + hrs : hrs) + ":" +
+                    (mins < 10 ? "0" + mins : mins) + ":" +
+                    (secs < 10 ? "0" + secs : secs);
+            }
+        }, 1000);
+    }
+
+    // RESUME DUTY (Back from Report to Timer)
+    window.resumeSpecialDuty = function () {
+        // Navigation
+        document.getElementById('step-3-special').classList.add('hidden');
+        document.getElementById('step-2-special').classList.remove('hidden');
+
+        // Restore v105 UI State
+
+        // HEADER UPDATE: Stage 2/3
+        currentStep = 2;
+        updateHeaderUI();
+        updateNavButtons();
+
+        // Resume Timer Logic (if stopped)
+        // Note: finishSpecialDuty stopped it. We need to restart it but keep old start time.
+        if (!window.SPECIAL_TIMER_INTERVAL) {
+            startTimerTicker();
+        }
+    };
+
+    window.finishSpecialDuty = function () {
+        // Use Custom Modal for Confirmation
+        showModal(
+            'Confirm Finish / ຢືນຢັນການສິ້ນສຸດ',
+            'ທ່ານຕ້ອງການສິ້ນສຸດການປະຕິບັດໜ້າທີ່ນີ້ແທ້ບໍ່? (Confirm Finish Duty?)',
+            'confirm',
+            function () {
+                // ACTUAL FINISH LOGIC (Moved inside callback)
+                _executeFinishSpecialDuty();
+            }
+        );
+    };
+
+    // Internal function to execute finish after confirmation
+    function _executeFinishSpecialDuty() {
+        // Stop Timer
+        if (window.SPECIAL_TIMER_INTERVAL) {
+            clearInterval(window.SPECIAL_TIMER_INTERVAL);
+            window.SPECIAL_TIMER_INTERVAL = null; // CRITICAL: Reset ID so resume works
+        }
+        window.SPECIAL_DATA.endTime = new Date();
+        window.SPECIAL_DATA.durationMs = window.SPECIAL_DATA.endTime - window.SPECIAL_DATA.startTime;
+
+        // Retrieve final timer string for display
+        const durationStr = document.getElementById('special-timer-display').innerText;
+
+        // Navigation
+        document.getElementById('step-2-special').classList.add('hidden');
+        document.getElementById('step-3-special').classList.remove('hidden');
+
+        // Exit v105 UI State
+
+        // HEADER UPDATE: Stage 3/3
+        currentStep = 3; // Report Stage
+        updateHeaderUI();
+        updateNavButtons(); // Refresh Bottom Bar (Finish -> Hidden/Back)
+
+        // Setup Report UI
+        document.getElementById('report-duration').innerText = durationStr;
+        document.getElementById('report-target').innerText = window.SPECIAL_DATA.target;
+
+        if (window.SPECIAL_DATA.type === 'Stationary') {
+            document.getElementById('report-section-stationary').classList.remove('hidden');
+            document.getElementById('report-section-onboarding').classList.add('hidden');
+        } else {
+            document.getElementById('report-section-stationary').classList.add('hidden');
+            document.getElementById('report-section-onboarding').classList.remove('hidden');
+        }
+    };
+
+    window.handleSpecialException = function () {
+        // Generic wrapper for exceptions.
+        // For Onboarding mode, it opens the "Trainee Late" confirmation.
+        if (window.SPECIAL_DATA.type === 'Onboarding') {
+            handleTraineeLate();
+        } else {
+            showModal('Exception', 'No specific exception handlers defined for Stationary mode yet.', 'info');
+        }
+    };
+
+    window.handleTraineeLate = function () {
+        showModal(
+            'Confirm Exception / ກໍລະນີຍົກເວັ້ນ',
+            'Report Trainee as LATE/ABSENT and switch to Stationary Duty coverage?',
+            'confirm',
+            function () {
+                _executeTraineeLate();
+            }
+        );
+    };
+
+    function _executeTraineeLate() {
+        const failedData = {
+            ...window.SPECIAL_DATA,
+            endTime: new Date(),
+            status: 'FailedOnboarding', // Special status
+            notes: 'Trainee Late/Absent - Auto-switched to Stationary',
+            duration: 0
+        };
+
+        google.script.run.submitSpecialActivity(failedData);
+
+        // 2. Switch Context to Stationary
+        showToast('Switched to Stationary Duty 🔄');
+        window.SPECIAL_DATA.type = 'Stationary';
+        window.SPECIAL_DATA.target = 'Covering (Late Trainee)';
+
+        // Update UI
+        const statusTitleLate = document.getElementById('label-special-active');
+        if (statusTitleLate) statusTitleLate.innerText = 'ປະຈຳຈຸດແທນ (Covering)';
+
+        const exceptionBtn = document.getElementById('btn-special-exception');
+        if (exceptionBtn) exceptionBtn.style.display = 'none'; // Hide exception button after switch
+
+        // Timer continues running (counting strictly for the 'Coverage' part? 
+        // User requested "record TWO entries". 
+        // Ideally we should restart timer for the new entry to be accurate.
+        // Let's restart timer to keep data clean for the Stationary record.
+        window.SPECIAL_DATA.startTime = new Date(); // Reset start time for the NEW duty
+        startTimerTicker(); // Display resets to 00:00:00
+    };
+
+    // =====================================================
+    // GUARD NO-SHOW FEATURE (v171)
+    // =====================================================
+    window.showGuardNoShowModal = function () {
+        const modal = document.getElementById('guard-no-show-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Reset selections
+        const radios = document.querySelectorAll('input[name="noShowReason"]');
+        radios.forEach(r => r.checked = false);
+        document.getElementById('no-show-other-input').classList.add('hidden');
+        document.getElementById('noShowOtherText').value = '';
+
+        // Setup "Other" toggle
+        document.getElementById('noShowReasonOther').addEventListener('change', function () {
+            document.getElementById('no-show-other-input').classList.toggle('hidden', !this.checked);
+        });
+    };
+
+    window.closeGuardNoShowModal = function () {
+        const modal = document.getElementById('guard-no-show-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+    };
+
+    window.confirmGuardNoShow = function () {
+        // Get selected reason
+        const selectedRadio = document.querySelector('input[name="noShowReason"]:checked');
+        if (!selectedRadio) {
+            showToast('ກະລຸນາເລືອກເຫດຜົນ / Please select a reason', 'error');
+            return;
+        }
+
+        let reason = selectedRadio.value;
+        if (reason === 'other') {
+            const otherText = document.getElementById('noShowOtherText').value.trim();
+            if (!otherText) {
+                showToast('ກະລຸນາລະບຸເຫດຜົນ / Please specify the reason', 'error');
+                return;
+            }
+            reason = otherText;
+        }
+
+        // Confirmation dialog
+        showModal(
+            'ຢືນຢັນ / Confirm',
+            'ທ່ານຕ້ອງການປ່ຽນເປັນໂໝດປະຈຳຈຸດບໍ? (Switch to Stationary Mode?)\n\nເຫດຜົນ: ' + reason,
+            'confirm',
+            function () {
+                _executeGuardNoShow(reason);
+            }
+        );
+    };
+
+    function _executeGuardNoShow(reason) {
+        // Close modal
+        closeGuardNoShowModal();
+
+        // Store no-show metadata
+        window.SPECIAL_DATA.guardNoShow = true;
+        window.SPECIAL_DATA.noShowReason = reason;
+        window.SPECIAL_DATA.noShowTimestamp = new Date().toISOString();
+        window.SPECIAL_DATA.originalDutyType = 'Onboarding';
+
+        // Switch to Stationary mode
+        window.SPECIAL_DATA.type = 'Stationary';
+        window.SPECIAL_DATA.target = 'ປະຈຳຈຸດແທນ (Guard No-Show)';
+
+        // IMPORTANT: Keep timer running (don't reset startTime)
+        // Timer continues from original start
+
+        // Hide the Guard Not Coming button
+        const noShowSection = document.getElementById('guard-no-show-section');
+        if (noShowSection) noShowSection.classList.add('hidden');
+
+        // Update status display
+        const statusDetail = document.getElementById('special-status-detail');
+        if (statusDetail) {
+            statusDetail.innerText = window.SPECIAL_DATA.site + ' • ປະຈຳຈຸດແທນ';
+        }
+
+        // Save state
+        saveFormStateToStorage();
+
+        showToast('ປ່ຽນເປັນໂໝດປະຈຳຈຸດສຳເລັດ! 🔄', 'success');
+    };
+
+    window.handleSpecialPhoto = function (input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                document.getElementById('specialPhotoPreview').classList.remove('hidden');
+                document.getElementById('specialPhotoPreview').querySelector('img').src = e.target.result;
+                document.getElementById('specialPhotoPlaceholder').classList.add('hidden');
+                document.getElementById('specialPhotoBase64').value = e.target.result; // Full Data URL
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    };
+
+    window.submitSpecialReport = function () {
+        // 1. Confirm First
+        showModal(
+            'Confirm Submit / ຢືນຢັນການສົ່ງ',
+            'ທ່ານຕ້ອງການສົ່ງບົດລາຍງານບໍ່? (Submit Report?)',
+            'confirm',
+            function () {
+                _executeSubmitSpecial();
+            }
+        );
+    };
+
+    function _executeSubmitSpecial() {
+        // Fix v88: Use btnNext in Bottom Bar
+        const btn = document.getElementById('btnNext');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerText = 'Submitting...';
+        }
+
+        // Gather Completion Data
+        const notes = document.getElementById('specialNotes').value;
+        const photo = document.getElementById('specialPhotoBase64').value;
+
+        // Fix v89: Serialize Date objects to avoid "illegal value" error
+        // google.script.run doesn't always handle Date objects in nested structures well.
+        const safeStartTime = window.SPECIAL_DATA.startTime ? new Date(window.SPECIAL_DATA.startTime).toISOString() : new Date().toISOString();
+        const safeEndTime = window.SPECIAL_DATA.endTime ? new Date(window.SPECIAL_DATA.endTime).toISOString() : new Date().toISOString();
+
+        const payload = {
+            ...window.SPECIAL_DATA,
+            startTime: safeStartTime, // Send as String
+            endTime: safeEndTime,     // Send as String
+            notes: notes,
+            photo: photo, // Backend will handle upload
+            status: 'Completed'
+        };
+
+        if (window.SPECIAL_DATA.type === 'Stationary') {
+            const risk = document.querySelector('input[name="riskLevel"]:checked').value;
+            payload.ratings = JSON.stringify({ risk: risk });
+        } else {
+            const uniform = document.getElementById('ratingUniform').value;
+            const comm = document.getElementById('ratingCommunication').value;
+            payload.ratings = JSON.stringify({ uniform: uniform, communication: comm });
+        }
+
+        // Submit
+        google.script.run
+            .withSuccessHandler(function () {
+                if (btn) { btn.innerText = 'Success ✅'; }
+
+                // Clear Storage (Session Complete)
+                clearFormStateStorage();
+
+                showModal(
+                    'Success / ສຳເລັດ',
+                    'ສົ່ງບົດລາຍງານສຳເລັດແລ້ວ! ກົດ OK ເພື່ອກັບຄືນໜ້າຫຼັກ.\n(Report Sent! Click OK to Return Home)',
+                    'success',
+                    function () {
+                        backToLanding(); // Reset
+                    }
+                );
+            })
+            .withFailureHandler(function (err) {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = 'Submit Report 🚀';
+                }
+                showModal('Error / ຜິດພາດ', 'Failed: ' + err.message, 'error');
+            })
+            .submitSpecialActivity(payload);
+    }
+
+
+
+
+    // --- LEGACY CONNECTORS (REMOVED: Use updated Logic in JavaScript.html top section) ---
+    // window.toggleCustomSelect = toggleCustomSelect; // Already defined
+    // window.selectCustomOption = selectCustomOption; // Already defined
+
+    window.setSpecialRating = function (type, val) {
+        // Update hidden input
+        const input = document.getElementById('rating' + type);
+        if (input) input.value = val;
+
+        // Update UI
+        const container = document.getElementById('ratingButtons-' + type);
+        if (container) {
+            const btns = container.querySelectorAll('.rating-btn');
+            btns.forEach(function (btn, idx) {
+                if (idx + 1 === val) {
+                    btn.classList.add('bg-purple-600', 'text-white', 'border-purple-600');
+                    btn.classList.remove('bg-white');
+                } else {
+                    btn.classList.remove('bg-purple-600', 'text-white', 'border-purple-600');
+                    btn.classList.add('bg-white');
+                }
+            });
+        }
+        console.log('[Rating] ' + type + ' set to: ' + val);
+    };
+
+    // =====================================================
+    // EXPOSE FUNCTIONS TO GLOBAL SCOPE (for Google Apps Script)
+    // =====================================================
+    window.toggleCustomSelect = toggleCustomSelect;
+    window.selectCustomOption = selectCustomOption;
+    window.updateSiteList = updateSiteList;
+    window.changeStep = changeStep;
+    window.submitForm = submitForm;
+    // window.showModal = showModal; // REMOVED to prevent overwriting Modal.html
+    // window.closeModal = closeModal; // REMOVED
+    window.handleMultiFileChange = handleMultiFileChange;
+    window.removePhoto = removePhoto;
+    window.openTimePicker = openTimePicker;
+    window.confirmTimePicker = confirmTimePicker;
+    window.closeTimePicker = closeTimePicker;
+    window.setSliderValue = setSliderValue;
+    window.handleSliderClick = handleSliderClick;
+    window.setSpecialRating = setSpecialRating;
+
+    // =====================================================
+    // TEST HARNESS (Refactoring Phase 1)
+    // =====================================================
+    window.MOCK_SUBMIT = false;
+    window.SIMULATE_OFFLINE = false;
+
+    // Check URL param automatically
+    window.addEventListener('load', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('test') === '1') {
+            enableTestMode();
+        }
+    });
+
+    // 5-Tap Trigger
+    let brandClicks = 0;
+    let brandTimer;
+    window.handleBrandClick = function () {
+        clearTimeout(brandTimer);
+        brandClicks++;
+        if (brandClicks >= 5) {
+            showToast('Developer Mode Enabled 🛠️');
+            enableTestMode();
+            brandClicks = 0;
+        }
+        brandTimer = setTimeout(() => { brandClicks = 0; }, 1000);
+    };
+
+    function enableTestMode() {
+        if (document.getElementById('testFab')) return;
+
+        const fab = document.createElement('div');
+        fab.id = 'testFab';
+        fab.className = 'test-fab';
+        fab.innerHTML = '🛠️';
+        fab.onclick = () => document.getElementById('testMenu').classList.toggle('show');
+        document.body.appendChild(fab);
+
+        const menu = document.createElement('div');
+        menu.id = 'testMenu';
+        menu.className = 'test-menu';
+        menu.innerHTML = `
+            <div style="font-weight:bold;margin-bottom:4px;border-bottom:1px solid #ddd;padding-bottom:4px">Test Tools</div>
+            <button class="test-btn" onclick="fillFakeData()">⚡ Fill Fake Data</button>
+            <button class="test-btn" id="btnMock" onclick="toggleMockSubmit()">🚀 Mock Submit: OFF</button>
+            <button class="test-btn" id="btnOffline" onclick="toggleSimulateOffline()">📶 Force Offline: OFF</button>
+            <button class="test-btn" onclick="testToasts()">🔔 Test Toasts</button>
+            <button class="test-btn" onclick="bypassGPS()">📍 Bypass GPS</button>
+            <button class="test-btn" onclick="jumpToSuccess()">🏁 Jump to Success</button>
+            <button class="test-btn" onclick="viewOfflineQueue()">📦 View Offline Queue</button>
+            <div style="margin-top:4px;border-top:1px solid #ddd;padding-top:4px">
+                <button class="test-btn" onclick="location.reload()">🔄 Reload App</button>
+            </div>
+        `;
+        document.body.appendChild(menu);
+    }
+
+    window.jumpToSuccess = function () {
+        const dummyData = {
+            patrolName: 'Test Patrol',
+            route: 'A',
+            siteName: 'Test Site (Bypassed)',
+            guardName: 'Test Guard',
+            shift: 'Day',
+            gpsLat: 17.9,
+            gpsLng: 102.6,
+            ratingCommunication: 5,
+            ratingUniform: 5,
+            issues: 'None'
+        };
+
+        // Populate Summary
+        if (typeof showSummary === 'function') {
+            showSummary(dummyData);
+        }
+
+        // Hide all steps
+        for (let i = 1; i <= 7; i++) {
+            const el = document.getElementById('step-' + i);
+            if (el) el.classList.add('hidden');
+        }
+
+        // Show Step 7
+        const step7 = document.getElementById('step-7');
+        if (step7) step7.classList.remove('hidden');
+
+        // Mock State
+        window.currentStep = 7;
+        const stepNum = document.getElementById('currentStepNum');
+        if (stepNum) stepNum.innerText = '7';
+
+        const prog = document.getElementById('progressBar');
+        if (prog) prog.style.width = '100%';
+
+        // Stop refresh
+        if (typeof stopRealTimeRefresh === 'function') stopRealTimeRefresh();
+
+        // Hide countdown
+        const cd = document.getElementById('refreshCountdown');
+        if (cd) cd.classList.add('hidden');
+
+        // Show Report
+        const report = document.getElementById('testReport');
+        const jsonPre = document.getElementById('testReportJson');
+        if (report && jsonPre) {
+            report.classList.remove('hidden');
+            if (typeof SyntaxHighlight === 'function') {
+                jsonPre.innerHTML = SyntaxHighlight(JSON.stringify(dummyData, null, 2));
+            } else {
+                jsonPre.textContent = JSON.stringify(dummyData, null, 2);
+            }
+        }
+
+        showToast('Jumped to Success 🏁');
+    };
+
+    window.bypassGPS = function () {
+        const card = document.getElementById('locationCard');
+        if (!card) {
+            showToast('Go to Step 6 first! ⚠️', 'error');
+            return;
+        }
+
+        // Set Dummy Data (Vientiane, Laos approximate)
+        const lat = 17.9667;
+        const lng = 102.6000;
+
+        const linkInput = document.getElementById('gpsLink');
+        const latInput = document.getElementById('gpsLat');
+        const lngInput = document.getElementById('gpsLng');
+
+        if (linkInput) linkInput.value = 'https://www.google.com/maps?q=' + lat + ',' + lng;
+        if (latInput) latInput.value = lat;
+        if (lngInput) lngInput.value = lng;
+
+        // Update UI
+        card.classList.remove('error');
+        card.classList.add('success');
+
+        const paramIcon = card.querySelector('.location-icon');
+        const paramText = card.querySelector('.location-text');
+        if (paramIcon) paramIcon.textContent = '✅';
+        if (paramText) paramText.textContent = 'GPS Bypassed (Fake Data)';
+
+        const coordsDiv = document.getElementById('locationCoords');
+        const coordsValue = document.getElementById('coordsValue');
+
+        if (coordsDiv) coordsDiv.classList.remove('hidden');
+        if (coordsValue) coordsValue.textContent = lat.toFixed(6) + ', ' + lng.toFixed(6) + ' (Fake)';
+
+        // Update Button State
+        const btn = document.getElementById('getLocationBtn');
+        if (btn) {
+            btn.disabled = false;
+            const btnIcon = document.getElementById('locationBtnIcon');
+            const btnText = document.getElementById('locationBtnText');
+            if (btnIcon) btnIcon.textContent = '🔄';
+            if (btnText) btnText.textContent = 'Reset Location';
+        }
+
+        showToast('GPS Bypassed 📍');
+    };
+
+    window.testToasts = function () {
+        showToast('Info Toast ℹ️');
+        setTimeout(() => showToast('Error Toast ❌', 'error'), 1000);
+        setTimeout(() => showToast('Success Toast ✅', 'success'), 2000);
+    };
+
+    window.viewOfflineQueue = function () {
+        const queue = JSON.parse(localStorage.getItem('vks_offline_queue') || '[]');
+        if (queue.length === 0) {
+            showModal('Offline Queue', 'Queue is empty.', 'info');
+            return;
+        }
+
+        // Pretty print summary
+        const summary = queue.map(function (item, i) {
+            return '#' + (i + 1) + ': ' + item.siteName + ' (' + new Date(item.queuedAt).toLocaleTimeString() + ')';
+        }).join('\n');
+
+        if (confirm('Queue has ' + queue.length + ' items:\n\n' + summary + '\n\nClear Queue?')) {
+            localStorage.removeItem('vks_offline_queue');
+            showToast('Queue Cleared 🗑️');
+        }
+    };
+
+    window.toggleMockSubmit = function () {
+        window.MOCK_SUBMIT = !window.MOCK_SUBMIT;
+        const btn = document.getElementById('btnMock');
+        btn.innerHTML = window.MOCK_SUBMIT ? '🚀 Mock Submit: ON' : '🚀 Mock Submit: OFF';
+        btn.classList.toggle('active', window.MOCK_SUBMIT);
+    };
+
+    window.toggleSimulateOffline = function () {
+        window.SIMULATE_OFFLINE = !window.SIMULATE_OFFLINE;
+        const btn = document.getElementById('btnOffline');
+        btn.innerHTML = window.SIMULATE_OFFLINE ? '📶 Force Offline: ON' : '📶 Force Offline: OFF';
+        btn.classList.toggle('active', window.SIMULATE_OFFLINE);
+
+        // Force update UI via event dispatch
+        try {
+            // Some browsers block redefining onLine, so we rely on the global flag in our update logic
+            Object.defineProperty(navigator, 'onLine', {
+                get: function () { return !window.SIMULATE_OFFLINE; },
+                configurable: true
+            });
+        } catch (e) {
+            console.warn('Cannot redefine navigator.onLine (Browser Restriction). Relying on window.SIMULATE_OFFLINE flag.');
+        }
+
+        window.dispatchEvent(new Event(window.SIMULATE_OFFLINE ? 'offline' : 'online'));
+        if (typeof updateNetworkStatusUI === 'function') updateNetworkStatusUI();
+    };
+
+    window.fillFakeData = function () {
+        // Step 1
+        ensureSelect('patrolName', 1);
+        ensureSelect('route', 'A'); // Radio
+        ensureSelect('siteName', 1); // Helper needed for custom selects
+
+        // Step 2
+        document.getElementById('guardName').value = 'Test Guard ' + Math.floor(Math.random() * 100);
+
+        // Step 3
+        const shiftInput = document.getElementById('shift');
+        if (shiftInput) shiftInput.value = 'Day';
+
+        // Try to check empType if it exists
+        const empRadio = document.querySelector('input[name="empType"][value="VKS"]');
+        if (empRadio) empRadio.checked = true;
+
+        // Step 4
+        document.querySelector('input[name="siteStatus"][value="Normal"]').checked = true;
+        toggleIssues(false);
+
+        showToast('Fake Data Filled ⚡');
+    };
+
+    function ensureSelect(id, indexOrVal) {
+        // Basic helper - real implementation depends on selectCustomOption
+        const el = document.getElementById(id);
+        if (el && el.tagName === 'SELECT') {
+            el.selectedIndex = indexOrVal;
+        } else if (id === 'route') {
+            const rad = document.querySelector('input[name="route"][value="A"]');
+            if (rad) rad.click();
+        } else {
+            // Try to find first option in custom select
+            const opts = document.getElementById(id + '-options');
+            if (opts && opts.firstChild) opts.firstChild.click();
+        }
+    }
+
+    // JSON Syntax Highlighter helper
+    function SyntaxHighlight(json) {
+        if (typeof json != 'string') {
+            json = JSON.stringify(json, undefined, 2);
+        }
+        json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+            var cls = 'text-purple-600'; // number
+            if (/^"/.test(match)) {
+                if (/:$/.test(match)) {
+                    cls = 'text-blue-600 font-bold'; // key
+                } else {
+                    cls = 'text-green-600'; // string
+                }
+            } else if (/true|false/.test(match)) {
+                cls = 'text-orange-600 font-bold'; // boolean
+            } else if (/null/.test(match)) {
+                cls = 'text-gray-500'; // null
+            }
+            return '<span class="' + cls + '">' + match + '</span>';
+        });
+    }
+    // =====================================================
+    // GAMIFICATION (Audio & Visuals)
+    // =====================================================
+    function playSuccessSound() {
+        // Simple "Ding!" using Web Audio API (No external files)
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+
+            const ctx = new AudioContext();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            // Nice "Ding" sound (Sine wave + decay)
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+            osc.frequency.exponentialRampToValueAtTime(1046.5, ctx.currentTime + 0.1); // Jump to C6
+
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
+
+            osc.start();
+            osc.stop(ctx.currentTime + 0.8);
+        } catch (e) {
+            console.warn('Audio play failed', e);
+        }
+    }
+
+    function fireConfetti() {
+        // Simple Canvas Confetti
+        const duration = 3000;
+        const animationEnd = Date.now() + duration;
+        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
+
+        // We need a canvas overlay if one doesn't exist
+        let canvas = document.getElementById('confetti-canvas');
+        if (!canvas) {
+            canvas = document.createElement('canvas');
+            canvas.id = 'confetti-canvas';
+            canvas.style.position = 'fixed';
+            canvas.style.top = '0';
+            canvas.style.left = '0';
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            canvas.style.pointerEvents = 'none';
+            canvas.style.zIndex = '9999';
+            document.body.appendChild(canvas);
+        }
+
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const particles = [];
+        const colors = ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff'];
+
+        // Create particles
+        for (let i = 0; i < 100; i++) {
+            particles.push({
+                x: window.innerWidth / 2,
+                y: window.innerHeight / 2,
+                w: Math.random() * 10 + 5,
+                h: Math.random() * 5 + 5,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                vx: (Math.random() - 0.5) * 20,
+                vy: (Math.random() - 0.5) * 20 - 10, // upward pop
+                gravity: 0.5,
+                rotation: Math.random() * 360,
+                rotationSpeed: (Math.random() - 0.5) * 10
+            });
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            particles.forEach((p, index) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += p.gravity;
+                p.rotation += p.rotationSpeed;
+
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rotation * Math.PI / 180);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                ctx.restore();
+
+                if (p.y > window.innerHeight) particles.splice(index, 1);
+            });
+
+            if (particles.length > 0) requestAnimationFrame(render);
+            else canvas.remove();
+        }
+
+        requestAnimationFrame(render);
+    }
+    // OVERRIDE: Update Special Site List (Fix for configData loading)
+    window.updateSpecialSiteList = function () {
+        const routeA = document.getElementById('sp-routeA');
+        const routeB = document.getElementById('sp-routeB');
+        const dropdown = document.getElementById('sp-siteName-options');
+        const triggerText = document.querySelector('#sp-siteName-select .custom-select-value');
+
+        if (!routeA || !routeB || !dropdown) return;
+
+        const route = routeA.checked ? 'A' : (routeB.checked ? 'B' : '');
+        dropdown.innerHTML = '';
+
+        // Clear current value if route changed
+        document.getElementById('sp-siteName').value = '';
+        if (triggerText) triggerText.textContent = 'Select Site...';
+
+        if (!route) {
+            dropdown.innerHTML = '<div class="custom-select-option p-3 text-gray-400">Please select route first...</div>';
+            return;
+        }
+
+        // Use global configData if available, fallback to empty
+        const sites = (typeof configData !== 'undefined') ?
+            ((route === 'A') ? configData.routeA : configData.routeB) : [];
+
+        if (sites && sites.length > 0) {
+            sites.forEach(s => {
+                const div = document.createElement('div');
+                div.className = 'custom-select-option p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0';
+                div.dataset.value = s;
+                div.textContent = s;
+                const opt = div;
+                div.onclick = function () {
+                    selectCustomOption(opt, 'sp-siteName');
+                };
+                dropdown.appendChild(div);
+            });
+            console.log(`[Special] Added ${sites.length} sites for Route ${route}.`);
+        } else {
+            dropdown.innerHTML = '<div class="custom-select-option p-3 text-gray-400">No sites found</div>';
+        }
+    };
+</script>

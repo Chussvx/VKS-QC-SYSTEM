@@ -1,0 +1,811 @@
+<!-- Page_Handover.html - Handover Records Feed -->
+<div id="page-handover-records" class="page-content">
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <div class="filter-group">
+      <!-- Date Range Picker (Flatpickr) -->
+      <button id="handover-date-trigger" class="date-range-picker-btn w-56">
+        <span class="material-symbols-outlined">calendar_today</span>
+        <span id="handover-date-label">All Dates</span>
+      </button>
+      <input type="hidden" id="handover-start-date">
+      <input type="hidden" id="handover-end-date">
+
+      <div class="divider-v h-6"></div>
+
+      <!-- Site Filter -->
+      <div class="custom-select w-48" data-select-id="handover-site" data-onchange="loadHandovers">
+        <button class="custom-select-trigger" onclick="toggleSelect('handover-site')">
+          <span class="custom-select-value">All Sites</span>
+          <span class="material-symbols-outlined">expand_more</span>
+        </button>
+        <div class="custom-select-menu" id="handover-site-menu">
+          <div class="custom-select-item selected" data-value=""
+            onclick="selectOption('handover-site', '', 'All Sites')">All Sites</div>
+        </div>
+        <input type="hidden" id="handover-site" name="handover-site" value="">
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3 ml-auto">
+      <span class="text-muted"><strong id="handover-count">0</strong> <span
+          data-i18n="handover.records">Records</span></span>
+      <button class="btn-icon" onclick="loadHandovers()" title="Refresh">
+        <span class="material-symbols-outlined">refresh</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Handover Feed -->
+  <div id="handover-feed" class="handover-feed flex flex-col gap-5 p-2">
+  </div>
+
+</div>
+
+<style>
+  /* Handover Activity Feed - V2 Redesign */
+  .handover-item {
+    display: flex;
+    gap: 20px;
+    padding: 24px;
+    background: white;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  }
+
+  .handover-item:hover {
+    border-color: rgba(16, 185, 129, 0.3);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+    transform: translateY(-2px);
+  }
+
+  .handover-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.03) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+    border: 1px solid rgba(16, 185, 129, 0.05);
+  }
+
+  .handover-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .handover-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+
+  .handover-site {
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+  }
+
+  .handover-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+  }
+
+  .handover-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .handover-meta-item .material-symbols-outlined {
+    font-size: 16px;
+  }
+
+  .handover-comment {
+    background: rgba(242, 242, 247, 0.4);
+    padding: 16px 20px;
+    border-radius: 12px;
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: var(--text-primary);
+    position: relative;
+    border-left: 4px solid var(--primary);
+    font-style: italic;
+  }
+
+  .handover-time-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--primary);
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  @media (max-width: 640px) {
+    .handover-item {
+      gap: 16px;
+      padding: 16px;
+    }
+
+    .handover-avatar {
+      width: 44px;
+      height: 44px;
+      font-size: 20px;
+    }
+  }
+
+  /* Fix Material Symbols Font - This fixes the 'warning' text issue */
+  .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    font-feature-settings: 'liga';
+  }
+
+  /* Date Range Picker Button */
+  .date-range-picker-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 16px;
+    background: white;
+    border: 1px solid var(--border);
+    /* Fallback if var has no alpha */
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-primary);
+    transition: all 0.2s;
+  }
+
+  .date-range-picker-btn:hover {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  }
+
+  /* Handover Avatar Icon Styling */
+  .handover-avatar .material-symbols-outlined {
+    font-size: 24px;
+    color: var(--primary);
+  }
+</style>
+
+<script>
+  // Handover page state
+  let handoverData = [];
+  let handoverFiltered = [];
+  let lastHandoverSignal = 0;
+  let handoverPoller = null;
+  let handoverRenderCount = 0;
+  const HANDOVER_BATCH_SIZE = 20;
+  let handoverBgMonths = 1;
+  let handoverBgLoading = false;
+  let handoverBgComplete = false;
+
+  // HandoverCache - In-memory cache for faster page loads (Amazon-style)
+  const HandoverCache = {
+    data: null,
+    timestamp: 0,
+    filters: null,
+    maxAge: 60000,
+
+    get: function (filters) {
+      // Only return cache if filters match
+      if (this.data && (Date.now() - this.timestamp) < this.maxAge) {
+        if (JSON.stringify(this.filters) === JSON.stringify(filters)) {
+          console.log('[HandoverCache] HIT');
+          return this.data;
+        }
+      }
+      return null;
+    },
+
+    set: function (data, filters) {
+      this.data = data;
+      this.filters = filters;
+      this.timestamp = Date.now();
+      console.log('[HandoverCache] SET');
+    }
+  };
+
+  // Initialize Handover page (Layer 3: memory cache guard)
+  function init_handover_records() {
+    // If we already have cached data, render instantly and skip full re-init
+    if (handoverData && handoverData.length > 0) {
+      console.log('[Handover] Memory cache hit — instant render');
+      handoverFiltered = [...handoverData];
+      handoverRenderCount = 0;
+      renderHandoverFeed();
+      document.getElementById('handover-count').textContent = handoverFiltered.length;
+      startHandoverSignalListener();
+      return;
+    }
+
+    // Initialize Flatpickr Date Range
+    if (typeof flatpickr !== 'undefined') {
+      flatpickr("#handover-date-trigger", {
+        mode: "range",
+        dateFormat: "Y-m-d",
+        onClose: function (selectedDates, dateStr, instance) {
+          if (selectedDates.length === 2) {
+            const start = selectedDates[0].toISOString().split('T')[0];
+            const end = selectedDates[1].toISOString().split('T')[0];
+            document.getElementById('handover-start-date').value = start;
+            document.getElementById('handover-end-date').value = end;
+            document.getElementById('handover-date-label').textContent = `${start} to ${end}`;
+            loadHandovers();
+          } else if (selectedDates.length === 0) {
+            clearDateRange();
+          }
+        }
+      });
+    } else {
+      console.warn('Flatpickr not loaded!');
+    }
+
+    loadHandoverFilters();
+    startHandoverSignalListener();
+
+    // Load initial data with smart defaults (last 7 days)
+    loadHandovers();
+  }
+
+  // Clear date range and reload (resets to smart default = last 7 days)
+  function clearDateRange() {
+    document.getElementById('handover-start-date').value = '';
+    document.getElementById('handover-end-date').value = '';
+    document.getElementById('handover-date-label').textContent = 'All Dates';
+    handoverBgMonths = 1;
+    handoverBgComplete = false;
+    loadHandovers();
+  }
+
+  // Helper: get date string N days ago
+  function _daysAgo(n) {
+    var d = new Date();
+    d.setDate(d.getDate() - n);
+    return d.toISOString().split('T')[0];
+  }
+
+  function loadHandoverFilters() {
+    google.script.run
+      .withSuccessHandler(function (options) {
+        // Populate custom dropdown menu (not <select>)
+        const menu = document.getElementById('handover-site-menu');
+        if (menu) {
+          let html = '<div class="custom-select-item selected" data-value="" onclick="selectOption(\'handover-site\', \'\', \'All Sites\')">All Sites</div>';
+          options.forEach(opt => {
+            html += `<div class="custom-select-item" data-value="${opt.value}" onclick="selectOption('handover-site', '${opt.value}', '${escapeHtml(opt.label)}'">${escapeHtml(opt.label)}</div>`;
+          });
+          menu.innerHTML = html;
+        }
+      })
+      .getSiteOptions();
+  }
+
+  // Load handovers with smart date defaults
+  function loadHandovers() {
+    var userStart = document.getElementById('handover-start-date').value;
+    var userEnd = document.getElementById('handover-end-date').value;
+
+    // Smart default: if no date filter set, load last 7 days (not all time)
+    var filters = {
+      startDate: userStart || _daysAgo(7),
+      endDate: userEnd || new Date().toISOString().split('T')[0],
+      siteId: document.getElementById('handover-site').value
+    };
+
+    // Check cache first
+    var cached = HandoverCache.get(filters);
+    if (cached) {
+      handoverData = cached;
+      handoverFiltered = [...handoverData];
+      handoverRenderCount = 0;
+      renderHandoverFeed();
+      document.getElementById('handover-count').textContent = handoverFiltered.length;
+      // Start background loading of older data
+      if (!userStart) setTimeout(loadNextHandoverBatch, 2000);
+      return;
+    }
+
+    // Show loading or stale data
+    if (handoverData && handoverData.length > 0) {
+      console.log('[Handover] Memory First Render');
+      handoverFiltered = [...handoverData];
+      handoverRenderCount = 0;
+      renderHandoverFeed();
+      showSync();
+    } else {
+      var feed = document.getElementById('handover-feed');
+      feed.innerHTML = '<div class="loading-state text-center py-8">' +
+        '<span class="material-symbols-outlined spin text-4xl text-muted">progress_activity</span>' +
+        '<p class="mt-2 text-muted">Loading handover records...</p></div>';
+    }
+
+    console.log('[Handover] Loading:', filters.startDate, 'to', filters.endDate);
+
+    google.script.run
+      .withSuccessHandler(function (data) {
+        hideSync();
+        data = data || [];
+        // Sort newest first
+        data.sort(function (a, b) { return new Date(b.timestamp) - new Date(a.timestamp); });
+        HandoverCache.set(data, filters);
+        handoverData = data;
+        handoverFiltered = [...handoverData];
+        handoverRenderCount = 0;
+        renderHandoverFeed();
+        document.getElementById('handover-count').textContent = handoverFiltered.length;
+
+        // Start background loading of older data (only if using smart defaults)
+        if (!userStart) {
+          handoverBgMonths = 1;
+          handoverBgComplete = false;
+          setTimeout(loadNextHandoverBatch, 2000);
+        }
+      })
+      .withFailureHandler(function (error) {
+        hideSync();
+        if (!handoverData || handoverData.length === 0) {
+          var feed = document.getElementById('handover-feed');
+          feed.innerHTML = '<div class="error-state text-center py-8">' +
+            '<span class="material-symbols-outlined text-4xl text-danger">error</span>' +
+            '<p class="mt-2">Failed to load: ' + error.message + '</p></div>';
+        } else {
+          showToast('Sync failed: ' + error.message, 'error');
+        }
+      })
+      .getHandoverRecords(filters);
+  }
+
+  // Background batch: load older 30-day chunks silently
+  function loadNextHandoverBatch() {
+    if (handoverBgComplete || handoverBgLoading) return;
+    if (currentPage !== 'handover_records') return;
+
+    handoverBgLoading = true;
+    var endDate = new Date();
+    endDate.setDate(endDate.getDate() - 7 - ((handoverBgMonths - 1) * 30));
+    var startDate = new Date(endDate);
+    startDate.setDate(startDate.getDate() - 30);
+
+    var batchFilters = {
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate.toISOString().split('T')[0],
+      siteId: document.getElementById('handover-site').value
+    };
+
+    console.log('[Handover BG] Batch', handoverBgMonths, ':', batchFilters.startDate, 'to', batchFilters.endDate);
+
+    google.script.run
+      .withSuccessHandler(function (data) {
+        handoverBgLoading = false;
+        data = data || [];
+
+        if (data.length === 0) {
+          handoverBgComplete = true;
+          console.log('[Handover BG] Complete! Total:', handoverData.length);
+          document.getElementById('handover-count').textContent = handoverData.length;
+          return;
+        }
+
+        // Merge by ID dedup
+        var existingIds = new Set(handoverData.map(function (d) { return d.id; }));
+        var newItems = data.filter(function (d) { return !existingIds.has(d.id); });
+
+        if (newItems.length > 0) {
+          handoverData = handoverData.concat(newItems);
+          handoverData.sort(function (a, b) { return new Date(b.timestamp) - new Date(a.timestamp); });
+          handoverFiltered = [...handoverData];
+          document.getElementById('handover-count').textContent = handoverData.length;
+          console.log('[Handover BG] +' + newItems.length + ' items. Total:', handoverData.length);
+        }
+
+        handoverBgMonths++;
+        setTimeout(loadNextHandoverBatch, 2000);
+      })
+      .withFailureHandler(function (err) {
+        handoverBgLoading = false;
+        console.warn('[Handover BG] Batch failed:', err.message);
+        setTimeout(loadNextHandoverBatch, 5000);
+      })
+      .getHandoverRecords(batchFilters);
+  }
+
+  // Render handover feed progressively (20 at a time)
+  function renderHandoverFeed() {
+    var feed = document.getElementById('handover-feed');
+
+    if (handoverFiltered.length === 0) {
+      feed.innerHTML = '<div class="empty-state text-center py-12">' +
+        '<span class="material-symbols-outlined text-6xl text-muted mb-4">assignment_turned_in</span>' +
+        '<h3 class="text-lg font-bold mb-1">No handover records found</h3>' +
+        '<p class="text-muted">Records from Site_Comments will appear here.</p></div>';
+      return;
+    }
+
+    // Render first batch (or reset)
+    var end = Math.min(HANDOVER_BATCH_SIZE, handoverFiltered.length);
+    handoverRenderCount = end;
+
+    var html = renderHandoverCards(handoverFiltered.slice(0, end));
+
+    // Add "Load More" button if there's more data
+    if (handoverFiltered.length > end) {
+      html += renderLoadMoreBtn();
+    }
+
+    feed.innerHTML = html;
+  }
+
+  // Render more cards when "Load More" is clicked
+  function loadMoreHandovers() {
+    var feed = document.getElementById('handover-feed');
+    var start = handoverRenderCount;
+    var end = Math.min(start + HANDOVER_BATCH_SIZE, handoverFiltered.length);
+    handoverRenderCount = end;
+
+    // Remove the old "Load More" button
+    var oldBtn = document.getElementById('handover-load-more');
+    if (oldBtn) oldBtn.remove();
+
+    // Append new cards
+    var tempDiv = document.createElement('div');
+    tempDiv.innerHTML = renderHandoverCards(handoverFiltered.slice(start, end));
+    while (tempDiv.firstChild) {
+      feed.appendChild(tempDiv.firstChild);
+    }
+
+    // Add new "Load More" button if still more
+    if (handoverFiltered.length > end) {
+      var btnDiv = document.createElement('div');
+      btnDiv.innerHTML = renderLoadMoreBtn();
+      feed.appendChild(btnDiv.firstChild);
+    }
+  }
+
+  // Generate HTML for a batch of handover cards
+  function renderHandoverCards(records) {
+    return records.map(function (record) {
+      var date = new Date(record.timestamp);
+      var timeAgo = getTimeAgo(date);
+      var icon = getHandoverIcon(record.siteName);
+
+      return '<div class="handover-item shadow-sm" onclick="openHandoverDetail(\'' + record.id + '\')">'
+        + '<div class="handover-avatar">' + icon + '</div>'
+        + '<div class="handover-content">'
+        + '<div class="handover-header">'
+        + '<div class="handover-site">' + escapeHtml(record.siteName) + '</div>'
+        + '<span class="handover-time-badge">' + timeAgo + '</span>'
+        + '</div>'
+        + '<div class="handover-meta">'
+        + '<div class="handover-meta-item"><span class="material-symbols-outlined">person</span>'
+        + '<span>' + escapeHtml(record.outgoingGuard || 'Unknown') + '</span></div>'
+        + '<div class="handover-meta-item"><span class="material-symbols-outlined">schedule</span>'
+        + '<span>' + (record.timeDisplay || '') + '</span></div>'
+        + '<div class="handover-meta-item"><span class="material-symbols-outlined">calendar_today</span>'
+        + '<span>' + (record.displayDate || date.toLocaleDateString('en-GB')) + '</span></div>'
+        + '</div>'
+        + '<div class="handover-comment">"' + escapeHtml(record.notes || 'No comment provided') + '"</div>'
+        + '</div></div>';
+    }).join('');
+  }
+
+  // "Load More" button HTML
+  function renderLoadMoreBtn() {
+    var remaining = handoverFiltered.length - handoverRenderCount;
+    return '<div id="handover-load-more" style="text-align:center;padding:16px;">'
+      + '<button onclick="loadMoreHandovers()" class="btn btn-outlined" style="min-width:200px;">'
+      + '<span class="material-symbols-outlined" style="font-size:18px;vertical-align:-3px;">expand_more</span> '
+      + 'Load More (' + remaining + ' remaining)'
+      + '</button></div>';
+  }
+
+  // UI Helpers (V2 Port)
+  function getTimeAgo(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+    if (seconds < 60) return "Just now";
+    let interval = seconds / 31536000;
+    if (interval > 1) return Math.floor(interval) + "y ago";
+    interval = seconds / 2592000;
+    if (interval > 1) return Math.floor(interval) + "mo ago";
+    interval = seconds / 86400;
+    if (interval > 1) return Math.floor(interval) + "d ago";
+    interval = seconds / 3600;
+    if (interval > 1) return Math.floor(interval) + "h ago";
+    interval = seconds / 60;
+    if (interval > 1) return Math.floor(interval) + "m ago";
+    return Math.floor(seconds) + "s ago";
+  }
+
+  // Renamed to avoid Global Namespace Collision
+  function getHandoverIcon(siteName) {
+    // SVG Paths for Material Icons
+    const icons = {
+      location: '<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="M480-480q33 0 56.5-23.5T560-560q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560q0 33 23.5 56.5T480-480Zm0 294q122-112 181-203.5T720-552q0-109-69.5-178.5T480-800q-101 0-170.5 69.5T240-552q0 71 59 162.5T480-186Zm0 106Q319-217 239.5-334.5T160-552q0-150 96.5-239T480-880q127 0 223.5 89T800-552q0 100-79.5 217.5T480-80Zm0-480Z"/></svg>',
+      hotel: '<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="M160-120v-480h80v-160q0-33 23.5-56.5T320-840h320q33 0 56.5 23.5T720-760v160h80v480h-80v-240H240v240h-80Zm160-440h320v-160H320v160ZM240-440h480v-200H240v200Zm120-40v-120h80v120h-80Zm160 0v-120h80v120h-80ZM240-440v-200 200Z"/></svg>',
+      business: '<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="M160-120v-720h400v160h240v560H160Zm80-80h240v-80H240v80Zm0-160h240v-80H240v80Zm0-160h240v-80H240v80Zm0-160h240v-80H240v80Zm320 480h160v-80H560v80Zm0-160h160v-80H560v80Zm0-160h160v-80H560v80Z"/></svg>',
+      shield: '<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="M480-80q-139-32-229.5-132.5T160-418v-302l320-120 320 120v302q0 106-90.5 206.5T480-80Zm0-84q104-33 172-113.5T720-418v-242l-240-90-240 90v242q0 119 68 199.5T480-164Zm0-254Z"/></svg>',
+      store: '<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="M240-120v-240h-80v240h-40v-360h40L40-680v-120h880v120l-120 200h40v360h-40v-240h-80v240H480v-240h-80v240H240Zm-24-440h528l64-106H152l64 106Zm84 100h80v-160h-80v160Zm160 0h80v-160h-80v160Zm160 0h80v-160h-80v160ZM120-680h720-720Z"/></svg>',
+      bank: '<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="M200-120v-80h560v80H200Zm80-160v-280h80v280h-80Zm200 0v-280h80v280h-80Zm200 0v-280h80v280h-80ZM120-640v-80l360-180 360 180v80H120Zm146-80h428L480-833 266-720Z"/></svg>',
+      home: '<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="M240-200h120v-240h240v240h120v-360L480-740 240-560v360Zm-80 80v-480l320-240 320 240v480H520v-240h-80v240H160Zm320-350Z"/></svg>',
+      hospital: '<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Zm40-320Z"/></svg>', // Simple plus shape
+      warehouse: '<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="M120-120v-200h80v120h80v-120h80v120h80v-120h80v120h80v-120h80v120h80v-200h80v200H120Zm0-280v-320L480-880l360 160v320H120Zm80-80h560v-194L480-781 200-674v194Zm280-99Z"/></svg>'
+    };
+
+    if (!siteName) return icons.location;
+    const name = siteName.toLowerCase();
+
+    // Hotels - English and Lao
+    if (name.includes('hotel') || name.includes('ໂຮງແຮມ') || name.includes('cosi') || name.includes('crowne') || name.includes('holiday'))
+      return icons.hotel;
+    // Companies - Lao
+    if (name.includes('ບໍລິສັດ') || name.includes('company') || name.includes('ltd'))
+      return icons.business;
+    // Patrol points (P1, P2, etc.)
+    if (name.match(/^p\d+/i) || name.includes('patrol'))
+      return icons.shield;
+    // Shops
+    if (name.includes('shop') || name.includes('store'))
+      return icons.store;
+    // Banks
+    if (name.includes('bank') || name.includes('atm') || name.includes('bcel'))
+      return icons.bank;
+    // Office
+    if (name.includes('office') || name.includes('vks'))
+      return icons.business;
+    // Warehouse
+    if (name.includes('warehouse') || name.includes('ສາງ'))
+      return icons.warehouse;
+    // Residential
+    if (name.includes('home') || name.includes('villa') || name.includes('ບ້ານ'))
+      return icons.home;
+    // Hospital
+    if (name.includes('hospital') || name.includes('clinic') || name.includes('ໂຮງໝໍ'))
+      return icons.hospital;
+    // Embassy/NGO
+    if (name.includes('embassy') || name.includes('aid') || name.includes('ngo') || name.includes('norwegian'))
+      return icons.bank; // Use bank icon (classic building) for embassy
+
+    // Default location pin
+    return icons.location;
+  }
+
+  // Parse guard name to extract route info
+  // Example: "ສາຍ A ພາກເຊົ້າ - ສະຫາຍ ສົມສັກ" -> { route: "ສາຍ A ພາກເຊົ້າ", name: "ສະຫາຍ ສົມສັກ" }
+  function parseGuardName(guardString) {
+    if (!guardString) return { route: 'Unknown', name: 'Unknown' };
+
+    const parts = guardString.split(' - ');
+    if (parts.length >= 2) {
+      return { route: parts[0].trim(), name: parts.slice(1).join(' - ').trim() };
+    }
+    return { route: '', name: guardString.trim() };
+  }
+
+  // Get avatar initials from name
+  function getAvatarInitials(name) {
+    if (!name) return '??';
+    const words = name.split(' ').filter(w => w.length > 0);
+    if (words.length >= 2) {
+      return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  }
+
+  // Handover map instance
+  let handoverMapInstance = null;
+
+  // Open handover detail modal
+  function openHandoverDetail(recordId) {
+    const record = handoverData.find(function (r) { return r.id === recordId; });
+    if (!record) {
+      showToast('Record not found', 'error');
+      return;
+    }
+
+    // Parse guard name to extract route info
+    const guardParts = parseGuardName(record.outgoingGuard);
+
+    // Store current site name for map and contact
+    window.currentHandoverSite = record.siteName;
+
+    // Open modal FIRST - this clones the template into DOM
+    openModal('handover-detail');
+
+    // Populate elements AFTER modal opens (template is now in DOM)
+    setTimeout(function () {
+      const siteEl = document.getElementById('handover-det-site');
+      const timeEl = document.getElementById('handover-det-time');
+      const dateEl = document.getElementById('handover-det-date');
+      const guardEl = document.getElementById('handover-det-guard');
+      const routeEl = document.getElementById('handover-det-route');
+      const notesEl = document.getElementById('handover-det-notes');
+      const avatarEl = document.getElementById('handover-det-avatar');
+      const typeEl = document.getElementById('handover-det-type');
+
+      if (siteEl) siteEl.textContent = record.siteName || 'Unknown Site';
+      if (timeEl) timeEl.textContent = record.timeDisplay || '--:--';
+      if (dateEl) dateEl.textContent = new Date(record.timestamp).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+      if (guardEl) guardEl.textContent = guardParts.name || 'Unknown';
+      if (routeEl) routeEl.textContent = guardParts.route || 'Route N/A';
+      if (notesEl) notesEl.textContent = record.notes ? '"' + record.notes + '"' : '"No notes provided"';
+      if (avatarEl) avatarEl.textContent = getAvatarInitials(guardParts.name);
+      if (typeEl) typeEl.textContent = 'CHECK-IN';
+
+      // Initialize map
+      initHandoverMap(record.siteName);
+    }, 50);
+  }
+
+  // Initialize map for handover modal
+  function initHandoverMap(siteName) {
+    const mapContainer = document.getElementById('handover-map');
+    if (!mapContainer) return;
+
+    // Clear any existing map
+    if (handoverMapInstance) {
+      handoverMapInstance.remove();
+      handoverMapInstance = null;
+    }
+
+    // Show loading state
+    mapContainer.innerHTML = `
+      <div class="map-loading">
+        <span class="material-symbols-outlined spin">progress_activity</span>
+        <span>Loading map...</span>
+      </div>
+    `;
+
+    // Fetch site coordinates
+    google.script.run
+      .withSuccessHandler(function (site) {
+        if (!site || !site.lat || !site.lng) {
+          mapContainer.innerHTML = `
+            <div class="map-loading map-unavailable">
+              <span class="material-symbols-outlined">map</span>
+              <span>Location not available</span>
+            </div>
+          `;
+          return;
+        }
+
+        // Clear loading state
+        mapContainer.innerHTML = '';
+
+        // Initialize Leaflet map
+        handoverMapInstance = L.map('handover-map', {
+          zoomControl: false,
+          attributionControl: false,
+          dragging: false,
+          scrollWheelZoom: false
+        }).setView([site.lat, site.lng], 15);
+
+        // Add tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(handoverMapInstance);
+
+        // Add marker
+        L.marker([site.lat, site.lng]).addTo(handoverMapInstance)
+          .bindPopup('<strong>' + (site.nameEN || siteName) + '</strong>')
+          .openPopup();
+      })
+      .withFailureHandler(function (err) {
+        mapContainer.innerHTML = `
+          <div class="map-loading map-unavailable">
+            <span class="material-symbols-outlined">error</span>
+            <span>Failed to load map</span>
+          </div>
+        `;
+      })
+      .getSiteByName(siteName);
+  }
+
+  // Contact site from handover modal
+  function contactSiteFromHandover() {
+    const siteName = window.currentHandoverSite;
+    if (!siteName) {
+      showToast('Site information not available', 'error');
+      return;
+    }
+
+    // Fetch site contact info
+    google.script.run
+      .withSuccessHandler(function (site) {
+        if (site && site.contactPhone) {
+          window.open('tel:' + site.contactPhone, '_self');
+        } else {
+          showToast('No contact number available for this site', 'info');
+        }
+      })
+      .withFailureHandler(function (err) {
+        showToast('Failed to get contact info', 'error');
+      })
+      .getSiteByName(siteName);
+  }
+
+
+  // REAL-TIME SIGNALING — delta-only refresh
+  function startHandoverSignalListener() {
+    if (handoverPoller) clearInterval(handoverPoller);
+    handoverPoller = setInterval(checkHandoverUpdate, 10000);
+  }
+
+  function checkHandoverUpdate() {
+    if (currentPage !== 'handover_records') return;
+
+    google.script.run
+      .withSuccessHandler(function (signals) {
+        if (!signals) return;
+
+        if (signals.lastMaster > lastHandoverSignal) {
+          if (lastHandoverSignal !== 0) {
+            console.log('[Handover] Signal update! Delta refresh...');
+            // Delta refresh: only load last 7 days and merge
+            refreshRecentHandovers();
+            showToast('Handovers updated', 'info');
+          }
+          lastHandoverSignal = signals.lastMaster;
+        }
+      })
+      .getUpdateSignals();
+  }
+
+  // Delta refresh: fetch last 7 days and merge with existing data
+  function refreshRecentHandovers() {
+    var filters = {
+      startDate: _daysAgo(7),
+      endDate: new Date().toISOString().split('T')[0],
+      siteId: document.getElementById('handover-site').value
+    };
+
+    google.script.run
+      .withSuccessHandler(function (fresh) {
+        fresh = fresh || [];
+        if (fresh.length === 0) return;
+
+        // Merge: replace existing by ID, add new
+        var existingMap = {};
+        handoverData.forEach(function (d) { existingMap[d.id] = true; });
+
+        var newItems = fresh.filter(function (d) { return !existingMap[d.id]; });
+        if (newItems.length > 0) {
+          handoverData = newItems.concat(handoverData);
+          handoverData.sort(function (a, b) { return new Date(b.timestamp) - new Date(a.timestamp); });
+          handoverFiltered = [...handoverData];
+          handoverRenderCount = 0;
+          renderHandoverFeed();
+          document.getElementById('handover-count').textContent = handoverFiltered.length;
+        }
+      })
+      .getHandoverRecords(filters);
+  }
+</script>

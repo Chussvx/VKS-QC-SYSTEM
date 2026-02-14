@@ -1,0 +1,1942 @@
+<!-- JavaScript.html - Client-side routing and modal system for GAS -->
+<!-- Usage in GAS: <?!= include('JavaScript'); ?> -->
+
+<script>
+    // =====================================================
+    // USER-FRIENDLY MESSAGE SYSTEM
+    // Replaces console.error with user-facing messages
+    // =====================================================
+
+    function showUserMessage(message, type = 'info', duration = 4000) {
+        // Create toast element if it doesn't exist
+        let toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toast-container';
+            toastContainer.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                z-index: 9999;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            `;
+            document.body.appendChild(toastContainer);
+        }
+
+        const toast = document.createElement('div');
+        const colors = {
+            success: { bg: '#10b981', icon: 'check_circle' },
+            error: { bg: '#ef4444', icon: 'error' },
+            warning: { bg: '#f59e0b', icon: 'warning' },
+            info: { bg: '#3b82f6', icon: 'info' }
+        };
+
+        const color = colors[type] || colors.info;
+        toast.style.cssText = `
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: ${color.bg};
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            font-size: 14px;
+            font-weight: 500;
+            min-width: 250px;
+            animation: slideIn 0.3s ease-out;
+        `;
+
+        toast.innerHTML = `
+            <span class="material-icons-round" style="font-size: 18px;">${color.icon}</span>
+            <span>${message}</span>
+        `;
+
+        toastContainer.appendChild(toast);
+
+        // Animate out and remove
+        setTimeout(() => {
+            toast.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
+        }, duration);
+    }
+
+    // Loading overlay system
+    function showLoading(message = 'Loading...') {
+        let overlay = document.getElementById('loading-overlay');
+        if (overlay) return; // Already loading
+
+        overlay = document.createElement('div');
+        overlay.id = 'loading-overlay';
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(4px);
+            z-index: 9998;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease-out;
+        `;
+
+        overlay.innerHTML = `
+            <div style="
+                background: white;
+                padding: 24px;
+                border-radius: 12px;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                font-size: 16px;
+                font-weight: 500;
+            ">
+                <div style="
+                    width: 24px;
+                    height: 24px;
+                    border: 3px solid #e5e7eb;
+                    border-top: 3px solid #3b82f6;
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                "></div>
+                <span>${message}</span>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        // Add styles
+        if (!document.getElementById('dynamic-styles')) {
+            const styles = document.createElement('style');
+            styles.id = 'dynamic-styles';
+            styles.textContent = `
+                @keyframes slideIn {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                @keyframes slideOut {
+                    from { transform: translateX(0); opacity: 1; }
+                    to { transform: translateX(100%); opacity: 0; }
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            `;
+            document.head.appendChild(styles);
+        }
+    }
+
+    function hideLoading() {
+        const overlay = document.getElementById('loading-overlay');
+        if (overlay) {
+            overlay.style.animation = 'fadeOut 0.2s ease-out';
+            setTimeout(() => {
+                if (overlay.parentNode) {
+                    overlay.parentNode.removeChild(overlay);
+                }
+            }, 200);
+        }
+    }
+
+    // =====================================================
+    // NON-DESTRUCTIVE PAGE REFRESH (Layer 1)
+    // Shows a translucent overlay on top of existing content
+    // instead of hiding it. Users can still see old data.
+    // =====================================================
+    function showPageRefresh(containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        // Don't show overlay if content isn't visible yet (first load uses spinner)
+        if (container.style.display === 'none') return;
+
+        // Ensure container is positioned for the absolute overlay
+        if (getComputedStyle(container).position === 'static') {
+            container.style.position = 'relative';
+        }
+
+        let overlay = container.querySelector('.page-refresh-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.className = 'page-refresh-overlay';
+            overlay.innerHTML = '<div class="refresh-spinner"></div>';
+            container.appendChild(overlay);
+        }
+        overlay.classList.add('active');
+    }
+
+    function hidePageRefresh(containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        const overlay = container.querySelector('.page-refresh-overlay');
+        if (overlay) overlay.classList.remove('active');
+    }
+
+    // Button loading states
+    function setButtonLoading(buttonId, loading = true, loadingText = 'Loading...') {
+        const button = document.getElementById(buttonId);
+        if (!button) return;
+
+        if (loading) {
+            button.disabled = true;
+            button.dataset.originalText = button.textContent;
+            button.innerHTML = `
+                <span style="display: inline-flex; align-items: center; gap: 8px;">
+                    <span style="
+                        width: 16px;
+                        height: 16px;
+                        border: 2px solid #e5e7eb;
+                        border-top: 2px solid currentColor;
+                        border-radius: 50%;
+                        animation: spin 1s linear infinite;
+                    "></span>
+                    <span>${loadingText}</span>
+                </span>
+            `;
+        } else {
+            button.disabled = false;
+            button.textContent = button.dataset.originalText || button.textContent;
+        }
+    }
+
+    // =====================================================
+    // GLOBAL REFRESH MANAGER
+    // Prevents interval stacking when navigating between pages
+    // =====================================================
+    const RefreshManager = {
+        intervals: {},   // Store active intervals by page name
+        settings: {
+            enabled: true,
+            defaultInterval: 60000  // 60 seconds
+        },
+
+        // Start refresh for a page (clears any existing interval first)
+        start(pageName, callback, interval) {
+            this.stop(pageName);
+            if (!this.settings.enabled) return;
+
+            var ms = interval || this.settings.defaultInterval;
+            this.intervals[pageName] = setInterval(callback, ms);
+        },
+
+        // Stop refresh for a page
+        stop(pageName) {
+            if (this.intervals[pageName]) {
+                clearInterval(this.intervals[pageName]);
+                delete this.intervals[pageName];
+            }
+        },
+
+        // Stop all refreshes
+        stopAll() {
+            var self = this;
+            Object.keys(this.intervals).forEach(function (page) { self.stop(page); });
+        },
+
+        // Enable/disable auto-refresh globally
+        setEnabled(enabled) {
+            this.settings.enabled = enabled;
+            if (!enabled) this.stopAll();
+        }
+    };
+
+    // =====================================================
+    // DIFF RENDERER UTILITY
+    // Efficiently updates DOM elements by comparing data keys
+    // =====================================================
+    const DiffRenderer = {
+        render(container, data, options) {
+            const parent = typeof container === 'string' ? document.getElementById(container) : container;
+            if (!parent) return;
+            if (!Array.isArray(data)) data = [];
+
+            const keyFn = options.keyFn;
+            const renderFn = options.renderFn;
+            const onUpdate = options.onUpdate;
+
+            // 1. Map current DOM elements by key
+            const currentElements = {};
+            const keysToRemove = [];
+
+            // First pass: Identify keyed elements and mark non-keyed (garbage/loading) for removal
+            Array.from(parent.children).forEach(child => {
+                const key = child.getAttribute('data-key');
+                if (key) {
+                    currentElements[key] = child;
+                } else {
+                    parent.removeChild(child);
+                }
+            });
+
+            // 2. Process new data
+            const newKeys = new Set();
+            const isTable = parent.tagName === 'TBODY' || parent.tagName === 'TABLE' || parent.tagName === 'THEAD';
+
+            data.forEach((item, index) => {
+                const key = keyFn(item);
+                newKeys.add(key);
+                let el = currentElements[key];
+
+                try {
+                    const newHtml = renderFn(item).trim();
+                    if (!newHtml) return;
+
+                    if (el) {
+                        // Update existing element
+                        const normalizedNewHtml = this._getInnerHtml(newHtml, isTable);
+                        if (el.innerHTML !== normalizedNewHtml) {
+                            el.innerHTML = normalizedNewHtml;
+                            this._syncAttributes(el, newHtml, isTable);
+                            if (onUpdate) onUpdate(el, item, true);
+                        } else {
+                            if (onUpdate) onUpdate(el, item, false);
+                        }
+                    } else {
+                        // Create new element
+                        el = this._createElement(newHtml, key, isTable);
+                    }
+
+                    // PLACEMENT: Ensure element is at index 'index'
+                    if (el) {
+                        const referenceNode = parent.children[index];
+                        if (el !== referenceNode) {
+                            if (referenceNode) {
+                                parent.insertBefore(el, referenceNode);
+                            } else {
+                                parent.appendChild(el);
+                            }
+                        }
+                    } else {
+                        console.warn('DiffRenderer: _createElement failed for item', item);
+                    }
+                } catch (e) {
+                    console.error('DiffRenderer: Error rendering item', item, e);
+                }
+            });
+
+            // 3. Remove elements that are no longer in data
+            Object.keys(currentElements).forEach(key => {
+                if (!newKeys.has(key)) {
+                    if (currentElements[key].parentNode) {
+                        parent.removeChild(currentElements[key]);
+                    }
+                }
+            });
+        },
+
+        // Helper to Create Element from string
+        _createElement(htmlString, key, isTable) {
+            let temp;
+            if (isTable) {
+                temp = document.createElement('table');
+                const tbody = document.createElement('tbody');
+                temp.appendChild(tbody);
+                tbody.innerHTML = htmlString;
+                temp = tbody; // We want to pick the child from the tbody
+            } else {
+                temp = document.createElement('div');
+                temp.innerHTML = htmlString;
+            }
+
+            const el = temp.firstElementChild;
+            if (el) el.setAttribute('data-key', key);
+            return el;
+        },
+
+        // Internal helper to get inner HTML from a string
+        _getInnerHtml(htmlString, isTable) {
+            let temp;
+            if (isTable) {
+                temp = document.createElement('table');
+                const tbody = document.createElement('tbody');
+                temp.appendChild(tbody);
+                tbody.innerHTML = htmlString;
+                temp = tbody;
+            } else {
+                temp = document.createElement('div');
+                temp.innerHTML = htmlString;
+            }
+            // Return innerHTML of the first child (the TR usually)
+            return temp.firstElementChild ? temp.firstElementChild.innerHTML : '';
+        },
+
+        // Internal helper to sync attributes
+        _syncAttributes(el, htmlString, isTable) {
+            let temp;
+            if (isTable) {
+                temp = document.createElement('table');
+                const tbody = document.createElement('tbody');
+                temp.appendChild(tbody);
+                tbody.innerHTML = htmlString;
+                temp = tbody;
+            } else {
+                temp = document.createElement('div');
+                temp.innerHTML = htmlString;
+            }
+            const sourceEl = temp.firstElementChild;
+            if (sourceEl) {
+                Array.from(sourceEl.attributes).forEach(attr => {
+                    if (attr.name !== 'data-key') {
+                        el.setAttribute(attr.name, attr.value);
+                    }
+                });
+            }
+        }
+    };
+
+    const TranslationManager = {
+        currentLang: 'en',
+        STORAGE_KEY: 'vks-app-language',
+
+        init() {
+            // Load saved language or default to English
+            this.currentLang = localStorage.getItem(this.STORAGE_KEY) || 'en';
+            console.log('Initializing TranslationManager with language:', this.currentLang);
+
+            // Set document language attribute
+            document.documentElement.setAttribute('lang', this.currentLang);
+            document.documentElement.lang = this.currentLang;
+
+            // Apply translations
+            this.applyTranslations();
+
+            // Expose to window for global access
+            window.t = this.t.bind(this);
+
+            // Sync with backend settings (async) - this will update if backend has different language
+            this.syncFromBackend();
+        },
+
+        // Fetch saved language from backend and sync with localStorage
+        syncFromBackend() {
+            var self = this;
+            console.log('[TranslationManager] syncFromBackend called, current language:', self.currentLang);
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                google.script.run
+                    .withSuccessHandler(function (settings) {
+                        console.log('[TranslationManager] getSettings response:', settings);
+                        if (settings && settings.language) {
+                            var backendLang = settings.language;
+                            console.log('[TranslationManager] Backend language:', backendLang, 'Current:', self.currentLang);
+                            if (backendLang !== self.currentLang) {
+                                console.log('[TranslationManager] Languages differ, syncing to:', backendLang);
+                                self.setLanguage(backendLang);
+                            } else {
+                                console.log('[TranslationManager] Languages match, no sync needed');
+                            }
+                        } else {
+                            console.log('[TranslationManager] No language in settings or settings undefined');
+                        }
+                    })
+                    .withFailureHandler(function (err) {
+                        console.warn('[TranslationManager] Failed to sync language from backend:', err);
+                    })
+                    .getSettings();
+            } else {
+                console.log('[TranslationManager] google.script.run not available');
+            }
+        },
+
+        setLanguage(lang) {
+            console.log('Switching language to:', lang);
+            this.currentLang = lang;
+            localStorage.setItem(this.STORAGE_KEY, lang);
+
+            // Disable "preview" mode argument for setLanguage to ensure we always run full updates if needed
+            // But here we just set state and update DOM
+            document.documentElement.setAttribute('lang', lang);
+            document.documentElement.lang = lang;
+
+            this.applyTranslations();
+
+            // Dispatch event for other components
+            window.dispatchEvent(new CustomEvent('languageChanged', { detail: { language: lang } }));
+
+            // Re-run active page init to refresh specific UI components if needed
+            if (typeof updateSidebarActive === 'function') {
+                // Force sidebar text refresh by re-applying active class or just simpler:
+                // The applyTranslations() already updates textContent of data-i18n elements.
+                // We just need to ensure sidebar is visible/updated.
+            }
+        },
+
+        t(key, params = {}) {
+            if (typeof I18N === 'undefined') return key;
+
+            // Fallback chain: Current Lang -> English -> Key
+            let text = I18N[this.currentLang]?.[key] || I18N['en']?.[key] || key;
+
+            // Replace parameters {{param}}
+            Object.keys(params).forEach(param => {
+                text = text.replace(new RegExp(`{{${param}}}`, 'g'), params[param]);
+            });
+
+            return text;
+        },
+
+        applyTranslations() {
+            if (typeof I18N === 'undefined') {
+                console.warn('[TranslationManager] I18N dictionary not loaded');
+                return;
+            }
+
+            console.log('[TranslationManager] applyTranslations called with language:', this.currentLang);
+            console.log('[TranslationManager] I18N[' + this.currentLang + '] exists:', !!I18N[this.currentLang]);
+
+            // 1. Text Content (data-i18n)
+            var i18nElements = document.querySelectorAll('[data-i18n]');
+            console.log('[TranslationManager] Found', i18nElements.length, 'elements with data-i18n');
+            i18nElements.forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (key) el.textContent = this.t(key);
+            });
+
+            // 2. Placeholders (data-i18n-placeholder)
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (key) el.placeholder = this.t(key);
+            });
+
+            // 3. Titles (data-i18n-title)
+            document.querySelectorAll('[data-i18n-title]').forEach(el => {
+                const key = el.getAttribute('data-i18n-title');
+                if (key) el.title = this.t(key);
+            });
+
+            // 4. Aria Labels (data-i18n-label)
+            document.querySelectorAll('[data-i18n-label]').forEach(el => {
+                const key = el.getAttribute('data-i18n-label');
+                if (key) el.setAttribute('aria-label', this.t(key));
+            });
+
+            // 5. Custom Select Display Values
+            // Update the trigger display when a selected item has data-i18n
+            document.querySelectorAll('.custom-select').forEach(container => {
+                const selectedItem = container.querySelector('.custom-select-item.selected[data-i18n]');
+                if (selectedItem) {
+                    const i18nKey = selectedItem.getAttribute('data-i18n');
+                    const valueDisplay = container.querySelector('.custom-select-value');
+                    if (valueDisplay && i18nKey) {
+                        valueDisplay.textContent = this.t(i18nKey);
+                    }
+                }
+            });
+        }
+    };
+
+    // Initialize after DOM load
+    document.addEventListener('DOMContentLoaded', () => {
+        // Ensure I18N is loaded first
+        if (typeof I18N !== 'undefined') {
+            TranslationManager.init();
+        } else {
+            setTimeout(() => { if (typeof I18N !== 'undefined') TranslationManager.init() }, 200);
+        }
+    });
+
+    // Global shorthand
+    function t(key, params) {
+        return TranslationManager.t(key, params);
+    }
+
+    // =====================================================
+    // UTILITY FUNCTIONS
+    // =====================================================
+
+    /**
+     * Escape HTML special characters to prevent XSS
+     */
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#x27;');
+    }
+
+    /**
+     * Get initials from a name
+     */
+    function getInitials(name) {
+        if (!name) return '?';
+        return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    }
+
+    /**
+     * Get a color based on a name (for avatars)
+     */
+    function getAvatarColor(name) {
+        const colors = ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4'];
+        let hash = 0;
+        for (let i = 0; i < (name || '').length; i++) {
+            hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return colors[Math.abs(hash) % colors.length];
+    }
+
+    /**
+     * Get site type icon (Global Helper)
+     */
+    function getSiteTypeIcon(type) {
+        if (!type) return '📍';
+        const icons = {
+            'Hotel': '🏨',
+            'Office': '🏢',
+            'Warehouse': '📦',
+            'Residential': '🏠',
+            'Condo': '🏢',
+            'Apartment': '🏠',
+            'Factory': '🏭',
+            'Bank': '🏦',
+            'School': '🎓',
+            'Restaurant': '🍽️',
+            'NGO': '🌍',
+            'Construction': '🚧',
+            'Retail': '🛒',
+            'Shop': '🛒',
+            'Store': '🛒',
+            'Mall': '🛍️',
+            'Embassy': '🏛️',
+            'Government': '🏛️',
+            'Hospital': '🏥',
+            'Clinic': '⚕️',
+            'Park': '🌳',
+            'Other': '📍'
+        };
+        // Case-insensitive match or substring match? 
+        // For now exact match + Case-Insensitive fallback
+        return icons[type] || icons[Object.keys(icons).find(k => k.toLowerCase() === type.toLowerCase())] || '📍';
+    }
+
+    /**
+     * Show table loading state with premium skeleton shimmer rows
+     */
+    function showTableLoading(tbodyId, colspan) {
+        const tbody = document.getElementById(tbodyId);
+        if (tbody) {
+            let rows = '';
+            for (let r = 0; r < 5; r++) {
+                let cells = '';
+                for (let c = 0; c < colspan; c++) {
+                    // Vary widths for realistic look
+                    const widths = ['85%', '60%', '70%', '50%', '45%', '90%', '55%', '40%', '65%'];
+                    const w = widths[(r + c) % widths.length];
+                    cells += `<td><div class="skeleton-text" style="width:${w}"></div></td>`;
+                }
+                rows += `<tr class="skeleton-row">${cells}</tr>`;
+            }
+            tbody.innerHTML = rows;
+        }
+    }
+
+    /**
+     * Show table error state
+     */
+    function showTableError(tbodyId, colspan, message) {
+        const tbody = document.getElementById(tbodyId);
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="${colspan}" class="text-center py-8 text-danger">
+                        <span class="material-symbols-outlined text-5xl mb-2">error</span>
+                        <p>${escapeHtml(message)}</p>
+                    </td>
+                </tr>`;
+        }
+    }
+
+    // =====================================================
+    // PAGE ROUTING SYSTEM
+    // =====================================================
+
+    // Map of page slugs to display names
+    const pageConfig = {
+        'dashboard': { title: 'Dashboard', actions: '' },
+        'site-map': { title: 'Site Map', actions: '' },
+        'patrol-status': { title: 'Patrol Status', actions: '' },
+        'inspection-logs': { title: 'Inspection Logs', actions: '' },
+        'inspector-routes': { title: 'Inspector Routes', actions: '' },
+        'handover-records': { title: 'Handover Records', actions: '' },
+        'special-duty': { title: 'Special Duty', actions: '' },
+        'guard-activity': { title: 'Guard Activity', actions: '' },
+        'incidents': { title: 'Incidents', actions: '' },
+        'complaints': { title: 'Complaints', actions: '' },
+        'performance': { title: 'Performance', actions: '' },
+        'reports': { title: 'Reports', actions: '' },
+        'guards': { title: 'Guards', actions: '' },
+        'sites': { title: 'Sites', actions: '' },
+        'calendar': { title: 'Patrol Plans', actions: '' },
+        'overtime': { title: 'Overtime', actions: '' },
+        'qr-generator': {
+            title: 'QR Generator', actions: `
+            <button class="btn btn-secondary btn-sm" onclick="printQRSheet()">
+                <span class="material-symbols-outlined">print</span>
+                Print Sheet
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="downloadAllQR()">
+                <span class="material-symbols-outlined">folder_zip</span>
+                Download ZIP
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="batchGenerate()">
+                <span class="material-symbols-outlined">autorenew</span>
+                Batch Generate
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="openAddCheckpoint()">
+                <span class="material-symbols-outlined">add</span>
+                Add Checkpoint
+            </button>
+        ` },
+        'sop': { title: 'SOP', actions: '' },
+        'settings': { title: 'Settings', actions: '' },
+        'user-management': { title: 'User Management', actions: '' },
+        'activity-logs': { title: 'Activity Logs', actions: '' }
+    };
+
+    // Current active page
+    let currentPage = 'dashboard';
+    let _navSeq = 0;         // Navigation guard counter — prevents stale callbacks
+    let _navTimeout = null;  // Tracks safety timeout for cancellation
+
+    // Navigate to a page with optional parameters
+    function navigateTo(page, params) {
+        params = params || {};
+        try {
+            // Increment guard counter — any pending callbacks with old seq become no-ops
+            var mySeq = ++_navSeq;
+
+            // Cancel any pending safety timeout from previous navigation
+            if (_navTimeout) {
+                clearTimeout(_navTimeout);
+                _navTimeout = null;
+            }
+
+            // Clean up any stale exiting states from prior interrupted navigations
+            document.querySelectorAll('.page-content.exiting').forEach(function (p) {
+                p.classList.remove('active', 'exiting');
+            });
+
+            // Stop refresh intervals for the previous page to prevent stacking
+            RefreshManager.stop(currentPage);
+
+            if (!pageConfig[page]) {
+                showUserMessage('Unknown page requested. Redirecting to dashboard...', 'warning');
+                page = 'dashboard';
+            }
+
+            // Store params for page initialization
+            window.currentPageParams = params;
+
+            // 1. Update UI - Sidebar
+            if (typeof updateSidebarActive === 'function') {
+                updateSidebarActive(page);
+            }
+
+            // 2. Update UI - Header Title
+            const titleElement = document.getElementById('page-title');
+            if (titleElement) {
+                titleElement.textContent = pageConfig[page].title;
+            } else if (typeof setPageTitle === 'function') {
+                setPageTitle(pageConfig[page].title);
+            }
+
+            // 3. Update UI - Header Actions
+            const actionsElement = document.getElementById('header-actions');
+            if (actionsElement) {
+                actionsElement.innerHTML = pageConfig[page].actions;
+            } else if (typeof setHeaderActions === 'function') {
+                setHeaderActions(pageConfig[page].actions);
+            }
+
+            // 4. Update Visibility — iOS 26 cross-dissolve transition
+            var currentActive = document.querySelector('.page-content.active');
+            var targetPage = document.getElementById('page-' + page);
+
+            if (!targetPage) {
+                showUserMessage('Page not found. Please try again.', 'error');
+                return;
+            }
+
+            if (currentActive && currentActive !== targetPage) {
+                // Exit animation on current page, then reveal new page
+                currentActive.classList.add('exiting');
+                currentActive.addEventListener('animationend', function onExit() {
+                    currentActive.removeEventListener('animationend', onExit);
+                    // Guard: only proceed if this is still the active navigation
+                    if (_navSeq !== mySeq) return;
+                    currentActive.classList.remove('active', 'exiting');
+                    targetPage.classList.add('active');
+                }, { once: true });
+
+                // Safety timeout — if animationend doesn't fire (reduced-motion)
+                _navTimeout = setTimeout(function () {
+                    _navTimeout = null;
+                    // Guard: only proceed if this is still the active navigation
+                    if (_navSeq !== mySeq) return;
+                    if (currentActive.classList.contains('exiting')) {
+                        currentActive.classList.remove('active', 'exiting');
+                        if (!targetPage.classList.contains('active')) {
+                            targetPage.classList.add('active');
+                        }
+                    }
+                }, 200);
+            } else if (!currentActive) {
+                // No current page — just show target
+                document.querySelectorAll('.page-content').forEach(function (p) {
+                    p.classList.remove('active');
+                });
+                targetPage.classList.add('active');
+            }
+
+            // 5. Update State & URL
+            currentPage = page;
+            if (window.location.hash !== '#' + page) {
+                window.location.hash = page;
+            }
+
+            // 6. Trigger page-specific init
+            const initFuncName = 'init_' + page.replace(/-/g, '_');
+            if (typeof window[initFuncName] === 'function') {
+                try {
+                    window[initFuncName]();
+                } catch (initErr) {
+                    showUserMessage('Page initialization failed. Please refresh.', 'error');
+                    console.error('Page init error:', initErr);
+                }
+            }
+        } catch (err) {
+            showUserMessage('Navigation failed. Please try again.', 'error');
+            console.error('Navigation error:', err);
+        }
+    }
+
+    // =====================================================
+    // SESSION MANAGER — Authentication Gate
+    // =====================================================
+
+    var SessionManager = {
+        SESSION_KEY: 'vks_session',
+
+        getSession: function () {
+            try {
+                var raw = localStorage.getItem(this.SESSION_KEY);
+                if (!raw) return null;
+                return JSON.parse(raw);
+            } catch (e) {
+                return null;
+            }
+        },
+
+        getUser: function () {
+            return this.getSession();
+        },
+
+        isLoggedIn: function () {
+            return this.getSession() !== null;
+        },
+
+        isAdmin: function () {
+            var session = this.getSession();
+            return session && session.role === 'admin';
+        },
+
+        getUserId: function () {
+            var session = this.getSession();
+            return session ? session.userId : null;
+        },
+
+        getDisplayName: function () {
+            var session = this.getSession();
+            if (!session) return 'Unknown';
+            return (session.name + ' ' + (session.surname || '')).trim();
+        },
+
+        logout: function () {
+            localStorage.removeItem(this.SESSION_KEY);
+            window.location.reload();
+        },
+
+        // Check session and show login or dashboard
+        checkAndInit: function () {
+            var loginOverlay = document.getElementById('login-overlay');
+            var appContainer = document.querySelector('.app-container');
+
+            if (this.isLoggedIn()) {
+                // Already logged in — hide login, show dashboard
+                if (loginOverlay) loginOverlay.classList.add('hidden');
+                if (appContainer) appContainer.style.display = '';
+                initRouter();
+                // Apply admin-only visibility
+                this.applyRoleVisibility();
+            } else {
+                // Not logged in — show login, hide dashboard
+                if (loginOverlay) loginOverlay.classList.remove('hidden');
+                if (appContainer) appContainer.style.display = 'none';
+            }
+        },
+
+        // Hide admin-only elements for non-admin users
+        applyRoleVisibility: function () {
+            var adminItems = document.querySelectorAll('[data-admin-only]');
+            var isAdmin = this.isAdmin();
+            for (var i = 0; i < adminItems.length; i++) {
+                adminItems[i].style.display = isAdmin ? '' : 'none';
+            }
+        }
+    };
+
+    // Expose globally for Page_Login.html to call after success
+    window.SessionManager = SessionManager;
+
+    // Called by Page_Login after successful authentication
+    function initApp() {
+        var loginOverlay = document.getElementById('login-overlay');
+        if (loginOverlay) loginOverlay.classList.add('hidden');
+        var appContainer = document.querySelector('.app-container');
+        if (appContainer) appContainer.style.display = '';
+        initRouter();
+        SessionManager.applyRoleVisibility();
+    }
+    window.initApp = initApp;
+
+    // Initialize routing on page load
+    function initRouter() {
+        const hash = window.location.hash.replace('#', '') || 'dashboard';
+        navigateTo(hash);
+
+        try {
+            if (typeof loadUserInfo === 'function') {
+                loadUserInfo();
+            }
+        } catch (err) {
+            console.error('User info load error:', err);
+            showUserMessage('Failed to load user information. Some features may be limited.', 'warning');
+        }
+    }
+
+    // Handle browser back/forward
+    window.addEventListener('hashchange', function () {
+        const hash = window.location.hash.replace('#', '') || 'dashboard';
+        if (hash !== currentPage) {
+            navigateTo(hash);
+        }
+    });
+
+    // Run session check on DOM load (replaces direct initRouter call)
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () { setTimeout(function () { SessionManager.checkAndInit(); }, 50); });
+    } else {
+        setTimeout(function () { SessionManager.checkAndInit(); }, 50);
+    }
+
+    // =====================================================
+    // MODAL SYSTEM
+    // =====================================================
+
+    // Map of modal IDs to their template elements
+    const modalTemplates = {};
+
+    // Open a modal by ID
+    function openModal(modalId, data = {}) {
+        try {
+            const backdrop = document.getElementById('modal-backdrop');
+            const container = document.getElementById('modal-container');
+
+            if (!backdrop || !container) {
+                showUserMessage('Modal system not available. Please refresh the page.', 'error');
+                return;
+            }
+
+            // Get modal template
+            const template = document.getElementById('modal-' + modalId);
+            if (!template) {
+                console.error('[openModal] Template not found: modal-' + modalId);
+                // Log all available modals to help debugging
+                const allModals = Array.from(document.querySelectorAll('[id^="modal-"]')).map(el => el.id);
+                console.log('Available modals:', allModals);
+
+                showUserMessage('Dialog "' + modalId + '" is not available. Please refresh the page.', 'error');
+                return;
+            }
+
+            // Clone and inject content
+            container.innerHTML = template.innerHTML;
+
+            // Link reference for template scripts
+            document.activeModal = container;
+
+            // Apply translations to dynamic content
+            if (typeof applyTranslations === 'function') {
+                applyTranslations(container);
+            }
+
+            // Show backdrop and lock scroll
+            backdrop.classList.add('active');
+            document.body.classList.add('modal-open');
+
+            // Populate data if provided
+            if (data && typeof populateModal === 'function') {
+                populateModal(modalId, data);
+            }
+
+            // Focus first input
+            setTimeout(() => {
+                const firstInput = container.querySelector('input, select, textarea');
+                if (firstInput) firstInput.focus();
+            }, 100);
+        } catch (err) {
+            showUserMessage('Failed to open dialog "' + modalId + '": ' + err.message, 'error');
+            console.error('[openModal] EXCEPTION for modalId=' + modalId + ':', err);
+            console.error('[openModal] Stack:', err.stack);
+        }
+    }
+
+    // Close modal
+    function closeModal() {
+        const backdrop = document.getElementById('modal-backdrop');
+        if (!backdrop) return;
+
+        // Add closing class to trigger slideOut/fadeOut
+        backdrop.classList.add('closing');
+        backdrop.classList.remove('active');
+
+        // Wait for animation (300ms) before hiding
+        setTimeout(function () {
+            backdrop.classList.remove('closing');
+            document.body.classList.remove('modal-open');
+            document.activeModal = null;
+        }, 300);
+    }
+
+    // Close on backdrop click (not modal content)
+    function closeModalOnBackdrop(event) {
+        if (event.target.id === 'modal-backdrop') {
+            closeModal();
+        }
+    }
+
+    // Close on Escape key
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            closeModal();
+        }
+    });
+
+    // =====================================================
+    // DATA OPERATIONS
+    // =====================================================
+
+    // Generic data loader
+    function loadData(type, filters = {}) {
+        return new Promise((resolve, reject) => {
+            google.script.run
+                .withSuccessHandler(resolve)
+                .withFailureHandler(reject)
+                .getData(type, filters);
+        });
+    }
+
+    // Generic data saver
+    function saveData(type, data) {
+        return new Promise((resolve, reject) => {
+            google.script.run
+                .withSuccessHandler(resolve)
+                .withFailureHandler(reject)
+                .saveData(type, data);
+        });
+    }
+
+    // Export data to file
+    function exportData(type) {
+        showLoading('Preparing export...');
+        google.script.run
+            .withSuccessHandler(function (url) {
+                hideLoading();
+                if (url) {
+                    window.open(url, '_blank');
+                }
+            })
+            .withFailureHandler(function (error) {
+                hideLoading();
+                showToast('Export failed: ' + error.message, 'error');
+            })
+            .exportData(type);
+    }
+
+    // =====================================================
+    // CONFIRMATION MODAL SYSTEM
+    // =====================================================
+
+    function showConfirm(title, message, onConfirm) {
+        openModal('confirm');
+
+        // Update text content
+        document.getElementById('confirm-title').textContent = title;
+        document.getElementById('confirm-message').textContent = message;
+
+        // Setup confirm button
+        const confirmBtn = document.getElementById('confirm-btn');
+        // Remove old listeners to prevent stacking (cloning is a quick hack, or use AbortController)
+        const newBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
+
+        newBtn.onclick = function () {
+            closeModal();
+            if (typeof onConfirm === 'function') onConfirm();
+        };
+    }
+
+    // =====================================================
+    // DATE UTILITIES
+    // =====================================================
+
+    /**
+     * Format a Date object to 'YYYY-MM-DD' using LOCAL timezone.
+     * IMPORTANT: Do NOT use toISOString().split('T')[0] — that converts to UTC
+     * and shifts dates backward for UTC+ timezones (e.g. Asia/Vientiane = UTC+7).
+     */
+    function formatLocalDate(d) {
+        var y = d.getFullYear();
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        var day = String(d.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + day;
+    }
+
+    // =====================================================
+    // DATE RANGE PICKER COMPONENT (Flatpickr)
+    // =====================================================
+
+    function initDateRangePicker(triggerId, labelId, clearBtnId, onDateChange) {
+        const triggerBtn = document.getElementById(triggerId);
+        if (!triggerBtn) return null;
+
+        return flatpickr(triggerBtn, {
+            mode: "range",
+            dateFormat: "Y-m-d",
+            locale: typeof getFlatpickrLocale === 'function' ? getFlatpickrLocale() : 'en',
+            onChange: function (selectedDates, dateStr, instance) {
+                updateDateRangeLabel(selectedDates, labelId, clearBtnId);
+                if (typeof onDateChange === 'function') {
+                    onDateChange(selectedDates, dateStr);
+                }
+            }
+        });
+    }
+
+    function initDatePicker(triggerId, labelId, onDateChange) {
+        const triggerBtn = document.getElementById(triggerId);
+        if (!triggerBtn) return null;
+
+        const lang = localStorage.getItem('language') || 'en';
+        return flatpickr(triggerBtn, {
+            mode: "single",
+            dateFormat: "Y-m-d",
+            locale: typeof getFlatpickrLocale === 'function' ? getFlatpickrLocale() : 'en',
+            onChange: function (selectedDates, dateStr, instance) {
+                // Update label with localized date
+                const label = document.getElementById(labelId);
+                if (label && selectedDates.length > 0) {
+                    const options = { month: 'short', day: 'numeric', year: 'numeric' };
+                    const locale = lang === 'lo' ? 'lo-LA' : 'en-GB';
+                    label.innerText = selectedDates[0].toLocaleDateString(locale, options);
+                }
+
+                if (typeof onDateChange === 'function') {
+                    onDateChange(selectedDates, dateStr);
+                }
+            }
+        });
+    }
+
+    function updateDateRangeLabel(selectedDates, labelId, clearBtnId) {
+        const label = document.getElementById(labelId);
+        // clearBtn implementations can vary, optional
+
+        if (!label) return;
+
+        if (selectedDates.length === 0) {
+            label.innerText = "Pick a date";
+            // if (clearBtn) clearBtn.classList.add('hidden');
+        } else {
+            const date1 = selectedDates[0];
+            const date2 = selectedDates[1] || date1;
+
+            const options = { month: 'short', day: 'numeric', year: 'numeric' };
+            const d1Str = date1.toLocaleDateString('en-GB', options); // DD MMM YYYY
+            const d2Str = date2.toLocaleDateString('en-GB', options);
+
+            label.innerText = (date1.getTime() === date2.getTime()) ? d1Str : `${d1Str} - ${d2Str}`;
+            // if (clearBtn) clearBtn.classList.remove('hidden');
+        }
+    }
+
+    // Initialize all date pickers on load
+    document.addEventListener("DOMContentLoaded", function () {
+        // Inspection Logs Date Picker
+        initDateRangePicker('inspection-date-trigger', 'inspection-date-label', null, function (dates, dateStr) {
+            if (dates.length > 0) {
+                // Use local timezone formatting (NOT toISOString which converts to UTC)
+                const d1 = formatLocalDate(dates[0]);
+                const d2 = dates[1] ? formatLocalDate(dates[1]) : d1;
+
+                const startInput = document.getElementById('inspection-start-date');
+                const endInput = document.getElementById('inspection-end-date');
+                if (startInput) startInput.value = d1;
+                if (endInput) endInput.value = d2;
+
+                if (typeof filterInspections === 'function') filterInspections();
+            } else {
+                if (typeof filterInspections === 'function') filterInspections();
+            }
+        });
+
+        // Overtime Date Picker
+        initDateRangePicker('ot-date-trigger', 'ot-date-label', null, function (dates, dateStr) {
+            if (dates.length > 0) {
+                // Use local timezone formatting (NOT toISOString which converts to UTC)
+                const d1 = formatLocalDate(dates[0]);
+                const d2 = dates[1] ? formatLocalDate(dates[1]) : d1;
+
+                const startInput = document.getElementById('ot-start-date');
+                const endInput = document.getElementById('ot-end-date');
+                if (startInput) startInput.value = d1;
+                if (endInput) endInput.value = d2;
+
+                if (typeof filterOvertime === 'function') filterOvertime();
+            }
+        });
+
+        // Handover Date Picker (Single)
+        initDatePicker('handover-date-trigger', 'handover-date-label', function (dates, dateStr) {
+            if (dates.length > 0) {
+                const input = document.getElementById('handover-date');
+                if (input) input.value = dateStr;
+                if (typeof loadHandovers === 'function') loadHandovers();
+            }
+        });
+
+        // Guard Activity Date Picker (Single)
+        initDatePicker('activity-date-trigger', 'activity-date-label', function (dates, dateStr) {
+            if (dates.length > 0) {
+                const input = document.getElementById('activity-date');
+                if (input) input.value = dateStr;
+                if (typeof loadGuardActivity === 'function') loadGuardActivity();
+            }
+        });
+
+        // Initialize Reports Modal Date Inputs
+        const reportDateInputs = [
+            'daily-report-date',
+            'patrol-report-start', 'patrol-report-end',
+            'perf-report-start', 'perf-report-end',
+            'incident-report-start', 'incident-report-end',
+            'shift-date' // Calendar modal
+        ];
+
+        reportDateInputs.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                flatpickr(el, {
+                    dateFormat: "Y-m-d",
+                    altInput: true,
+                    altFormat: "F j, Y",
+                    allowInput: true
+                });
+            }
+        });
+    });
+
+
+    // =====================================================
+    // UI HELPERS
+    // =====================================================
+
+    // Show loading overlay
+    function showLoading(message = 'Loading...') {
+        let loader = document.getElementById('loading-overlay');
+        if (!loader) {
+            loader = document.createElement('div');
+            loader.id = 'loading-overlay';
+            loader.innerHTML = `
+        <div class="loading-spinner"></div>
+        <p class="loading-message">${message}</p>
+      `;
+            document.body.appendChild(loader);
+        }
+        loader.querySelector('.loading-message').textContent = message;
+        loader.classList.add('active');
+    }
+
+    // Show/Hide Sync Indicator in Header
+    function showSync() {
+        const el = document.getElementById('global-sync-indicator');
+        if (el) el.classList.add('active');
+    }
+
+    function hideSync() {
+        const el = document.getElementById('global-sync-indicator');
+        if (el) el.classList.remove('active');
+    }
+
+    // Hide loading overlay
+    function hideLoading() {
+        const loader = document.getElementById('loading-overlay');
+        if (loader) {
+            loader.classList.remove('active');
+        }
+    }
+
+    // Show toast notification
+    function showToast(message, type = 'info') {
+        let toast = document.getElementById('toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'toast';
+            document.body.appendChild(toast);
+        }
+        toast.className = 'toast toast-' + type;
+        toast.textContent = message;
+        toast.classList.add('active');
+
+        setTimeout(() => {
+            toast.classList.remove('active');
+        }, 3000);
+    }
+
+    // Format date for display
+    function formatDate(dateString, format = 'short') {
+        const date = new Date(dateString);
+        if (format === 'short') {
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+        return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
+    // Debounce function for search inputs
+    function debounce(func, wait) {
+        let timeout;
+        return function (...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+    }
+
+    // =====================================================
+    // CUSTOM SELECT DROPDOWN SYSTEM
+    // =====================================================
+
+    // Toggle custom select dropdown
+    function toggleSelect(selectId) {
+        const container = document.querySelector(`[data-select-id="${selectId}"]`);
+        if (!container) return;
+
+        const wasOpen = container.classList.contains('open');
+
+        // Close all other dropdowns first (and restore their modal overflow)
+        document.querySelectorAll('.custom-select.open').forEach(el => {
+            if (el !== container) {
+                el.classList.remove('open');
+                _restoreModalOverflow(el);
+            }
+        });
+
+        // Toggle this one
+        container.classList.toggle('open', !wasOpen);
+
+        // Fix Flaw 2: Prevent modal body from clipping dropdown menu
+        if (!wasOpen) {
+            _disableModalOverflow(container);
+        } else {
+            _restoreModalOverflow(container);
+        }
+    }
+
+    // Helper: Find nearest scrollable modal ancestor and disable overflow clipping
+    function _disableModalOverflow(el) {
+        var parent = el.closest('.modal-body, [class*="overflow"], main.flex-1.overflow-y-auto');
+        if (parent && (getComputedStyle(parent).overflowY === 'auto' || getComputedStyle(parent).overflowY === 'scroll')) {
+            parent._savedOverflow = parent.style.overflow;
+            parent.style.overflow = 'visible';
+        }
+    }
+
+    // Helper: Restore overflow on modal ancestor
+    function _restoreModalOverflow(el) {
+        var parent = el.closest('.modal-body, [class*="overflow"], main.flex-1.overflow-y-auto');
+        if (parent && parent._savedOverflow !== undefined) {
+            parent.style.overflow = parent._savedOverflow;
+            delete parent._savedOverflow;
+        } else if (parent) {
+            parent.style.overflow = '';
+        }
+    }
+
+    // Select an option in the custom dropdown
+    // params: selectId, value, label (string) OR element (this)
+    function selectOption(selectId, value, labelOrElement) {
+        let label = labelOrElement;
+
+        // NEW: If 3rd arg is the element itself, extract text
+        if (typeof labelOrElement === 'object' && labelOrElement.tagName) {
+            label = labelOrElement.textContent.trim();
+        }
+
+        const container = document.querySelector(`[data-select-id="${selectId}"]`);
+        if (!container) return;
+
+        // Update hidden input
+        const hiddenInput = container.querySelector('input[type="hidden"]');
+        if (hiddenInput) {
+            hiddenInput.value = value;
+        }
+
+        // Update displayed value
+        const valueDisplay = container.querySelector('.custom-select-value');
+        if (valueDisplay) {
+            valueDisplay.textContent = label;
+            valueDisplay.classList.remove('custom-select-placeholder');
+        }
+
+        // Update selected state on items
+        container.querySelectorAll('.custom-select-item').forEach(item => {
+            item.classList.toggle('selected', item.dataset.value === value);
+        });
+
+        // Close dropdown
+        container.classList.remove('open');
+
+        // Trigger onchange callback if defined
+        const onchange = container.dataset.onchange;
+        if (onchange && typeof window[onchange] === 'function') {
+            window[onchange]();
+        }
+    }
+
+    // Select an option using i18n key for label
+    function selectOptionI18n(selectId, value, i18nKey) {
+        const label = typeof t === 'function' ? t(i18nKey) : i18nKey;
+        selectOption(selectId, value, label);
+    }
+
+    // Get value from custom select
+    function getSelectValue(selectId) {
+        const container = document.querySelector(`[data-select-id="${selectId}"]`);
+        if (!container) return '';
+        const hiddenInput = container.querySelector('input[type="hidden"]');
+        return hiddenInput ? hiddenInput.value : '';
+    }
+
+    // Global click handler to close dropdowns when clicking outside
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('.custom-select')) {
+            document.querySelectorAll('.custom-select.open').forEach(el => {
+                el.classList.remove('open');
+                _restoreModalOverflow(el);
+            });
+        }
+    });
+
+    // ESC key handler to close dropdowns
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.custom-select.open').forEach(el => {
+                el.classList.remove('open');
+                _restoreModalOverflow(el);
+            });
+        }
+    });
+
+    // =====================================================
+    // FORM HELPERS
+    // =====================================================
+
+    // Load Site Options for Select
+    function loadSiteOptions(selectId, selectedValue = null) {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+
+        // Use cached sites if available
+        if (window.cachedSites && window.cachedSites.length > 0) {
+            populateSiteSelect(select, window.cachedSites);
+            if (selectedValue) select.value = selectedValue;
+            return;
+        }
+
+        // Show loading state
+        select.innerHTML = '<option value="">Loading sites...</option>';
+        select.disabled = true;
+
+        // Otherwise fetch
+        google.script.run
+            .withSuccessHandler(function (sites) {
+                window.cachedSites = sites;
+                populateSiteSelect(select, sites);
+                if (selectedValue) select.value = selectedValue;
+                select.disabled = false;
+            })
+            .withFailureHandler(function (err) {
+                console.error('Failed to load sites:', err);
+                select.innerHTML = `<option value="">Error loading sites</option>`;
+                select.disabled = false;
+                showToast('Failed to load sites', 'error');
+            })
+            .getSites(); // Calls Sites.gs logic
+    }
+
+    function populateSiteSelect(select, sites) {
+        select.innerHTML = '<option value="">Select site...</option>';
+        // Sort alphabetically by name
+        sites.sort((a, b) => (a.nameEN || '').localeCompare(b.nameEN || ''));
+
+        sites.forEach(site => {
+            const option = document.createElement('option');
+            // Use ID if available, otherwise name
+            option.value = site.id || site.nameEN;
+            option.textContent = site.nameEN + (site.code ? ` (${site.code})` : '');
+            select.appendChild(option);
+        });
+    }
+
+    // =====================================================
+    // VKS CUSTOM DROPDOWN SYSTEM
+    // Reusable premium dropdowns for modals & forms
+    // =====================================================
+    window._vksDropdowns = {};
+
+    /**
+     * Initialize a VKS Custom Dropdown
+     * @param {Object} cfg
+     * @param {string} cfg.containerId - Wrapper div ID (must have class="custom-select")
+     * @param {string} cfg.hiddenInputId - Hidden input ID for form value
+     * @param {string} cfg.placeholder - Placeholder text
+     * @param {boolean} cfg.searchable - Enable search filter
+     * @param {Array} cfg.items - [{value, label, icon?}]
+     * @param {Function} cfg.onSelect - Optional callback(value, label)
+     */
+    function initVKSDropdown(cfg) {
+        var container = document.getElementById(cfg.containerId);
+        if (!container) { console.warn('initVKSDropdown: container not found:', cfg.containerId); return; }
+        window._vksDropdowns[cfg.containerId] = cfg;
+
+        var html = '';
+        html += '<button type="button" class="custom-select-trigger" onclick="toggleVKSDropdown(\'' + cfg.containerId + '\')">';
+        html += '<span class="custom-select-value custom-select-placeholder" id="' + cfg.containerId + '-label">' + (cfg.placeholder || 'Select...') + '</span>';
+        html += '<span class="material-symbols-outlined">expand_more</span>';
+        html += '</button>';
+        html += '<div class="custom-select-menu" id="' + cfg.containerId + '-menu">';
+
+        if (cfg.searchable) {
+            html += '<div style="padding: 0.5rem; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); z-index: 1;">';
+            html += '<input type="text" class="form-input" placeholder="🔍 Search..." style="height: 2rem; font-size: 0.8125rem;" oninput="filterVKSDropdown(\'' + cfg.containerId + '\', this.value)" id="' + cfg.containerId + '-search">';
+            html += '</div>';
+        }
+
+        html += '<div id="' + cfg.containerId + '-items">';
+        if (cfg.items && cfg.items.length > 0) {
+            cfg.items.forEach(function (item) {
+                html += _buildVKSItem(cfg.containerId, item);
+            });
+        }
+        html += '</div></div>';
+        container.innerHTML = html;
+    }
+
+    /** Build a single dropdown item HTML */
+    function _buildVKSItem(containerId, item) {
+        var safeVal = String(item.value).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        var safeLbl = String(item.label || item.value).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        var display = (item.icon ? item.icon + ' ' : '') + (item.label || item.value);
+        return '<div class="custom-select-item" data-value="' + safeVal + '" onclick="selectVKSDropdownItem(\'' + containerId + '\',\'' + safeVal + '\',\'' + safeLbl + '\')">' + display + '</div>';
+    }
+
+    function toggleVKSDropdown(containerId) {
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        // Close all others
+        document.querySelectorAll('.custom-select.open').forEach(function (el) {
+            if (el.id !== containerId) el.classList.remove('open');
+        });
+        container.classList.toggle('open');
+        // Auto-focus search
+        if (container.classList.contains('open')) {
+            var s = document.getElementById(containerId + '-search');
+            if (s) setTimeout(function () { s.focus(); }, 50);
+        }
+    }
+
+    function selectVKSDropdownItem(containerId, value, label) {
+        var cfg = window._vksDropdowns[containerId];
+        if (!cfg) return;
+        // Set hidden input
+        var inp = document.getElementById(cfg.hiddenInputId);
+        if (inp) inp.value = value;
+        // Update trigger label
+        var lbl = document.getElementById(containerId + '-label');
+        if (lbl) { lbl.textContent = label || value; lbl.classList.remove('custom-select-placeholder'); }
+        // Update selected state
+        var items = document.querySelectorAll('#' + containerId + '-items .custom-select-item');
+        items.forEach(function (el) { el.classList.toggle('selected', el.dataset.value === value); });
+        // Close & clear search
+        var container = document.getElementById(containerId);
+        if (container) container.classList.remove('open');
+        var search = document.getElementById(containerId + '-search');
+        if (search) { search.value = ''; filterVKSDropdown(containerId, ''); }
+        // Callback
+        if (cfg.onSelect) cfg.onSelect(value, label);
+    }
+
+    function filterVKSDropdown(containerId, query) {
+        var itemsEl = document.getElementById(containerId + '-items');
+        if (!itemsEl) return;
+        var q = (query || '').toLowerCase();
+        itemsEl.querySelectorAll('.custom-select-item').forEach(function (el) {
+            el.style.display = el.textContent.toLowerCase().indexOf(q) !== -1 ? '' : 'none';
+        });
+    }
+
+    /** Set dropdown value programmatically (for edit mode pre-population) */
+    function setVKSDropdownValue(containerId, value) {
+        var cfg = window._vksDropdowns[containerId];
+        if (!cfg) return;
+        var inp = document.getElementById(cfg.hiddenInputId);
+        if (inp) inp.value = value || '';
+        if (!value) {
+            // Reset to placeholder
+            var lbl = document.getElementById(containerId + '-label');
+            if (lbl) { lbl.textContent = cfg.placeholder || 'Select...'; lbl.classList.add('custom-select-placeholder'); }
+            document.querySelectorAll('#' + containerId + '-items .custom-select-item').forEach(function (el) { el.classList.remove('selected'); });
+            return;
+        }
+        var items = document.querySelectorAll('#' + containerId + '-items .custom-select-item');
+        var foundLabel = '';
+        items.forEach(function (el) {
+            if (el.dataset.value === String(value)) { el.classList.add('selected'); foundLabel = el.textContent.trim(); }
+            else { el.classList.remove('selected'); }
+        });
+        var lbl = document.getElementById(containerId + '-label');
+        if (lbl && foundLabel) { lbl.textContent = foundLabel; lbl.classList.remove('custom-select-placeholder'); }
+    }
+
+    /** Populate dropdown items dynamically (for sites/guards loaded from backend) */
+    function populateVKSDropdown(containerId, items, selectedValue) {
+        var cfg = window._vksDropdowns[containerId];
+        if (!cfg) return;
+        cfg.items = items;
+        var itemsEl = document.getElementById(containerId + '-items');
+        if (!itemsEl) return;
+        var html = '';
+        items.forEach(function (item) { html += _buildVKSItem(containerId, item); });
+        itemsEl.innerHTML = html;
+        if (selectedValue) setVKSDropdownValue(containerId, selectedValue);
+    }
+
+    // Close VKS dropdowns when clicking outside
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('.custom-select')) {
+            document.querySelectorAll('.custom-select.open').forEach(function (el) { el.classList.remove('open'); });
+        }
+    });
+
+    // =====================================================
+    // VKS FLATPICKR HELPER
+    // =====================================================
+    window._vksFlatpickrs = {};
+
+    /**
+     * Initialize a flatpickr on an input, storing the instance for later access.
+     * @param {string} inputId - The input element ID
+     * @param {Object} opts - Flatpickr options override
+     * @returns {Object} flatpickr instance
+     */
+    function initVKSFlatpickr(inputId, opts) {
+        var input = document.getElementById(inputId);
+        if (!input || typeof flatpickr === 'undefined') return null;
+
+        var defaults = {
+            dateFormat: 'Y-m-dTH:i',
+            enableTime: true,
+            time_24hr: true,
+            disableMobile: true,
+            locale: typeof getFlatpickrLocale === 'function' ? getFlatpickrLocale() : undefined
+        };
+        var config = Object.assign({}, defaults, opts || {});
+        // Destroy previous instance if re-initializing
+        if (window._vksFlatpickrs[inputId]) {
+            window._vksFlatpickrs[inputId].destroy();
+        }
+        window._vksFlatpickrs[inputId] = flatpickr(input, config);
+        return window._vksFlatpickrs[inputId];
+    }
+
+    // =====================================================
+    // LOAD SITE OPTIONS — VKS CUSTOM DROPDOWN VERSION
+    // =====================================================
+
+    /**
+     * Load site options into a VKS Custom Dropdown (instead of native <select>).
+     * @param {string} dropdownId - The custom dropdown container ID
+     * @param {string|null} selectedValue - Pre-selected site ID
+     */
+    function loadSiteOptionsVKS(dropdownId, selectedValue) {
+        if (window.cachedSites && window.cachedSites.length > 0) {
+            _populateSiteDropdown(dropdownId, window.cachedSites, selectedValue);
+            return;
+        }
+        // Show loading placeholder
+        var lbl = document.getElementById(dropdownId + '-label');
+        if (lbl) lbl.textContent = 'Loading sites...';
+
+        google.script.run
+            .withSuccessHandler(function (sites) {
+                window.cachedSites = sites;
+                _populateSiteDropdown(dropdownId, sites, selectedValue);
+            })
+            .withFailureHandler(function (err) {
+                console.error('Failed to load sites:', err);
+                if (lbl) lbl.textContent = 'Error loading sites';
+                showToast('Failed to load sites', 'error');
+            })
+            .getSites();
+    }
+
+    function _populateSiteDropdown(dropdownId, sites, selectedValue) {
+        sites.sort(function (a, b) { return (a.nameEN || '').localeCompare(b.nameEN || ''); });
+        var items = sites.map(function (site) {
+            return {
+                value: site.id || site.nameEN,
+                label: site.nameEN + (site.code ? ' (' + site.code + ')' : ''),
+                icon: '📍'
+            };
+        });
+        populateVKSDropdown(dropdownId, items, selectedValue);
+    }
+
+    // =====================================================
+    // LOAD GUARD OPTIONS — VKS CUSTOM DROPDOWN VERSION
+    // =====================================================
+
+    /**
+     * Load guard options for a specific site into a VKS Custom Dropdown.
+     * @param {string} dropdownId - The custom dropdown container ID
+     * @param {string} siteId - Site ID to filter guards
+     * @param {string|null} selectedValue - Pre-selected guard ID
+     */
+    function loadGuardOptionsVKS(dropdownId, siteId, selectedValue) {
+        if (!siteId) {
+            // Clear dropdown if no site selected
+            populateVKSDropdown(dropdownId, [], null);
+            var lbl = document.getElementById(dropdownId + '-label');
+            if (lbl) { lbl.textContent = 'Select site first...'; lbl.classList.add('custom-select-placeholder'); }
+            return;
+        }
+
+        // Show loading placeholder
+        var lbl = document.getElementById(dropdownId + '-label');
+        if (lbl) lbl.textContent = 'Loading guards...';
+
+        google.script.run
+            .withSuccessHandler(function (guards) {
+                var items = guards.map(function (g) {
+                    return {
+                        value: g.id,
+                        label: (g.empId || '') + ' - ' + (g.name || 'Unknown'),
+                        icon: '👮'
+                    };
+                });
+                populateVKSDropdown(dropdownId, items, selectedValue);
+                if (items.length === 0 && lbl) {
+                    lbl.textContent = 'No guards found';
+                    lbl.classList.add('custom-select-placeholder');
+                }
+            })
+            .withFailureHandler(function (err) {
+                console.error('Failed to load guards:', err);
+                if (lbl) lbl.textContent = 'Error loading guards';
+                showToast('Failed to load guards', 'error');
+            })
+            .getGuards({ siteId: siteId, status: 'active' });
+    }
+
+    // =====================================================
+    // LOCALIZATION HELPER (delegates to TranslationManager)
+    // =====================================================
+    function applyTranslations(container) {
+        if (!container) container = document;
+
+        // Use TranslationManager as single source of truth for language
+        var lang = (typeof TranslationManager !== 'undefined' && TranslationManager.currentLang)
+            ? TranslationManager.currentLang
+            : (localStorage.getItem('vks-app-language') || 'en');
+
+        if (typeof I18N === 'undefined' || !I18N[lang]) return;
+
+        var dict = I18N[lang];
+
+        // 1. Text Content (data-i18n)
+        container.querySelectorAll('[data-i18n]').forEach(function (el) {
+            var key = el.getAttribute('data-i18n');
+            if (dict[key]) el.textContent = dict[key];
+        });
+
+        // 2. Placeholders (data-i18n-placeholder)
+        container.querySelectorAll('[data-i18n-placeholder]').forEach(function (el) {
+            var key = el.getAttribute('data-i18n-placeholder');
+            if (dict[key]) el.placeholder = dict[key];
+        });
+
+        // 3. Titles/Tooltips (data-i18n-title)
+        container.querySelectorAll('[data-i18n-title]').forEach(function (el) {
+            var key = el.getAttribute('data-i18n-title');
+            if (dict[key]) el.title = dict[key];
+        });
+
+        // 4. Aria Labels (data-i18n-label) — match TranslationManager
+        container.querySelectorAll('[data-i18n-label]').forEach(function (el) {
+            var key = el.getAttribute('data-i18n-label');
+            if (dict[key]) el.setAttribute('aria-label', dict[key]);
+        });
+    }
+
+    // =====================================================
+    // PHOTO UPLOAD UTILITIES
+    // Shared by Incident and Complaint forms
+    // =====================================================
+
+    /** Stores base64 photo data per form prefix */
+    var _photoStore = { incident: [], complaint: [] };
+
+    /** Max constraints */
+    var PHOTO_MAX_COUNT = 3;
+    var PHOTO_MAX_SIZE_MB = 5;
+    var PHOTO_MAX_SIZE_BYTES = PHOTO_MAX_SIZE_MB * 1024 * 1024;
+
+    /**
+     * Handle file input change — convert to base64 with preview
+     * @param {Event} event - file input change event
+     * @param {string} prefix - 'incident' or 'complaint'
+     */
+    function handlePhotoSelect(event, prefix) {
+        var files = Array.from(event.target.files);
+        var store = _photoStore[prefix] || [];
+        var remaining = PHOTO_MAX_COUNT - store.length;
+
+        if (remaining <= 0) {
+            showToast('Maximum ' + PHOTO_MAX_COUNT + ' photos allowed', 'warning');
+            event.target.value = '';
+            return;
+        }
+
+        // Take only what fits
+        files = files.slice(0, remaining);
+
+        files.forEach(function (file) {
+            // Validate size
+            if (file.size > PHOTO_MAX_SIZE_BYTES) {
+                showToast(file.name + ' exceeds ' + PHOTO_MAX_SIZE_MB + 'MB limit', 'error');
+                return;
+            }
+
+            // Validate type
+            if (!file.type.startsWith('image/')) {
+                showToast(file.name + ' is not an image file', 'error');
+                return;
+            }
+
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                var photoObj = {
+                    name: file.name,
+                    type: file.type,
+                    size: file.size,
+                    base64: e.target.result  // data:image/...;base64,...
+                };
+                _photoStore[prefix].push(photoObj);
+                renderPhotoPreview(prefix);
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Reset input so same file can be selected again
+        event.target.value = '';
+    }
+
+    /** Render preview thumbnails for a form prefix */
+    function renderPhotoPreview(prefix) {
+        var container = document.getElementById(prefix + '-photo-preview');
+        if (!container) return;
+
+        var store = _photoStore[prefix] || [];
+        if (store.length === 0) {
+            container.innerHTML = '';
+            return;
+        }
+
+        container.innerHTML = store.map(function (photo, idx) {
+            var sizeKB = Math.round(photo.size / 1024);
+            var sizeLabel = sizeKB > 1024 ? (sizeKB / 1024).toFixed(1) + ' MB' : sizeKB + ' KB';
+            return '<div class="photo-preview-item">' +
+                '<img src="' + photo.base64 + '" alt="' + photo.name + '">' +
+                '<button type="button" class="photo-remove-btn" onclick="removePhoto(\'' + prefix + '\',' + idx + ')" title="Remove">✕</button>' +
+                '<div class="photo-size">' + sizeLabel + '</div>' +
+                '</div>';
+        }).join('');
+    }
+
+    /** Remove a photo by index */
+    function removePhoto(prefix, index) {
+        if (_photoStore[prefix]) {
+            _photoStore[prefix].splice(index, 1);
+            renderPhotoPreview(prefix);
+        }
+    }
+
+    /** Get photo base64 array for form submission */
+    function getPhotoData(prefix) {
+        return (_photoStore[prefix] || []).map(function (p) {
+            return { name: p.name, type: p.type, base64: p.base64 };
+        });
+    }
+
+    /** Clear all photos for a form prefix */
+    function clearPhotoUploads(prefix) {
+        _photoStore[prefix] = [];
+        renderPhotoPreview(prefix);
+    }
+
+    /** Setup drag-and-drop for upload zones */
+    function initUploadDragDrop(zoneId, prefix) {
+        var zone = document.getElementById(zoneId);
+        if (!zone) return;
+
+        zone.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            zone.classList.add('drag-over');
+        });
+        zone.addEventListener('dragleave', function () {
+            zone.classList.remove('drag-over');
+        });
+        zone.addEventListener('drop', function (e) {
+            e.preventDefault();
+            zone.classList.remove('drag-over');
+            if (e.dataTransfer.files.length > 0) {
+                // Create a synthetic event for the handler
+                handlePhotoSelect({ target: { files: e.dataTransfer.files, value: '' } }, prefix);
+            }
+        });
+    }
+</script>

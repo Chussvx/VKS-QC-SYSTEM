@@ -1,0 +1,217 @@
+<div id="modal-complaint-detail-new" class="hidden">
+    <!-- Main Modal Container -->
+    <div class="bg-gray-100 flex flex-col h-[90vh] md:h-auto md:max-h-[90vh]">
+
+        <!-- Header (Sticky) -->
+        <div
+            class="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-start shrink-0 z-10 sticky top-0 rounded-t-xl">
+            <div>
+                <div class="flex items-center gap-3 mb-1">
+                    <span id="view-comp-priority"
+                        class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-800 uppercase tracking-wide">
+                        PRIORITY
+                    </span>
+                    <span id="view-comp-id" class="text-sm text-gray-400 font-mono font-medium">CMP-ID</span>
+                    <span id="view-comp-status"
+                        class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 capitalize">
+                        Status
+                    </span>
+                </div>
+                <h2 class="text-2xl font-extrabold text-gray-900 leading-tight">
+                    Complaint Case
+                </h2>
+            </div>
+            <button onclick="closeModal()"
+                class="text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-full hover:bg-gray-100">
+                <span class="material-icons-round text-xl">close</span>
+            </button>
+        </div>
+
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
+            <div class="space-y-6 max-w-5xl mx-auto">
+
+                <!-- Customer & Case Info -->
+                <div class="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+                    <h3
+                        class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
+                        Case Information</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                        <div>
+                            <label
+                                class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Site</label>
+                            <p id="view-comp-site" class="text-sm font-bold text-gray-900">Site Name</p>
+                        </div>
+                        <div>
+                            <label
+                                class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Customer</label>
+                            <p id="view-comp-customer" class="text-sm font-bold text-gray-900">Customer Name</p>
+                            <p id="view-comp-customer-type"
+                                class="text-xs text-gray-500 font-medium bg-gray-100 inline-block px-1.5 rounded mt-0.5">
+                                Type</p>
+                        </div>
+                        <div>
+                            <label
+                                class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Contact</label>
+                            <p id="view-comp-phone" class="text-sm text-gray-900 font-mono">Phone</p>
+                        </div>
+                        <div>
+                            <label
+                                class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Submitted</label>
+                            <p id="view-comp-time" class="text-sm font-medium text-gray-900">Date/Time</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Left Column -->
+                    <div class="md:col-span-2 space-y-6">
+                        <!-- Issue Details -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                            <h3
+                                class="flex items-center gap-2 text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 pb-2 border-b border-gray-100">
+                                <span class="material-icons-round text-gray-400 text-base">error_outline</span>
+                                Issue Details
+                            </h3>
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                    <div>
+                                        <label
+                                            class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Category</label>
+                                        <p id="view-comp-category" class="text-sm font-bold text-gray-900">Category</p>
+                                    </div>
+                                    <div>
+                                        <label
+                                            class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Severity</label>
+                                        <span id="view-comp-severity"
+                                            class="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-200 text-gray-800 uppercase">Severity</span>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label
+                                        class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Description</label>
+                                    <p id="view-comp-description"
+                                        class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                                        Complaint description...
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Resolution Section -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                            <h3
+                                class="flex items-center gap-2 text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 pb-2 border-b border-gray-100">
+                                <span class="material-icons-round text-gray-400 text-base">check_circle_outline</span>
+                                Resolution & Outcome
+                            </h3>
+                            <div class="space-y-6">
+                                <div class="grid grid-cols-2 gap-6">
+                                    <div>
+                                        <label
+                                            class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Resolution
+                                            Status</label>
+                                        <p id="view-comp-resolution"
+                                            class="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">-</p>
+                                    </div>
+                                    <div>
+                                        <label
+                                            class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Disciplinary
+                                            Action</label>
+                                        <p id="view-comp-discipline"
+                                            class="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">-</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Meta -->
+                    <div class="space-y-6">
+                        <!-- Workflow -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                            <h3
+                                class="flex items-center gap-2 text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 pb-2 border-b border-gray-100">
+                                <span class="material-icons-round text-gray-400 text-base">history</span>
+                                Workflow
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label
+                                        class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Guard
+                                        Involved</label>
+                                    <p id="view-comp-guard"
+                                        class="text-sm text-gray-900 font-mono bg-gray-50 px-2 py-1 rounded inline-block">
+                                        -</p>
+                                </div>
+                                <div class="border-t border-gray-100 my-2"></div>
+                                <div>
+                                    <label
+                                        class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Notified
+                                        By</label>
+                                    <p id="view-comp-notified-by" class="text-xs text-gray-900">-</p>
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Recorded
+                                        By</label>
+                                    <p id="view-comp-recorded-by" class="text-xs text-gray-900">-</p>
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Assigned
+                                        To</label>
+                                    <p id="view-comp-assigned-to" class="text-xs text-gray-900">-</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dates -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                            <h3
+                                class="flex items-center gap-2 text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 pb-2 border-b border-gray-100">
+                                <span class="material-icons-round text-gray-400 text-base">event</span>
+                                Timeline
+                            </h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <label
+                                        class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Due
+                                        Date</label>
+                                    <p id="view-comp-due-date" class="text-sm text-gray-900 font-mono">-</p>
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Completed
+                                        Date</label>
+                                    <p id="view-comp-completion-date" class="text-sm text-gray-900 font-mono">-</p>
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Approved
+                                        By</label>
+                                    <p id="view-comp-approved-by" class="text-sm text-gray-900">-</p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Actions (Sticky) -->
+        <div
+            class="bg-white border-t border-gray-200 px-6 py-4 flex justify-end gap-3 shrink-0 z-10 sticky bottom-0 rounded-b-xl">
+            <button onclick="closeModal()"
+                class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 font-bold hover:bg-gray-50 transition-colors text-sm uppercase tracking-wide">
+                Close
+            </button>
+            <button id="btn-comp-resolve"
+                class="px-6 py-2.5 rounded-lg bg-green-600 text-white font-bold hover:bg-green-700 shadow-md hover:shadow-lg transition-all text-sm uppercase tracking-wide flex items-center gap-2">
+                <span class="material-icons-round text-lg">check_circle</span> Resolve Case
+            </button>
+        </div>
+    </div>
+</div>

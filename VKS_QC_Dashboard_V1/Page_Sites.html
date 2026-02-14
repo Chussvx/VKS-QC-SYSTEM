@@ -1,0 +1,1066 @@
+<!-- Page_Sites.html - Sites Management page content -->
+<div id="page-sites" class="page-content">
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="filter-group">
+            <!-- Search -->
+            <div class="input-group">
+                <span class="material-symbols-outlined input-icon">search</span>
+                <input type="text" id="sites-search" class="form-input" data-i18n-placeholder="sites.search"
+                    placeholder="Search site or VKS code..." onkeyup="filterSites()">
+            </div>
+
+            <div class="divider-v h-6 mx-2"></div>
+
+            <!-- Route Filter -->
+            <div class="custom-select w-40" data-select-id="sites-route" data-onchange="filterSites">
+                <button class="custom-select-trigger" onclick="toggleSelect('sites-route')">
+                    <span class="custom-select-value" data-i18n="sites.all_routes">All Routes</span>
+                    <span class="material-symbols-outlined">expand_more</span>
+                </button>
+                <div class="custom-select-menu">
+                    <div class="custom-select-item selected" data-value=""
+                        onclick="selectOption('sites-route', '', 'All Routes')">All Routes</div>
+                    <div class="custom-select-item" data-value="A"
+                        onclick="selectOption('sites-route', 'A', 'Route A')">Route A</div>
+                    <div class="custom-select-item" data-value="B"
+                        onclick="selectOption('sites-route', 'B', 'Route B')">Route B</div>
+                </div>
+                <input type="hidden" name="sites-route" value="">
+            </div>
+
+            <!-- Type Filter -->
+            <div class="custom-select w-40" data-select-id="sites-type" data-onchange="filterSites">
+                <button class="custom-select-trigger" onclick="toggleSelect('sites-type')">
+                    <span class="custom-select-value" data-i18n="sites.all_types">All Types</span>
+                    <span class="material-symbols-outlined">expand_more</span>
+                </button>
+                <div class="custom-select-menu">
+                    <div class="custom-select-item selected" data-value=""
+                        onclick="selectOption('sites-type', '', 'All Types')">All Types</div>
+                    <div class="custom-select-item" data-value="Hotel"
+                        onclick="selectOption('sites-type', 'Hotel', 'Hotel')">Hotel</div>
+                    <div class="custom-select-item" data-value="Office"
+                        onclick="selectOption('sites-type', 'Office', 'Office')">Office</div>
+                    <div class="custom-select-item" data-value="Warehouse"
+                        onclick="selectOption('sites-type', 'Warehouse', 'Warehouse')">Warehouse</div>
+                    <div class="custom-select-item" data-value="Residential"
+                        onclick="selectOption('sites-type', 'Residential', 'Residential')">Residential</div>
+                    <div class="custom-select-item" data-value="Bank"
+                        onclick="selectOption('sites-type', 'Bank', 'Bank')">Bank</div>
+                    <div class="custom-select-item" data-value="Retail"
+                        onclick="selectOption('sites-type', 'Retail', 'Retail')">Retail</div>
+                    <div class="custom-select-item" data-value="Other"
+                        onclick="selectOption('sites-type', 'Other', 'Other')">Other</div>
+                </div>
+                <input type="hidden" name="sites-type" value="">
+            </div>
+
+            <!-- Status Filter -->
+            <div class="custom-select w-40" data-select-id="sites-status" data-onchange="filterSites">
+                <button class="custom-select-trigger" onclick="toggleSelect('sites-status')">
+                    <span class="custom-select-value" data-i18n="sites.all_status">All Status</span>
+                    <span class="material-symbols-outlined">expand_more</span>
+                </button>
+                <div class="custom-select-menu">
+                    <div class="custom-select-item selected" data-value=""
+                        onclick="selectOption('sites-status', '', 'All Status')">All Status</div>
+                    <div class="custom-select-item" data-value="active"
+                        onclick="selectOption('sites-status', 'active', 'Active')">Active</div>
+                    <div class="custom-select-item" data-value="inactive"
+                        onclick="selectOption('sites-status', 'inactive', 'Inactive')">Inactive</div>
+                </div>
+                <input type="hidden" name="sites-status" value="">
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3 ml-auto">
+            <button class="btn btn-primary btn-sm" onclick="openSiteForm()">
+                <span class="material-symbols-outlined">add</span>
+                <span data-i18n="sites.add">Add Site</span>
+            </button>
+            <div class="divider-v h-6 mx-2"></div>
+            <span class="text-muted text-sm font-medium"><strong id="sites-count">0</strong> <span
+                    data-i18n="sites.count">Sites</span></span>
+        </div>
+    </div>
+
+    <!-- Sites Table -->
+    <div class="card p-0 overflow-hidden">
+        <div class="table-container">
+            <table class="data-table" id="sites-table">
+                <thead>
+                    <tr>
+                        <th style="width: 120px;" data-i18n="sites.col.vks_code">VKS Code</th>
+                        <th data-i18n="sites.col.site_name">Site Name</th>
+                        <th data-i18n="sites.col.type">Type</th>
+                        <th class="text-center" data-i18n="sites.col.route">Route</th>
+                        <th class="text-center" data-i18n="sites.col.guards">Guards</th>
+                        <th class="text-center" data-i18n="sites.col.checkpoints">Checkpoints</th>
+                        <th class="text-center" data-i18n="sites.col.rounds">Rounds</th>
+                        <th data-i18n="sites.col.status">Status</th>
+                        <th class="text-center" style="width: 60px;" data-i18n="sites.col.map">Map</th>
+                        <th class="text-center" style="width: 60px;" data-i18n="sites.col.actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="sites-tbody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Sites page state
+    let sitesData = [];
+    let sitesFiltered = [];
+    let lastSitesSignal = 0;
+    let sitesPoller = null;
+    window.activeSiteId = null; // Global context for modals
+
+    // SiteCache - In-memory cache for instant site detail loading (Amazon-style)
+    // Extended TTL: Site data is stable, 3 min cache for faster revisits
+    const SiteCache = {
+        data: {},           // siteId → { detail, timestamp }
+        maxAge: 180000,     // 3 minutes (was 60s) - sites change infrequently
+
+        get: function (siteId) {
+            const cached = this.data[siteId];
+            if (cached && (Date.now() - cached.timestamp) < this.maxAge) {
+                console.log('[SiteCache] HIT:', siteId);
+                return cached.detail;
+            }
+            console.log('[SiteCache] MISS:', siteId);
+            return null;
+        },
+
+        set: function (siteId, detail) {
+            this.data[siteId] = { detail: detail, timestamp: Date.now() };
+            console.log('[SiteCache] SET:', siteId);
+        },
+
+        clear: function () {
+            this.data = {};
+            console.log('[SiteCache] CLEARED');
+        }
+    };
+
+    // Initialize Sites page
+    function init_sites() {
+        // Elite Standard: Render memory data instantly if it exists
+        if (sitesData && sitesData.length > 0) {
+            console.log('[Sites] Memory Entry Render');
+            renderSitesTable();
+            updateSitesCount();
+        }
+
+        startSitesSignalListener();
+
+        // If memory is empty, we MUST fetch. If not, only fetch if signal changed.
+        if (sitesData.length === 0) {
+            loadSites();
+        } else {
+            checkSitesUpdate();
+        }
+    }
+
+    // Load sites from backend
+    function loadSites() {
+        // Elite Standard: Render memory data instantly if it exists
+        if (sitesData && sitesData.length > 0) {
+            console.log('[Sites] Memory First Render');
+            renderSitesTable();
+            showSync(); // Subtle pulse in header
+        } else {
+            showTableLoading('sites-tbody', 8);
+        }
+
+        google.script.run
+            .withSuccessHandler(function (data) {
+                console.log('[Sites] Server Response:', data);
+                hideSync();
+                sitesData = data || [];
+                sitesFiltered = [...sitesData];
+                console.log('[Sites] Data length:', sitesData.length);
+                renderSitesTable();
+                updateSitesCount();
+            })
+            .withFailureHandler(function (error) {
+                console.error('[Sites] Server Error:', error);
+                hideSync();
+                // Error Persistence: Only show error if we have NO data
+                if (!sitesData || sitesData.length === 0) {
+                    showTableError('sites-tbody', 8, 'Failed to load sites: ' + error.message);
+                } else {
+                    showToast('Sync failed: ' + error.message, 'error');
+                }
+            })
+            .getSites({});
+    }
+
+    // Filter sites based on inputs
+    function filterSites() {
+        console.log('[DEBUG] Filtering...');
+        console.log('[DEBUG] Search:', document.getElementById('sites-search').value);
+        console.log('[DEBUG] Route:', getSelectValue('sites-route'));
+        console.log('[DEBUG] Type:', getSelectValue('sites-type'));
+        console.log('[DEBUG] Status:', getSelectValue('sites-status'));
+
+        const search = (document.getElementById('sites-search').value || '').toLowerCase();
+        // FIXED: Use getSelectValue helper instead of getElementById on custom selects
+        const route = getSelectValue('sites-route');
+        const type = getSelectValue('sites-type');
+        const status = getSelectValue('sites-status');
+
+        sitesFiltered = sitesData.filter(site => {
+            const matchSearch = !search ||
+                site.code.toLowerCase().includes(search) ||
+                site.nameEN.toLowerCase().includes(search) ||
+                (site.nameLO && site.nameLO.includes(search));
+            const matchRoute = !route || site.route === route;
+            const matchType = !type || site.type === type;
+            const matchStatus = !status || site.status === status;
+
+            return matchSearch && matchRoute && matchType && matchStatus;
+        });
+
+        renderSitesTable();
+        updateSitesCount();
+    }
+
+    // Update sites count display
+    function updateSitesCount() {
+        document.getElementById('sites-count').textContent = sitesFiltered.length;
+    }
+
+    // Render sites table
+    function renderSitesTable() {
+        const tbody = document.getElementById('sites-tbody');
+
+        if (sitesFiltered.length === 0) {
+            tbody.innerHTML = `
+      <tr>
+        <td colspan="10" class="text-center py-8 text-muted">
+          <span class="material-symbols-outlined text-5xl mb-2">domain_disabled</span>
+          <p>${t('sites.no_data')}</p>
+        </td>
+      </tr>
+    `;
+            return;
+        }
+
+        DiffRenderer.render(tbody, sitesFiltered, {
+            keyFn: site => site.id,
+            renderFn: site => `
+    <tr class="clickable-row ${site.status === 'inactive' ? 'row-inactive' : ''}" onclick="openSiteDetail('${site.id}')">
+      <td class="font-mono font-medium">${escapeHtml(site.code)}</td>
+      <td>
+        <div>
+          <p class="font-semibold">${escapeHtml(site.nameEN)}</p>
+          ${site.nameLO ? `<p class="text-xs text-muted mt-1">${escapeHtml(site.nameLO)}</p>` : ''}
+        </div>
+      </td>
+      <td>
+        <div class="flex items-center gap-2">
+          <span class="text-xl">${getSiteTypeIcon(site.type)}</span>
+          <span>${escapeHtml(site.type)}</span>
+        </div>
+      </td>
+      <td class="text-center">
+        <span class="route-badge route-${site.route.toLowerCase()}">${site.route}</span>
+      </td>
+      <td class="text-center font-medium">${site.guardCount || 0}</td>
+      <td class="text-center font-medium">${site.checkpointCount || 0}</td>
+      <td class="text-center font-medium">${site.roundsTarget || '-'}</td>
+      <td>
+        ${site.status === 'active'
+                    ? '<span class="badge badge-success"><span class="status-dot bg-success"></span>Active</span>'
+                    : '<span class="badge badge-default"><span class="status-dot bg-muted"></span>Inactive</span>'
+                }
+      </td>
+      <td class="text-center">
+        <button class="btn-icon" onclick="event.stopPropagation(); viewSiteOnMap('${site.id}')" title="View on Map">
+          <span class="material-symbols-outlined">map</span>
+        </button>
+      </td>
+      <td class="text-center">
+        <button class="btn-icon text-danger" onclick="event.stopPropagation(); confirmDeleteSite('${site.id}', '${escapeHtml(site.nameEN).replace(/'/g, "\\'")}')"
+          title="Delete Site" style="opacity: 0.6; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">
+          <span class="material-symbols-outlined" style="font-size: 18px;">delete</span>
+        </button>
+      </td>
+    </tr>
+  `,
+            onUpdate: (el, item, changed) => {
+                if (changed) {
+                    el.classList.add('row-update-flash');
+                    setTimeout(() => el.classList.remove('row-update-flash'), 2000);
+                }
+            }
+        });
+    }
+
+    // NOTE: getSiteTypeIcon is now in JavaScript.html (Global)
+
+    // Open site detail modal
+    function openSiteDetail(siteId) {
+        window.activeSiteId = siteId;
+        const site = sitesData.find(function (s) { return s.id === siteId; });
+        if (!site) return;
+
+        // 1. Open Modal FIRST (instant feedback)
+        openModal('site-detail');
+
+        // 2. Populate basic data immediately from table data
+        document.getElementById('site-det-name').textContent = site.nameEN;
+        document.getElementById('site-det-code').textContent = site.code + ' • Route ' + site.route;
+
+        const statusEl = document.getElementById('site-det-status');
+        if (statusEl) {
+            statusEl.textContent = (site.status || 'active').toUpperCase();
+            statusEl.className = site.status === 'active' ? 'badge badge-success-solid badge-xs' : 'badge badge-muted badge-xs';
+        }
+
+        // 3. Check cache first (Amazon-style instant loading)
+        const cached = SiteCache.get(siteId);
+        if (cached) {
+            // INSTANT - use cached data
+            populateSiteDetail(cached);
+            return;
+        }
+
+        // 4. Cache MISS - fetch from server and cache result
+        google.script.run
+            .withSuccessHandler(function (detail) {
+                SiteCache.set(siteId, detail); // Cache for next time
+                populateSiteDetail(detail);
+            })
+            .withFailureHandler(function (err) {
+                console.error('getSiteDetailWithGuards error:', err);
+            })
+            .getSiteDetailWithGuards(siteId);
+    }
+
+    // Populate site detail modal from merged response (includes guards)
+    function populateSiteDetail(site) {
+        document.getElementById('site-det-address').textContent = site.address || 'No address provided';
+        document.getElementById('site-det-meta-route').textContent = 'Route ' + site.route;
+        document.getElementById('site-det-meta-zone').textContent = site.district || 'Unassigned';
+        document.getElementById('site-det-meta-guards').textContent = (site.totalPersonnel || 0) + ' Assigned';
+        document.getElementById('site-det-contact-name').textContent = site.contactName || 'N/A';
+        document.getElementById('site-det-contact-phone').textContent = site.contactPhone || 'N/A';
+
+        // Populate incidents (placeholder logic)
+        const incidentContainer = document.getElementById('site-det-incidents');
+        if (site.incidentCount > 0) {
+            // Future implementation for real incident feed
+        }
+
+        // Render guards directly from merged response (no separate API call!)
+        renderGuardsFromData(site);
+    }
+
+    // Render guards from merged site detail response
+    function renderGuardsFromData(site) {
+        const guardsList = document.getElementById('site-det-guards-list');
+        const inspectorsList = document.getElementById('site-det-inspectors-list');
+        const inspectorsSection = document.getElementById('site-det-inspectors-section');
+        const guardsCount = document.getElementById('site-det-guards-count');
+        const siteId = site.id;
+
+        const totalCount = (site.guards?.length || 0) + (site.inspectors?.length || 0);
+        guardsCount.textContent = '(' + totalCount + ' total)';
+
+        // Render regular guards
+        if (site.guards && site.guards.length > 0) {
+            guardsList.innerHTML = site.guards.map(function (g) {
+                return '<button class="guard-chip" onclick="openGuardStats(\'' + g.id + '\', \'' + siteId + '\', \'guard\')" title="' + escapeHtml(g.name) + ' - ' + g.totalCheckins + ' check-ins">' +
+                    '<span class="guard-avatar">' + g.initials + '</span>' +
+                    '<span class="guard-name">' + escapeHtml(g.name.split(' ')[0]) + '</span>' +
+                    '<span class="guard-count">' + g.totalCheckins + '</span>' +
+                    '</button>';
+            }).join('');
+        } else {
+            guardsList.innerHTML = '<div class="text-xs text-muted italic">No guards have checked in at this site yet.</div>';
+        }
+
+        // Render inspectors
+        if (site.inspectors && site.inspectors.length > 0) {
+            inspectorsSection.classList.remove('hidden');
+            inspectorsList.innerHTML = site.inspectors.map(function (i) {
+                return '<button class="guard-chip inspector" onclick="openGuardStats(\'' + i.id + '\', \'' + siteId + '\', \'inspector\')" title="' + escapeHtml(i.name) + ' - ' + i.totalVisits + ' inspections">' +
+                    '<span class="guard-avatar inspector">' + i.initials + '</span>' +
+                    '<span class="guard-name">' + escapeHtml(i.name.split(' ')[0]) + '</span>' +
+                    '<span class="guard-count">' + i.totalVisits + '</span>' +
+                    '</button>';
+            }).join('');
+        } else {
+            inspectorsSection.classList.add('hidden');
+            inspectorsList.innerHTML = '';
+        }
+    }
+
+    // Load and render guards for site detail modal
+    function loadGuardsForSite(siteId) {
+        const guardsList = document.getElementById('site-det-guards-list');
+        const inspectorsList = document.getElementById('site-det-inspectors-list');
+        const inspectorsSection = document.getElementById('site-det-inspectors-section');
+        const guardsCount = document.getElementById('site-det-guards-count');
+
+        guardsList.innerHTML = '<div class="text-xs text-muted italic">Loading...</div>';
+        inspectorsList.innerHTML = '';
+        inspectorsSection.classList.add('hidden');
+
+        google.script.run
+            .withSuccessHandler(function (data) {
+                console.log('getGuardsBySite returned:', data);
+                const totalCount = (data.guards?.length || 0) + (data.inspectors?.length || 0);
+                guardsCount.textContent = '(' + totalCount + ' total)';
+
+                // Render regular guards
+                if (data.guards && data.guards.length > 0) {
+                    console.log('First guard obj:', data.guards[0]);
+                    guardsList.innerHTML = data.guards.map(function (g) {
+                        return '<button class="guard-chip" onclick="openGuardStats(\'' + g.id + '\', \'' + siteId + '\', \'guard\')" title="' + escapeHtml(g.name) + ' - ' + g.totalCheckins + ' check-ins">' +
+                            '<span class="guard-avatar">' + g.initials + '</span>' +
+                            '<span class="guard-name">' + escapeHtml(g.name.split(' ')[0]) + '</span>' +
+                            '<span class="guard-count">' + g.totalCheckins + '</span>' +
+                            '</button>';
+                    }).join('');
+                } else {
+                    guardsList.innerHTML = '<div class="text-xs text-muted italic">No guards have checked in at this site yet.</div>';
+                }
+
+                // Render inspectors
+                if (data.inspectors && data.inspectors.length > 0) {
+                    inspectorsSection.classList.remove('hidden');
+                    inspectorsList.innerHTML = data.inspectors.map(function (i) {
+                        return '<button class="guard-chip inspector" onclick="openGuardStats(\'' + i.id + '\', \'' + siteId + '\', \'inspector\')" title="' + escapeHtml(i.name) + ' - ' + i.totalVisits + ' inspections">' +
+                            '<span class="guard-avatar inspector">' + i.initials + '</span>' +
+                            '<span class="guard-name">' + escapeHtml(i.name.split(' ')[0]) + '</span>' +
+                            '<span class="guard-count">' + i.totalVisits + '</span>' +
+                            '</button>';
+                    }).join('');
+                }
+            })
+            .withFailureHandler(function (err) {
+                guardsList.innerHTML = '<div class="text-xs text-danger">Failed to load guards</div>';
+                guardsCount.textContent = '(error)';
+            })
+            .getGuardsBySite(siteId);
+    }
+
+    // Open guard stats popup modal
+    function openGuardStats(guardId, siteId, guardType) {
+        console.log('openGuardStats called:', { guardId: guardId, siteId: siteId, guardType: guardType });
+        openModal('guard-stats');
+
+        // Set loading state
+        document.getElementById('guard-stats-avatar').textContent = '...';
+        document.getElementById('guard-stats-name').textContent = 'Loading...';
+        document.getElementById('guard-stats-site').textContent = 'Stats for: Loading...';
+        document.getElementById('guard-stats-total').textContent = '-';
+        document.getElementById('guard-stats-weekly').textContent = '-';
+        document.getElementById('guard-stats-monthly').textContent = '-';
+        document.getElementById('guard-stats-ontime').textContent = '-';
+        document.getElementById('guard-stats-last').textContent = '-';
+        document.getElementById('guard-stats-other-sites').innerHTML = '';
+
+        google.script.run
+            .withSuccessHandler(function (stats) {
+                document.getElementById('guard-stats-avatar').textContent = stats.initials;
+                document.getElementById('guard-stats-avatar').className = 'guard-stats-avatar' +
+                    (stats.type === 'inspector' ? ' inspector' : '');
+                document.getElementById('guard-stats-name').textContent = stats.name;
+                document.getElementById('guard-stats-type-badge').textContent = stats.type === 'inspector' ? 'Inspector / ຜູ້ກວດກາ' : 'Guard / ພະນັກງານ';
+                document.getElementById('guard-stats-type-badge').className = 'badge text-xs ' +
+                    (stats.type === 'inspector' ? 'badge-warning' : 'badge-success');
+                document.getElementById('guard-stats-site').textContent = stats.siteName || 'Unknown Site';
+
+                document.getElementById('guard-stats-total').textContent = stats.totalCheckins;
+                document.getElementById('guard-stats-weekly').textContent = stats.weeklyCheckins;
+                document.getElementById('guard-stats-monthly').textContent = stats.monthlyCheckins;
+                document.getElementById('guard-stats-ontime').textContent = stats.onTimeRate + '%';
+
+                // Show trend if available
+                const trendEl = document.getElementById('guard-stats-trend');
+                if (trendEl && stats.onTimeRate >= 80) {
+                    trendEl.textContent = stats.onTimeRate >= 90 ? '+Excellent' : '+Good';
+                }
+
+                // Format last check-in
+                if (stats.lastCheckin) {
+                    const lastDate = new Date(stats.lastCheckin);
+                    const now = new Date();
+                    const diffMs = now - lastDate;
+                    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+                    if (diffHours < 1) {
+                        document.getElementById('guard-stats-last').textContent = 'Just now';
+                    } else if (diffHours < 24) {
+                        document.getElementById('guard-stats-last').textContent = diffHours + 'h ago';
+                    } else if (diffDays < 7) {
+                        document.getElementById('guard-stats-last').textContent = diffDays + ' days ago';
+                    } else {
+                        document.getElementById('guard-stats-last').textContent = lastDate.toLocaleDateString();
+                    }
+                } else {
+                    document.getElementById('guard-stats-last').textContent = 'Never';
+                }
+
+                // Render other sites with premium Stitch styling
+                const otherSitesEl = document.getElementById('guard-stats-other-sites');
+                const otherSitesSection = document.getElementById('guard-stats-other-sites-section');
+
+                if (stats.otherSites && stats.otherSites.length > 0) {
+                    otherSitesSection.style.display = 'block';
+                    otherSitesEl.innerHTML = stats.otherSites.map(function (s) {
+                        return '<div class="guard-stats-site-item">' +
+                            '<div class="guard-stats-site-icon"><span class="material-symbols-outlined">domain</span></div>' +
+                            '<div class="guard-stats-site-info">' +
+                            '<span class="guard-stats-site-name">' + escapeHtml(s.siteName) + '</span>' +
+                            '<span class="guard-stats-site-visits">' + s.visits + ' visits</span>' +
+                            '</div>' +
+                            '<span class="material-symbols-outlined guard-stats-site-arrow">chevron_right</span>' +
+                            '</div>';
+                    }).join('');
+                } else {
+                    otherSitesSection.style.display = 'none';
+                }
+            })
+            .withFailureHandler(function (err) {
+                document.getElementById('guard-stats-name').textContent = 'Error loading stats';
+            })
+            .getGuardStats(guardId, siteId, guardType);
+    }
+
+    /**
+     * Go back to Site Detail modal from Guard Stats popup
+     * Used instead of closeModal() to maintain navigation flow
+     */
+    function backToSiteDetail() {
+        if (window.activeSiteId) {
+            openSiteDetail(window.activeSiteId);
+        } else {
+            closeModal();
+        }
+    }
+
+    // Open add/edit site form
+    function openSiteForm(siteId) {
+        const isEdit = !!siteId;
+        window.activeSiteId = siteId || null;
+
+        // 1. Open Modal FIRST
+        openModal('site-form');
+
+        // Initialize premium custom controls
+        if (typeof initSiteFormControls === 'function') {
+            initSiteFormControls();
+        }
+
+        const form = document.getElementById('form-site');
+        form.reset();
+        form.dataset.siteId = siteId || '';
+
+        // Clear Google Maps and GPS fields
+        document.getElementById('site-google-maps-link').value = '';
+        document.getElementById('site-lat').value = '';
+        document.getElementById('site-lng').value = '';
+        document.getElementById('gps-extract-status').textContent = '';
+
+        document.querySelector('#modal-container .modal-title').textContent = isEdit ? t('sites.form.title.edit') : t('sites.form.title.add');
+
+        // For edit mode: Set toggle OFF and disable until data loads (prevents flash)
+        const statusToggle = document.getElementById('site-status');
+        if (isEdit) {
+            statusToggle.checked = false;
+            statusToggle.disabled = true;
+
+            google.script.run
+                .withSuccessHandler(function (site) {
+                    document.getElementById('site-code').value = site.code;
+                    document.getElementById('site-name-en').value = site.nameEN;
+                    document.getElementById('site-name-lo').value = site.nameLO || '';
+                    if (site.type) setVKSDropdownValue('site-type-dropdown', site.type);
+                    if (site.route) setVKSDropdownValue('site-route-dropdown', site.route);
+                    document.getElementById('site-address').value = site.address;
+                    document.getElementById('site-contact-name').value = site.contactName || '';
+                    document.getElementById('site-contact-phone').value = site.contactPhone || '';
+                    // Set toggle to actual value and enable
+                    statusToggle.checked = site.status === 'active';
+                    statusToggle.disabled = false;
+                    // Populate lat/lng if available
+                    document.getElementById('site-lat').value = site.lat || '';
+                    document.getElementById('site-lng').value = site.lng || '';
+                })
+                .getSiteDetail(siteId);
+        } else {
+            // New site: toggle ON by default and enabled
+            statusToggle.checked = true;
+            statusToggle.disabled = false;
+        }
+    }
+
+    // ===========================================
+    // GOOGLE MAPS LINK CONVERTER
+    // ===========================================
+
+    // Laos geographic bounds for validation
+    const LAOS_BOUNDS = {
+        lat: { min: 13.9, max: 22.5 },
+        lng: { min: 100.1, max: 107.7 }
+    };
+
+    /**
+     * Parse Google Maps URL and extract coordinates
+     * Handles multiple URL formats
+     */
+    function parseGoogleMapsUrl(url) {
+        if (!url) return null;
+
+        // Detect short links - these can't be parsed client-side
+        if (url.includes('goo.gl/maps') || url.includes('maps.app.goo.gl')) {
+            return { error: 'short_link' };
+        }
+
+        // Check if this is a Google Maps URL
+        if (!url.includes('google.com/maps') && !url.includes('google.co')) {
+            return { error: 'invalid_url' };
+        }
+
+        let match;
+
+        // Pattern 1: @lat,lng format (most common - from clicking on map)
+        // Example: @17.9685531,102.6135422,17z
+        match = url.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+        if (match) {
+            return { lat: parseFloat(match[1]).toFixed(6), lng: parseFloat(match[2]).toFixed(6) };
+        }
+
+        // Pattern 2: ?q=lat,lng or &q=lat,lng format
+        // Example: ?q=17.9685,102.6300
+        match = url.match(/[?&]q=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+        if (match) {
+            return { lat: parseFloat(match[1]).toFixed(6), lng: parseFloat(match[2]).toFixed(6) };
+        }
+
+        // Pattern 3: !3d and !4d format (embed/iframe URLs)
+        // Example: !3d17.9685531!4d102.6135422
+        match = url.match(/!3d(-?\d+\.?\d*).*!4d(-?\d+\.?\d*)/);
+        if (match) {
+            return { lat: parseFloat(match[1]).toFixed(6), lng: parseFloat(match[2]).toFixed(6) };
+        }
+
+        // Pattern 4: ll= format (older format)
+        // Example: ll=17.9685,102.6300
+        match = url.match(/ll=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+        if (match) {
+            return { lat: parseFloat(match[1]).toFixed(6), lng: parseFloat(match[2]).toFixed(6) };
+        }
+
+        // Pattern 5: /place/ without coordinates (place ID only)
+        if (url.includes('/place/') && !match) {
+            return { error: 'no_coords_in_place' };
+        }
+
+        return { error: 'parse_failed' };
+    }
+
+    /**
+     * Validate coordinates are within expected Laos bounds
+     */
+    function validateCoordinatesForLaos(lat, lng) {
+        const latNum = parseFloat(lat);
+        const lngNum = parseFloat(lng);
+
+        const inLaos = (
+            latNum >= LAOS_BOUNDS.lat.min && latNum <= LAOS_BOUNDS.lat.max &&
+            lngNum >= LAOS_BOUNDS.lng.min && lngNum <= LAOS_BOUNDS.lng.max
+        );
+
+        return { valid: inLaos, lat: latNum, lng: lngNum };
+    }
+
+    /**
+     * Extract coordinates from Google Maps link input
+     */
+    function extractCoordinates() {
+        const linkInput = document.getElementById('site-google-maps-link');
+        const latInput = document.getElementById('site-lat');
+        const lngInput = document.getElementById('site-lng');
+        const statusEl = document.getElementById('gps-extract-status');
+
+        const link = linkInput.value.trim();
+
+        if (!link) {
+            statusEl.innerHTML = '<span class="text-warning">⚠️ Please paste a Google Maps link first</span>';
+            return;
+        }
+
+        const result = parseGoogleMapsUrl(link);
+
+        if (!result) {
+            statusEl.innerHTML = '<span class="text-danger">❌ Could not parse URL</span>';
+            return;
+        }
+
+        // Handle errors
+        if (result.error) {
+            switch (result.error) {
+                case 'short_link':
+                    statusEl.innerHTML = '<span class="text-warning">⚠️ Short links cannot be parsed. Please copy the full URL from the Google Maps address bar.</span>';
+                    break;
+                case 'invalid_url':
+                    statusEl.innerHTML = '<span class="text-danger">❌ This doesn\'t appear to be a Google Maps link</span>';
+                    break;
+                case 'no_coords_in_place':
+                    statusEl.innerHTML = '<span class="text-warning">⚠️ This place link has no coordinates. Click on the exact location on the map, then copy the URL.</span>';
+                    break;
+                default:
+                    statusEl.innerHTML = '<span class="text-danger">❌ Could not extract coordinates from this link</span>';
+            }
+            return;
+        }
+
+        // Success - populate lat/lng
+        latInput.value = result.lat;
+        lngInput.value = result.lng;
+
+        // Validate for Laos
+        const validation = validateCoordinatesForLaos(result.lat, result.lng);
+        if (validation.valid) {
+            statusEl.innerHTML = '<span class="text-success">✅ Coordinates extracted successfully!</span>';
+        } else {
+            statusEl.innerHTML = '<span class="text-warning">⚠️ Coordinates extracted, but location appears to be outside Laos. Please verify.</span>';
+        }
+    }
+
+    // Open Patrol Configuration Modal
+    function openPatrolConfig(siteId) {
+        const id = siteId || window.activeSiteId;
+        if (!id) return;
+
+        window.activeSiteId = id;
+        openModal('patrol-config');
+
+        // Initialize premium controls
+        if (typeof initPatrolConfigControls === 'function') {
+            initPatrolConfigControls();
+        }
+
+        // Show loading state - prevent flash of wrong defaults
+        document.getElementById('shift-type-8').checked = false;
+        document.getElementById('shift-type-12').checked = false;
+        document.getElementById('site-shift-start').value = '';
+        document.getElementById('site-shift-end').value = '';
+        document.getElementById('site-checkpoint-target').value = '';
+        document.getElementById('site-rounds-target').value = '';
+        document.getElementById('site-patrol-conditions').value = '';
+
+        google.script.run
+            .withSuccessHandler(function (site) {
+                // Shift Type - now set from backend
+                if (site.shiftType === '8h') {
+                    document.getElementById('shift-type-8').checked = true;
+                    handleShiftDurationChange('8h');
+                } else {
+                    document.getElementById('shift-type-12').checked = true;
+                    handleShiftDurationChange('12h');
+                }
+
+                document.getElementById('site-shift-start').value = site.shiftStart || '06:00';
+                document.getElementById('site-shift-end').value = site.shiftEnd || '18:00';
+                document.getElementById('site-checkpoint-target').value = site.checkpointTarget || '';
+                document.getElementById('site-rounds-target').value = site.roundsTarget || '';
+                document.getElementById('site-patrol-conditions').value = site.patrolConditions || '';
+
+                // Recalculate if 12h
+                if (site.shiftType === '12h') calculateAutoEndTime();
+            })
+            .withFailureHandler(function (error) {
+                showToast('Failed to load patrol settings: ' + error.message, 'error');
+            })
+            .getSiteDetail(id);
+    }
+
+    /**
+     * Handle shift duration toggle (8h vs 12h)
+     */
+    function handleShiftDurationChange(type) {
+        const startInput = document.getElementById('site-shift-start');
+        const endInput = document.getElementById('site-shift-end');
+
+        if (type === '8h') {
+            // Lock both, set to default (Morning shift as representative)
+            startInput.disabled = true;
+            endInput.disabled = true;
+            startInput.classList.add('bg-slate-50', 'text-slate-400');
+            endInput.classList.add('bg-slate-50', 'text-slate-400');
+
+            // Standard VKS 8h: 06:00 - 14:00 (Morning)
+            // We store these as placeholders; backend/dashboard logic handles the 3-shift cycle
+            startInput.value = '06:00';
+            endInput.value = '14:00';
+        } else {
+            // 12h: Enable start, lock end (auto-calc)
+            startInput.disabled = false;
+            endInput.disabled = true;
+            startInput.classList.remove('bg-slate-50', 'text-slate-400');
+            endInput.classList.add('bg-slate-50', 'text-slate-400');
+
+            calculateAutoEndTime();
+        }
+    }
+
+    /**
+     * Auto-calculate End Time (+12 hours) from Start Time
+     */
+    function calculateAutoEndTime() {
+        const type = document.querySelector('input[name="shift-type"]:checked').value;
+        if (type !== '12h') return;
+
+        const startVal = document.getElementById('site-shift-start').value;
+        if (!startVal) return;
+
+        const [hours, mins] = startVal.split(':');
+        let endHours = (parseInt(hours) + 12) % 24;
+        const endVal = `${String(endHours).padStart(2, '0')}:${mins}`;
+
+        document.getElementById('site-shift-end').value = endVal;
+    }
+
+    // Save Patrol Configuration
+    function savePatrolConfig() {
+        if (!window.activeSiteId) return;
+
+        const btn = document.getElementById('btn-save-patrol-config');
+        const icon = document.getElementById('btn-patrol-icon');
+        const text = document.getElementById('btn-patrol-text');
+
+        const data = {
+            checkpointTarget: parseInt(document.getElementById('site-checkpoint-target').value) || 4,
+            roundsTarget: parseInt(document.getElementById('site-rounds-target').value) || 7,
+            shiftType: document.querySelector('input[name="shift-type"]:checked').value,
+            shiftStart: document.getElementById('site-shift-start').value,
+            shiftEnd: document.getElementById('site-shift-end').value,
+            patrolConditions: document.getElementById('site-patrol-conditions').value.trim()
+        };
+
+        // Button loading state
+        if (btn) {
+            btn.disabled = true;
+            if (icon) { icon.textContent = 'progress_activity'; icon.classList.add('animate-spin'); }
+            if (text) text.textContent = 'Saving...';
+        }
+
+        google.script.run
+            .withSuccessHandler(function (res) {
+                // Reset button
+                if (btn) {
+                    btn.disabled = false;
+                    if (icon) { icon.textContent = 'check_circle'; icon.classList.remove('animate-spin'); }
+                    if (text) text.textContent = 'CONTINUE TO CHECKPOINTS';
+                }
+                showToast('Patrol settings saved', 'success');
+
+                // CRITICAL: Update memory state to avoid refresh flicker
+                const site = sitesData.find(s => s.id === window.activeSiteId);
+                if (site) {
+                    site.checkpointTarget = data.checkpointTarget;
+                    site.roundsTarget = data.roundsTarget;
+                    site.shiftType = data.shiftType;
+                    site.shiftStart = data.shiftStart;
+                    site.shiftEnd = data.shiftEnd;
+                }
+
+                goToCheckpoints();
+            })
+            .withFailureHandler(function (err) {
+                // Reset button on error
+                if (btn) {
+                    btn.disabled = false;
+                    if (icon) { icon.textContent = 'check_circle'; icon.classList.remove('animate-spin'); }
+                    if (text) text.textContent = 'CONTINUE TO CHECKPOINTS';
+                }
+                showToast('Save failed: ' + err.message, 'error');
+            })
+            .saveSitePatrolConfig(window.activeSiteId, data);
+    }
+
+    // Navigate to QR Generator for the current site
+    function goToCheckpoints() {
+        if (!window.activeSiteId) return;
+        const site = sitesData.find(function (s) { return s.id === window.activeSiteId; });
+        closeModal();
+        navigateTo('qr-generator', { siteId: window.activeSiteId, siteName: site ? site.nameEN : '' });
+    }
+
+    // Save site
+    function saveSite() {
+        const form = document.getElementById('form-site');
+        const siteId = form.dataset.siteId;
+        const saveBtn = document.getElementById('btn-save-site');
+        const saveIcon = document.getElementById('btn-save-icon');
+        const saveText = document.getElementById('btn-save-text');
+
+        const data = {
+            id: siteId,
+            code: document.getElementById('site-code').value.trim(),
+            nameEN: document.getElementById('site-name-en').value.trim(),
+            nameLO: document.getElementById('site-name-lo').value.trim(),
+            type: document.getElementById('site-type').value,
+            route: document.getElementById('site-route').value,
+            address: document.getElementById('site-address').value.trim(),
+            lat: document.getElementById('site-lat').value.trim() || null,
+            lng: document.getElementById('site-lng').value.trim() || null,
+            contactName: document.getElementById('site-contact-name').value.trim(),
+            contactPhone: document.getElementById('site-contact-phone').value.trim(),
+            status: document.getElementById('site-status').checked ? 'active' : 'inactive'
+        };
+
+        if (!data.code || !data.nameEN || !data.address) {
+            showToast('Please fill in required fields', 'error');
+            return;
+        }
+
+        // Add loading state to button (VKS pattern)
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            if (saveIcon) {
+                saveIcon.textContent = 'progress_activity';
+                saveIcon.classList.add('animate-spin');
+            }
+            if (saveText) saveText.textContent = 'Saving...';
+        }
+
+        google.script.run
+            .withSuccessHandler(function (result) {
+                // Reset button state
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    if (saveIcon) {
+                        saveIcon.textContent = 'save';
+                        saveIcon.classList.remove('animate-spin');
+                    }
+                    if (saveText) saveText.textContent = 'SAVE CHANGES';
+                }
+                closeModal();
+                showToast(siteId ? 'Site updated' : 'Site created', 'success');
+                loadSites();
+            })
+            .withFailureHandler(function (error) {
+                // Reset button state on error
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    if (saveIcon) {
+                        saveIcon.textContent = 'save';
+                        saveIcon.classList.remove('animate-spin');
+                    }
+                    if (saveText) saveText.textContent = 'SAVE CHANGES';
+                }
+                showToast('Save failed: ' + error.message, 'error');
+            })
+            .saveSite(data);
+    }
+
+    // View site on map - opens popup modal with embedded map
+    function viewSiteOnMap(siteId) {
+        const site = sitesData.find(s => s.id === siteId);
+        if (!site) {
+            showToast('Site not found', 'warning');
+            return;
+        }
+
+        if (!site.lat || !site.lng) {
+            showToast('No GPS coordinates for this site', 'warning');
+            return;
+        }
+
+        // Open modal
+        openModal('site-map');
+
+        // Populate header
+        document.getElementById('site-map-title').textContent = site.nameEN;
+        document.getElementById('site-map-code').textContent = site.code + ' • Route ' + site.route;
+        document.getElementById('site-map-address').textContent = site.address || 'No address provided';
+        document.getElementById('site-map-coords').textContent = 'Coordinates: ' + site.lat.toFixed(6) + ', ' + site.lng.toFixed(6);
+
+        // Google Maps directions link
+        document.getElementById('site-map-directions-link').href =
+            'https://www.google.com/maps/dir/?api=1&destination=' + site.lat + ',' + site.lng;
+
+        // Embed Google Maps iframe
+        const mapContainer = document.getElementById('site-map-container');
+        mapContainer.innerHTML = '<iframe ' +
+            'width="100%" height="100%" frameborder="0" style="border:0" loading="lazy" allowfullscreen ' +
+            'referrerpolicy="no-referrer-when-downgrade" ' +
+            'src="https://www.google.com/maps?q=' + site.lat + ',' + site.lng + '&z=16&output=embed">' +
+            '</iframe>';
+    }
+
+    /**
+     * Polling Signal Listener (Sites)
+     * Checks for LAST_SITE_SIGNAL every 10 seconds.
+     */
+    function startSitesSignalListener() {
+        if (sitesPoller) clearInterval(sitesPoller);
+        sitesPoller = setInterval(checkSitesUpdate, 10000);
+    }
+
+    /**
+     * Checks if sites data needs a refresh based on the global signal.
+     */
+    function checkSitesUpdate() {
+        if (currentPage !== 'sites') return;
+
+        google.script.run
+            .withSuccessHandler(function (signals) {
+                if (signals && signals.lastSite > lastSitesSignal) {
+                    if (lastSitesSignal !== 0) {
+                        console.log('[Sites] Signal update! Refreshing...');
+                        loadSites();
+                        showToast('Sites updated', 'info');
+                    }
+                    lastSitesSignal = signals.lastSite;
+                }
+            })
+            .getUpdateSignals();
+    }
+
+    // ===========================================
+    // DELETE SITE (Soft-delete)
+    // ===========================================
+
+    /**
+     * Show confirmation dialog and soft-delete site
+     * Sets status to 'deleted' — site stays in sheet but is hidden everywhere
+     */
+    function confirmDeleteSite(siteId, siteName) {
+        if (!confirm('Are you sure you want to delete "' + siteName + '"?\n\nThe site will be hidden from all pages and dropdowns but its data will be preserved.')) {
+            return;
+        }
+
+        // Immediate UI feedback — remove from local arrays
+        sitesData = sitesData.filter(function (s) { return s.id !== siteId; });
+        sitesFiltered = sitesFiltered.filter(function (s) { return s.id !== siteId; });
+        renderSitesTable();
+        updateSitesCount();
+        SiteCache.clear();
+
+        // Call backend
+        google.script.run
+            .withSuccessHandler(function (result) {
+                showToast('"' + siteName + '" deleted successfully', 'success');
+            })
+            .withFailureHandler(function (err) {
+                showToast('Delete failed: ' + err.message, 'error');
+                // Reload to restore the site in UI
+                loadSites();
+            })
+            .deleteSite(siteId);
+    }
+</script>

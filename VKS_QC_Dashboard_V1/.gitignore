@@ -1,0 +1,11 @@
+# VKS QC Dashboard - Generated Files
+
+# Deploy cache (tracks file hashes for smart deploy)
+.deploy-cache.json
+
+# Node modules (if any)
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db

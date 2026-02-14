@@ -1,0 +1,475 @@
+<!-- Modal_Issues.html - Incident and Complaint Modals -->
+
+<!-- Incident Detail Modal Template (Tailwind VKS Design) -->
+<template id="modal-incident-detail">
+    <!-- Main Modal Card Wrapper -->
+    <div class="flex flex-col w-full bg-white rounded-xl shadow-2xl overflow-hidden relative"
+        style="max-height: 90vh; width: 100%; max-width: 640px;">
+
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-start bg-white z-10 shrink-0">
+            <div>
+                <div class="flex items-center gap-3 mb-1">
+                    <div class="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-red-500">
+                        <span class="material-symbols-outlined">warning</span>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-800" id="inc-det-title">Incident Title</h2>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-500">ID: <span id="inc-det-id">INC-XXX</span></span>
+                            <span class="px-2 py-0.5 bg-red-50 text-red-600 text-xs font-semibold rounded"
+                                id="inc-det-status">ACTIVE</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button onclick="closeModal()"
+                class="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded hover:bg-gray-100">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-6 bg-gray-50/50 overflow-y-auto flex-grow">
+            <!-- Meta bar -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 bg-white p-4 rounded-lg border border-gray-200">
+                <div>
+                    <div class="text-xs font-bold text-gray-400 uppercase mb-1" data-i18n="issues.inc.site">SITE</div>
+                    <div class="text-sm font-medium text-gray-800" id="inc-det-site">Site Name</div>
+                </div>
+                <div>
+                    <div class="text-xs font-bold text-gray-400 uppercase mb-1" data-i18n="issues.inc.category">CATEGORY
+                    </div>
+                    <div class="text-sm font-medium text-gray-800" id="inc-det-zone">Access Control</div>
+                </div>
+                <div>
+                    <div class="text-xs font-bold text-gray-400 uppercase mb-1" data-i18n="issues.inc.severity">SEVERITY
+                    </div>
+                    <div class="text-sm font-medium text-gray-800" id="inc-det-shift">High</div>
+                </div>
+                <div>
+                    <div class="text-xs font-bold text-gray-400 uppercase mb-1" data-i18n="issues.inc.reported">REPORTED
+                    </div>
+                    <div class="text-sm font-medium text-gray-800" id="inc-det-time">Jan 13, 2026</div>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="bg-white p-5 rounded-lg border border-gray-200">
+                <h4 class="text-xs font-bold text-gray-400 uppercase mb-3" data-i18n="issues.inc.description">
+                    DESCRIPTION</h4>
+                <p class="text-sm text-gray-600 leading-relaxed" id="inc-det-desc">
+                    Incident description will appear here.
+                </p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 bg-white border-t border-gray-100 flex justify-between items-center shrink-0 z-10">
+            <button class="btn btn-ghost" onclick="closeModal()" data-i18n="common.cancel">CANCEL</button>
+            <div class="flex gap-2">
+                <button class="btn btn-danger-solid" onclick="escalateIssue()"
+                    data-i18n="issues.btn.escalate">ESCALATE</button>
+                <button class="btn btn-secondary" onclick="contactSite()" data-i18n="issues.btn.contact">CONTACT
+                    SITE</button>
+                <button class="btn btn-primary" onclick="updateIncidentStatus('resolved')"
+                    data-i18n="issues.btn.mark_fixed">MARK FIXED</button>
+            </div>
+        </div>
+    </div>
+</template>
+
+<!-- Incident Form Modal Template -->
+<!-- Incident Form Modal Template -->
+<template id="modal-incident-form">
+    <div class="flex flex-col w-full bg-white rounded-xl shadow-2xl overflow-hidden relative"
+        style="max-height: 90vh; width: 100%; max-width: 640px;">
+
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white z-10 shrink-0">
+            <h3 class="text-lg font-bold text-gray-800 modal-title" data-i18n="issues.inc.form.title">New Incident</h3>
+            <button class="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded hover:bg-gray-100"
+                onclick="closeModal()">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-6 bg-gray-50/50 overflow-y-auto flex-grow">
+            <form id="form-incident" data-incident-id="">
+                <div class="form-group mb-4">
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1 required"
+                        data-i18n="issues.inc.form.title_label">Title</label>
+                    <input type="text" id="incident-title"
+                        class="form-input w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                        placeholder="Brief incident description" required>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="form-group">
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1 required"
+                            data-i18n="issues.inc.form.site">Site</label>
+                        <select id="incident-site-select"
+                            class="form-select w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                            required>
+                            <option value="">Select site...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1 required"
+                            data-i18n="issues.inc.form.category">Category</label>
+                        <select id="incident-category-select"
+                            class="form-select w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                            required>
+                            <option value="">Select...</option>
+                            <option value="theft">🔒 Theft</option>
+                            <option value="fire">🔥 Fire</option>
+                            <option value="medical">🏥 Medical</option>
+                            <option value="vandalism">💔 Vandalism</option>
+                            <option value="access">🚪 Access Control</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1 required"
+                        data-i18n="issues.inc.form.severity">Severity</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="incident-severity" value="critical" class="peer sr-only" required>
+                            <div
+                                class="p-2 rounded border border-gray-200 text-center peer-checked:bg-red-50 peer-checked:border-red-500 peer-checked:text-red-600 transition-all hover:bg-gray-50">
+                                <div class="font-bold text-sm">Critical</div>
+                                <div class="text-xs text-gray-400">4h SLA</div>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="incident-severity" value="high" class="peer sr-only">
+                            <div
+                                class="p-2 rounded border border-gray-200 text-center peer-checked:bg-orange-50 peer-checked:border-orange-500 peer-checked:text-orange-600 transition-all hover:bg-gray-50">
+                                <div class="font-bold text-sm">High</div>
+                                <div class="text-xs text-gray-400">24h SLA</div>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="incident-severity" value="medium" class="peer sr-only">
+                            <div
+                                class="p-2 rounded border border-gray-200 text-center peer-checked:bg-yellow-50 peer-checked:border-yellow-500 peer-checked:text-yellow-600 transition-all hover:bg-gray-50">
+                                <div class="font-bold text-sm">Medium</div>
+                                <div class="text-xs text-gray-400">72h SLA</div>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="incident-severity" value="low" class="peer sr-only">
+                            <div
+                                class="p-2 rounded border border-gray-200 text-center peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-600 transition-all hover:bg-gray-50">
+                                <div class="font-bold text-sm">Low</div>
+                                <div class="text-xs text-gray-400">7d SLA</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1"
+                        data-i18n="issues.inc.form.description">Description</label>
+                    <textarea id="incident-description"
+                        class="form-textarea w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                        rows="4" placeholder="Detailed description of the incident..."></textarea>
+                </div>
+            </form>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 bg-white border-t border-gray-100 flex justify-end gap-2 shrink-0 z-10">
+            <button class="btn btn-ghost" onclick="closeModal()" data-i18n="common.cancel">Cancel</button>
+            <button class="btn btn-primary" onclick="submitIncidentForm()">
+                <span class="material-symbols-outlined">save</span>
+                <span data-i18n="issues.btn.save_incident">Save Incident</span>
+            </button>
+        </div>
+    </div>
+</template>
+
+<!-- Complaint Detail Modal Template (Tailwind VKS Design) -->
+<template id="modal-complaint-detail">
+    <!-- Main Modal Card Wrapper -->
+    <div class="flex flex-col w-full bg-white rounded-xl shadow-2xl overflow-hidden relative"
+        style="max-height: 90vh; width: 100%; max-width: 640px;">
+
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-start bg-white z-10 shrink-0">
+            <div>
+                <div class="flex items-center gap-3 mb-1">
+                    <div class="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center text-amber-500">
+                        <span class="material-symbols-outlined">chat_bubble</span>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-800" id="comp-det-title">Complaint Case</h2>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-500">ID: <span id="comp-det-id">CMP-XXX</span></span>
+                            <span class="px-2 py-0.5 bg-amber-50 text-amber-600 text-xs font-semibold rounded"
+                                id="comp-det-status">NEW</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button onclick="closeModal()"
+                class="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded hover:bg-gray-100">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-6 bg-gray-50/50 overflow-y-auto flex-grow">
+            <!-- Meta bar -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 bg-white p-4 rounded-lg border border-gray-200">
+                <div>
+                    <div class="text-xs font-bold text-gray-400 uppercase mb-1" data-i18n="issues.comp.site">SITE</div>
+                    <div class="text-sm font-medium text-gray-800" id="comp-det-site">Site Name</div>
+                </div>
+                <div>
+                    <div class="text-xs font-bold text-gray-400 uppercase mb-1" data-i18n="issues.comp.customer">
+                        CUSTOMER</div>
+                    <div class="text-sm font-medium text-gray-800" id="comp-det-customer">Customer Name</div>
+                </div>
+                <div>
+                    <div class="text-xs font-bold text-gray-400 uppercase mb-1" data-i18n="issues.comp.category">
+                        CATEGORY</div>
+                    <div class="text-sm font-medium text-gray-800" id="comp-det-category">Service</div>
+                </div>
+                <div>
+                    <div class="text-xs font-bold text-gray-400 uppercase mb-1" data-i18n="issues.comp.submitted">
+                        SUBMITTED</div>
+                    <div class="text-sm font-medium text-gray-800" id="comp-det-time">Jan 13, 2026</div>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="bg-white p-5 rounded-lg border border-gray-200">
+                <h4 class="text-xs font-bold text-gray-400 uppercase mb-3" data-i18n="issues.comp.description">
+                    DESCRIPTION</h4>
+                <p class="text-sm text-gray-600 leading-relaxed" id="comp-det-desc">
+                    Complaint description will appear here.
+                </p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 bg-white border-t border-gray-100 flex justify-between items-center shrink-0 z-10">
+            <button class="btn btn-ghost" onclick="closeModal()" data-i18n="common.cancel">CANCEL</button>
+            <div class="flex gap-2">
+                <button class="btn btn-secondary" onclick="contactSite()" data-i18n="issues.btn.contact">CONTACT
+                    SITE</button>
+                <button class="btn btn-primary" onclick="updateComplaintStatus('resolved')"
+                    data-i18n="issues.btn.resolve">RESOLVE CASE</button>
+            </div>
+        </div>
+    </div>
+</template>
+
+<!-- Complaint Form Modal Template -->
+<template id="modal-complaint-form">
+    <div class="flex flex-col w-full bg-white rounded-xl shadow-2xl overflow-hidden relative"
+        style="max-height: 90vh; width: 100%; max-width: 640px;">
+
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white z-10 shrink-0">
+            <h3 class="text-lg font-bold text-gray-800 modal-title" data-i18n="issues.comp.form.title">New Complaint
+                Case</h3>
+            <button class="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded hover:bg-gray-100"
+                onclick="closeModal()">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-6 bg-gray-50/50 overflow-y-auto flex-grow">
+            <form id="form-complaint" data-complaint-id="">
+                <div class="form-group mb-4">
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1 required"
+                        data-i18n="issues.comp.form.customer">Customer Name</label>
+                    <input type="text" id="complaint-customer"
+                        class="form-input w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                        placeholder="Company or person name" required>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="form-group">
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1 required"
+                            data-i18n="issues.comp.form.site">Site</label>
+                        <select id="complaint-site-select"
+                            class="form-select w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                            required>
+                            <option value="">Select site...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1 required"
+                            data-i18n="issues.comp.form.category">Category</label>
+                        <select id="complaint-category-select"
+                            class="form-select w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                            required>
+                            <option value="">Select...</option>
+                            <option value="service">📉 Service Quality</option>
+                            <option value="behavior">👤 Guard Behavior</option>
+                            <option value="billing">💰 Billing</option>
+                            <option value="punctuality">⏰ Punctuality</option>
+                            <option value="uniform">👔 Uniform</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1 required"
+                        data-i18n="issues.comp.form.priority">Priority</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="complaint-priority" value="p1" class="peer sr-only" required>
+                            <div
+                                class="p-2 rounded border border-gray-200 text-center peer-checked:bg-red-50 peer-checked:border-red-500 peer-checked:text-red-600 transition-all hover:bg-gray-50">
+                                <div class="font-bold text-sm">P1</div>
+                                <div class="text-xs text-gray-400">Critical</div>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="complaint-priority" value="p2" class="peer sr-only">
+                            <div
+                                class="p-2 rounded border border-gray-200 text-center peer-checked:bg-orange-50 peer-checked:border-orange-500 peer-checked:text-orange-600 transition-all hover:bg-gray-50">
+                                <div class="font-bold text-sm">P2</div>
+                                <div class="text-xs text-gray-400">High</div>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="complaint-priority" value="p3" class="peer sr-only">
+                            <div
+                                class="p-2 rounded border border-gray-200 text-center peer-checked:bg-yellow-50 peer-checked:border-yellow-500 peer-checked:text-yellow-600 transition-all hover:bg-gray-50">
+                                <div class="font-bold text-sm">P3</div>
+                                <div class="text-xs text-gray-400">Medium</div>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="complaint-priority" value="p4" class="peer sr-only">
+                            <div
+                                class="p-2 rounded border border-gray-200 text-center peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-600 transition-all hover:bg-gray-50">
+                                <div class="font-bold text-sm">P4</div>
+                                <div class="text-xs text-gray-400">Low</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1"
+                        data-i18n="issues.comp.form.details">Details</label>
+                    <textarea id="complaint-description"
+                        class="form-textarea w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                        rows="4" placeholder="Detailed complaint description..."></textarea>
+                </div>
+            </form>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 bg-white border-t border-gray-100 flex justify-end gap-2 shrink-0 z-10">
+            <button class="btn btn-ghost" onclick="closeModal()" data-i18n="common.cancel">Cancel</button>
+            <button class="btn btn-primary" onclick="submitComplaintForm()">
+                <span class="material-symbols-outlined">save</span>
+                <span data-i18n="issues.btn.create_case">Create Case</span>
+            </button>
+        </div>
+    </div>
+</template>
+
+<script>
+    // Submit incident form
+    function submitIncidentForm() {
+        const form = document.getElementById('form-incident');
+
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const data = {
+            id: form.dataset.incidentId || null,
+            title: document.getElementById('incident-title').value,
+            siteId: document.getElementById('incident-site-select').value,
+            category: document.getElementById('incident-category-select').value,
+            severity: document.querySelector('input[name="incident-severity"]:checked').value,
+            description: document.getElementById('incident-description').value
+        };
+
+        showToast('Saving incident...', 'info');
+
+        google.script.run
+            .withSuccessHandler(function (result) {
+                closeModal();
+                showToast('Incident saved: ' + result.id, 'success');
+                loadIncidents();
+            })
+            .withFailureHandler(function (error) {
+                showToast('Error: ' + error.message, 'error');
+            })
+            .saveIncident(data);
+    }
+
+    // Submit complaint form
+    function submitComplaintForm() {
+        const form = document.getElementById('form-complaint');
+
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const data = {
+            id: form.dataset.complaintId || null,
+            customerName: document.getElementById('complaint-customer').value,
+            siteId: document.getElementById('complaint-site-select').value,
+            category: document.getElementById('complaint-category-select').value,
+            priority: document.querySelector('input[name="complaint-priority"]:checked').value,
+            description: document.getElementById('complaint-description').value
+        };
+
+        showToast('Saving complaint...', 'info');
+
+        google.script.run
+            .withSuccessHandler(function (result) {
+                closeModal();
+                showToast('Complaint saved: ' + result.id, 'success');
+                loadComplaints();
+            })
+            .withFailureHandler(function (error) {
+                showToast('Error: ' + error.message, 'error');
+            })
+            .saveComplaint(data);
+    }
+
+    // Update incident status
+    function updateIncidentStatus(newStatus) {
+        const incId = currentIncidentId;
+        if (!incId) return;
+
+        google.script.run
+            .withSuccessHandler(function () {
+                closeModal();
+                showToast('Status updated', 'success');
+                loadIncidents();
+            })
+            .updateIssueStatus(incId, newStatus);
+    }
+
+    // Update complaint status
+    function updateComplaintStatus(newStatus) {
+        const cId = currentComplaintId;
+        if (!cId) return;
+
+        google.script.run
+            .withSuccessHandler(function () {
+                closeModal();
+                showToast('Status updated', 'success');
+                loadComplaints();
+            })
+            .updateIssueStatus(cId, newStatus);
+    }
+</script>

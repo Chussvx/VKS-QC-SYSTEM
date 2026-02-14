@@ -1,0 +1,38 @@
+<!-- Step 5: Handover Comments -->
+<div id="step-5" class="step-content hidden">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">🤝 ຂໍ້ຄວາມສົ່ງມອບຈຸດ (Handover)</h2>
+            <div class="info-box mt-2">
+                <span class="info-icon">💡</span>
+                <p class="text-xs">ຝາກຂໍ້ຄວາມ ຫຼື ຄຳແນະນຳໃຫ້ທີມງານທີ່ຈະມາລົງກວດກາໃນຄັ້ງຖັດໄປຢູ່ຈຸດນີ້.</p>
+            </div>
+        </div>
+        <div class="card-content">
+            <div class="input-group">
+                <label>📝 ຂໍ້ຄວາມເຖິງທີມງານຖັດໄປ</label>
+                <div class="textarea-wrapper">
+                    <textarea id="handoverComment" name="handoverComment"
+                        placeholder="ພິມຂໍ້ຄວາມສົ່ງມອບທີ່ນີ້... (ຖ້າບໍ່ມີໃຫ້ປະວ່າງ)" rows="5"></textarea>
+                </div>
+                <div class="mt-2 text-xs text-muted">
+                    * ຂໍ້ຄວາມນີ້ຈະຖືກສະແດງໃຫ້ຜູ້ທີ່ມາລົງກວດຈຸດ <span class="font-bold text-primary"
+                        id="handoverTargetSite">...</span> ໃນຄັ້ງຖັດໄປເຫັນ.
+                </div>
+            </div>
+
+            <!-- Quick Suggestions -->
+            <div class="flex flex-wrap gap-2 mt-4">
+                <button type="button" class="btn btn-xs btn-outline btn-wrap-text"
+                    onclick="document.getElementById('handoverComment').value = 'ສະພາບປົກກະຕິ, ບໍ່ມີຫຍັງຜິດປົກກະຕິ.'">✅
+                    ປົກກະຕິ</button>
+                <button type="button" class="btn btn-xs btn-outline btn-wrap-text"
+                    onclick="document.getElementById('handoverComment').value = 'ຝາກຕິດຕາມເລື່ອງໄຟເຍືອງທາງບາງຈຸດທີ່ບໍ່ຮຸ່ງ.'">💡
+                    ຕິດຕາມໄຟ</button>
+                <button type="button" class="btn btn-xs btn-outline btn-wrap-text"
+                    onclick="document.getElementById('handoverComment').value = 'ປະຕູຮົ້ວດ້ານຫຼັງມີຮອຍງ້າງ, ຝາກເນັ້ນຕື່ມ.'">🚪
+                    ເນັ້ນປະຕູ</button>
+            </div>
+        </div>
+    </div>
+</div>

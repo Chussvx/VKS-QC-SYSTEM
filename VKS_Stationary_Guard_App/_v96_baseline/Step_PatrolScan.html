@@ -1,0 +1,224 @@
+<div class="flex flex-col h-full space-y-8 pb-32">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <button onclick="navigateTo('patrol')"
+            class="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center bg-white shadow-sm hover:bg-slate-50 transition-colors">
+            <span class="material-symbols-outlined text-slate-600">close</span>
+        </button>
+        <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="font-bold text-sm tracking-tight text-slate-500 uppercase">ໂໝດການປະເມີນ</span>
+        </div>
+        <div class="w-10"></div>
+    </div>
+
+    <!-- Verified Header -->
+    <header class="text-center space-y-3">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-emerald-50 text-emerald-600 mb-2">
+            <span class="material-symbols-outlined text-4xl">verified_user</span>
+        </div>
+        <div>
+            <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">ຢືນຢັນຈຸດກວດກາ</h1>
+            <p class="text-emerald-600 font-semibold text-sm">
+                <span id="assessment-checkpoint-name">ກຳລັງໂຫຼດ...</span>
+                <span class="text-slate-400 font-normal ml-1" id="assessment-checkpoint-lao"></span>
+            </p>
+        </div>
+    </header>
+
+    <!-- Checkpoint State Selection -->
+    <section class="space-y-4">
+        <div class="flex items-center justify-between px-1">
+            <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">ສະຖານະຈຸດກວດ</h2>
+        </div>
+        <div class="grid grid-cols-3 gap-3" id="state-buttons">
+            <button onclick="selectAssessmentState('NORMAL', this)"
+                class="tactile-btn glass-card rounded-3xl p-4 flex flex-col items-center gap-3 border-emerald-100 bg-white state-btn state-selected">
+                <div
+                    class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center glow-emerald">
+                    <span class="material-symbols-outlined">check_circle</span>
+                </div>
+                <div class="text-center">
+                    <span class="block text-xs font-bold text-slate-800">ປົກກະຕິ</span>
+                </div>
+            </button>
+            <button onclick="selectAssessmentState('ISSUE', this)"
+                class="tactile-btn glass-card rounded-3xl p-4 flex flex-col items-center gap-3 border-transparent bg-white/60 state-btn">
+                <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center">
+                    <span class="material-symbols-outlined">error</span>
+                </div>
+                <div class="text-center">
+                    <span class="block text-xs font-bold text-slate-800">ມີບັນຫາ</span>
+                </div>
+            </button>
+            <button onclick="selectAssessmentState('URGENT', this)"
+                class="tactile-btn glass-card rounded-3xl p-4 flex flex-col items-center gap-3 border-transparent bg-white/60 state-btn">
+                <div class="w-10 h-10 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center">
+                    <span class="material-symbols-outlined">warning</span>
+                </div>
+                <div class="text-center">
+                    <span class="block text-xs font-bold text-slate-800">ອັນຕະລາຍ</span>
+                </div>
+            </button>
+        </div>
+    </section>
+
+    <!-- Visual Evidence -->
+    <section class="space-y-4">
+        <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">ຫຼັກຖານຮູບພາບ</h2>
+        <button onclick="document.getElementById('assessment-cam').click()"
+            class="tactile-btn w-full glass-card rounded-[2.5rem] p-8 flex flex-col items-center justify-center gap-4 border-dashed border-2 border-slate-200 bg-white/40 group">
+            <input type="file" id="assessment-cam" accept="image/*" capture="environment" class="hidden"
+                onchange="handleAssessmentPhoto(this)">
+            <div
+                class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-500 transition-colors">
+                <span class="material-symbols-outlined text-4xl">add_a_photo</span>
+            </div>
+            <div class="text-center">
+                <h3 class="text-lg font-bold text-slate-800">ຖ່າຍຮູບຫຼັກຖານ</h3>
+                <p class="text-xs text-slate-500 font-medium">(ຖ້າມີ)</p>
+            </div>
+        </button>
+        <div id="assessment-photo-preview" class="hidden rounded-2xl overflow-hidden"></div>
+    </section>
+
+    <!-- Observation Notes -->
+    <section class="space-y-3">
+        <div class="glass-card rounded-3xl p-4 bg-white/80">
+            <textarea id="assessment-note"
+                class="w-full bg-transparent border-none focus:ring-0 text-sm text-slate-700 placeholder:text-slate-400 min-h-[100px] resize-none"
+                placeholder="ຂໍ້ສັງເກດເພີ່ມເຕີມ..."></textarea>
+        </div>
+    </section>
+
+    <!-- Fixed Submit Button - NOW INSIDE -->
+    <div
+        class="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#f8fafc] via-[#f8fafc] to-transparent pt-12 z-50 flex flex-col items-center">
+        <button onclick="submitAssessment()"
+            class="tactile-btn w-full max-w-md bg-emerald-600 rounded-3xl py-5 px-8 flex items-center justify-center gap-3 shadow-xl shadow-emerald-200 active:bg-emerald-700 group border-none">
+            <span class="text-white font-extrabold text-lg tracking-wide uppercase">ສົ່ງການປະເມີນ</span>
+            <span
+                class="material-symbols-outlined text-white group-hover:translate-x-1 transition-transform">send</span>
+        </button>
+    </div>
+</div>
+
+<script>
+    let selectedState = 'NORMAL';
+    let assessmentPhotoData = null;
+
+    function loadAssessment(checkpointName, checkpointLao) {
+        document.getElementById('assessment-checkpoint-name').innerText = checkpointLao || checkpointName || "ຈຸດກວດກາບໍ່ລະບຸ";
+    }
+
+    function selectAssessmentState(state, btn) {
+        selectedState = state;
+
+        // Reset all buttons
+        document.querySelectorAll('.state-btn').forEach(b => {
+            b.classList.remove('state-selected', 'ring-4', 'ring-opacity-20');
+            b.classList.add('bg-white/60', 'border-transparent');
+        });
+
+        // Highlight selected
+        btn.classList.add('state-selected', 'ring-4', 'ring-opacity-20');
+        btn.classList.remove('bg-white/60', 'border-transparent');
+
+        if (state === 'NORMAL') {
+            btn.classList.add('ring-emerald-500', 'border-emerald-100', 'bg-white');
+        } else if (state === 'ISSUE') {
+            btn.classList.add('ring-amber-500', 'border-amber-100', 'bg-white');
+        } else {
+            btn.classList.add('ring-red-500', 'border-red-100', 'bg-white');
+        }
+    }
+
+    function handleAssessmentPhoto(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                assessmentPhotoData = e.target.result;
+                const preview = document.getElementById('assessment-photo-preview');
+                preview.innerHTML = `<img src="${e.target.result}" class="w-full h-48 object-cover" alt="Evidence">`;
+                preview.classList.remove('hidden');
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function submitAssessment() {
+        showLoading('ກຳລັງຢືນຢັນການສະແກນ...');
+        const note = document.getElementById('assessment-note').value;
+
+        const scanPayload = {
+            qrString: State.lastScannedQR,
+            guardId: State.currentGuardId,
+            locationId: State.checkinData?.locationName,
+            scanType: 'PATROL',
+            meta: {
+                assessment: selectedState,
+                note: note,
+                photo: assessmentPhotoData,
+                lat: State.gps?.lat,
+                lng: State.gps?.lng,
+                roundNumber: State.completedRounds.length + 1,
+                pointInRound: State.activeRoundPoints.length + 1
+            }
+        };
+
+        submitScanData(scanPayload)
+            .then(result => {
+                hideLoading();
+                if (result.success) {
+                    // Add this point to the active round
+                    const pointData = {
+                        checkpointId: result.checkpoint,
+                        assessment: selectedState,
+                        time: new Date().toISOString()
+                    };
+                    State.activeRoundPoints.push(pointData);
+
+                    // Legacy progress tracking (for old UI)
+                    State.patrolProgress = State.patrolProgress || {};
+                    const overallPointNum = (State.completedRounds.length * State.pointsPerRound) + State.activeRoundPoints.length;
+                    State.patrolProgress[overallPointNum] = { status: 'Done', assessment: selectedState };
+
+                    // Check if round is complete (4 points)
+                    if (State.activeRoundPoints.length >= State.pointsPerRound) {
+                        // Finalize this round
+                        State.completedRounds.push({
+                            roundNumber: State.completedRounds.length + 1,
+                            points: [...State.activeRoundPoints],
+                            completedAt: new Date().toISOString()
+                        });
+                        State.activeRoundPoints = []; // Reset for next round
+
+                        // Show round completion celebration
+                        showRoundComplete(State.completedRounds.length, State.totalPatrols);
+
+                        // Navigate back after celebration auto-dismisses
+                        setTimeout(function () {
+                            navigateTo('patrol');
+                        }, State.completedRounds.length >= State.totalPatrols ? 6500 : 4500);
+                    } else {
+                        saveSessionState();
+                        if (result.offline) showToast("ບັນທຶກແບບ Offline", "info");
+                        navigateTo('patrol');
+                    }
+                } else {
+                    showError("ຂໍ້ຜິດພາດ", result.message);
+                }
+            })
+            .catch(err => {
+                hideLoading();
+                showError("ເຄືອຂ່າຍມີບັນຫາ", err);
+            });
+    }
+
+    // Initialize with checkpoint name from state
+    setTimeout(() => {
+        if (State.lastScannedCheckpoint) {
+            loadAssessment(State.lastScannedCheckpoint.name, State.lastScannedCheckpoint.nameLao);
+        }
+    }, 100);
+</script>

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Patrol Route Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "primary": "#10b77f",
+                "background-light": "#f6f8f7",
+                "background-dark": "#10221c",
+              },
+              fontFamily: {
+                "display": ["Inter"]
+              },
+              borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+            },
+          },
+        }
+    </script>
+<style type="text/tailwindcss">
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .dashed-line { background-image: linear-gradient(to bottom, #10b77f 50%, rgba(255,255,255,0) 0%); background-position: center; background-size: 2px 10px; background-repeat: repeat-y; }
+        .solid-line { background-color: #e2e8f0; }
+        .dark .solid-line { background-color: #334155; }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-200 h-screen flex flex-col overflow-hidden font-display">
+<header class="h-[52px] bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 z-50">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<span class="material-icons-outlined text-primary">route</span>
+<span class="font-semibold text-sm">Patrol Route</span>
+</div>
+<div class="h-4 w-[1px] bg-slate-200 dark:bg-slate-700 mx-2"></div>
+<div class="flex items-center gap-2">
+<select class="bg-slate-100 dark:bg-slate-800 border-none rounded text-xs font-medium py-1.5 pl-3 pr-8 focus:ring-1 focus:ring-primary cursor-pointer">
+<option>Alex Thompson</option>
+<option>Sarah Jenkins</option>
+<option>Marcus Vane</option>
+</select>
+<div class="flex items-center bg-slate-100 dark:bg-slate-800 rounded px-2 py-1.5 gap-2">
+<span class="material-icons-outlined text-sm text-slate-500">calendar_today</span>
+<span class="text-xs font-medium">Oct 24, 2023</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">Today</button>
+<button class="px-3 py-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 text-[10px] font-bold uppercase tracking-wider transition-colors">Yesterday</button>
+<button class="px-3 py-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 text-[10px] font-bold uppercase tracking-wider transition-colors">Last 7D</button>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<div class="flex bg-slate-100 dark:bg-slate-800 rounded p-1">
+<button class="px-3 py-1 bg-white dark:bg-slate-700 shadow-sm rounded text-[10px] font-bold">MAP</button>
+<button class="px-3 py-1 text-slate-500 text-[10px] font-bold">SATELLITE</button>
+</div>
+<button class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-400 transition-colors">
+<span class="material-icons-outlined text-lg">play_arrow</span>
+</button>
+<button class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-400 transition-colors">
+<span class="material-icons-outlined text-lg">fullscreen</span>
+</button>
+</div>
+</header>
+<main class="flex-1 flex overflow-hidden">
+<section class="flex-1 relative bg-slate-200 dark:bg-slate-950 overflow-hidden">
+<div class="absolute inset-0 opacity-80">
+<img class="w-full h-full object-cover" data-alt="Modern stylized satellite map of a city grid with parks and streets" data-location="Austin, Texas" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVTpbG7nnZU7C-tTSpJwMNcyuN8JW6WX5PGqyzGsH8qQ4PHVEjt2JwiXi9SQ-VArbSEKv3XAdfV41krPs-FHkMSQiaYHsrrR2uBl7nFQE2Fbaj9Z6ymypPr5M2S6Wr0yCOuXA_TMkjiOFXDDXHEnvxhwP3OXZoAndqH0mfZCE6_2bgS_0U1io7p1q722ZqziZjbrXKYAGCeCeyadGN1h0duAzEwaEz8MqzRL8-gW40DZxBior1gwdNieuc6kTRrLxwVMSQyz8iyFoG"/>
+</div>
+<div class="absolute top-[20%] left-[30%]">
+<div class="relative flex items-center justify-center">
+<div class="absolute bottom-12 left-1/2 -translate-x-1/2 w-[240px] bg-white dark:bg-slate-900 shadow-2xl rounded-[12px] border border-slate-100 dark:border-slate-800 z-30">
+<button class="absolute top-2 right-2 p-1 text-slate-400 hover:text-slate-600 transition-colors">
+<span class="material-symbols-outlined text-base">close</span>
+</button>
+<div class="p-3">
+<div class="flex items-center justify-between mb-2 pr-6">
+<h4 class="text-xs font-bold truncate">North Plaza Lobby</h4>
+<span class="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[8px] font-bold uppercase whitespace-nowrap">ON-TIME</span>
+</div>
+<div class="space-y-1.5 mb-3">
+<p class="text-[10px] text-slate-500 leading-tight">1022 West 6th St, Austin, TX 78703</p>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1 text-[10px] text-slate-600 dark:text-slate-400">
+<span class="material-symbols-outlined text-[12px]">schedule</span>
+<span>08:12 AM - 08:35 AM</span>
+</div>
+<span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[8px] font-bold uppercase">Dwell Time: 23m</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-2 p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg mb-3">
+<div class="flex flex-col">
+<span class="text-[8px] font-bold text-slate-400 uppercase leading-none mb-1">Score</span>
+<span class="text-[10px] font-bold text-primary">98/100</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[8px] font-bold text-slate-400 uppercase leading-none mb-1">Photos</span>
+<span class="text-[10px] font-bold">4</span>
+</div>
+</div>
+<button class="w-full bg-primary hover:bg-emerald-600 text-white font-bold text-[10px] py-2 rounded transition-all shadow-sm shadow-primary/20">
+                            VIEW FULL REPORT
+                        </button>
+</div>
+<div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white dark:bg-slate-900 rotate-45 border-r border-b border-slate-100 dark:border-slate-800"></div>
+</div>
+<div class="w-8 h-8 bg-primary rounded-full border-4 border-white shadow-lg flex items-center justify-center text-white text-xs font-bold relative z-10">1</div>
+<div class="absolute -bottom-1 w-2 h-2 bg-primary rotate-45 z-0"></div>
+</div>
+</div>
+<div class="absolute top-[45%] left-[55%]">
+<div class="relative flex items-center justify-center">
+<div class="w-8 h-8 bg-primary rounded-full border-4 border-white shadow-lg flex items-center justify-center text-white text-xs font-bold">2</div>
+<div class="absolute -bottom-1 w-2 h-2 bg-primary rotate-45"></div>
+</div>
+</div>
+<div class="absolute top-4 right-4 w-[240px] bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-lg shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+<div class="p-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+<h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Map Layers</h3>
+</div>
+<div class="p-3 space-y-4">
+<div>
+<span class="text-[11px] font-semibold text-slate-500 mb-2 block uppercase">Route Mode</span>
+<div class="flex bg-slate-100 dark:bg-slate-800 p-1 rounded">
+<button class="flex-1 py-1 text-[10px] font-bold bg-white dark:bg-slate-700 rounded shadow-sm text-primary">OPTIMIZED</button>
+<button class="flex-1 py-1 text-[10px] font-bold text-slate-400">ACTUAL</button>
+</div>
+</div>
+<div>
+<span class="text-[11px] font-semibold text-slate-500 mb-2 block uppercase">Compliance</span>
+<div class="space-y-2">
+<label class="flex items-center justify-between cursor-pointer group">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<span class="text-xs">On-time</span>
+</div>
+<span class="text-[10px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 rounded">12</span>
+</label>
+<label class="flex items-center justify-between cursor-pointer">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-amber-400"></div>
+<span class="text-xs">Delayed</span>
+</div>
+<span class="text-[10px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 rounded">3</span>
+</label>
+</div>
+</div>
+</div>
+</div>
+</section>
+<aside class="w-[340px] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 flex flex-col shadow-2xl relative z-10">
+<div class="shrink-0 p-3 border-b border-slate-100 dark:border-slate-800">
+<div class="flex items-center gap-3 mb-2">
+<div class="relative">
+<img alt="Inspector" class="w-9 h-9 rounded-full object-cover ring-2 ring-primary/20" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAwaS6MBwUs2CHbjAORv9JjctLJHx5xwKOwv4VF-n1rrlNhio13M5h2coWWi8EkAqr35lIZA8bSAEeK4pl5EACLknJLxrVkV1ERnIubyDeYpsxQYAm0zf5J6ZXBf2hhgx9RoHUJbNKciOxOvLD7G_zrW_MHP2q2UitvprB0zAHPHbd73Z2VpAxtWpFA9lD2p6_a4u_Q03pPncyRoTPQZxSFosAkp8pTgECwPlUc-AC8KoYK90F89VYt_yFmd8wSSBXhDNAiKomhAMyx"/>
+<div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-primary border-2 border-white rounded-full"></div>
+</div>
+<div>
+<h2 class="text-sm font-bold leading-none mb-1">Alex Thompson</h2>
+<span class="text-[9px] font-medium text-slate-400 flex items-center gap-1">
+<span class="material-icons-outlined text-[10px]">schedule</span>
+                        08:00 AM - 04:00 PM
+                    </span>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-1.5">
+<div class="bg-background-light dark:bg-slate-800/50 p-1.5 rounded-lg border border-slate-100 dark:border-slate-800">
+<span class="block text-[8px] font-bold text-slate-400 uppercase leading-none mb-0.5">Sites</span>
+<span class="text-[11px] font-bold">14/16</span>
+</div>
+<div class="bg-background-light dark:bg-slate-800/50 p-1.5 rounded-lg border border-slate-100 dark:border-slate-800">
+<span class="block text-[8px] font-bold text-slate-400 uppercase leading-none mb-0.5">Score</span>
+<span class="text-[11px] font-bold text-primary">94%</span>
+</div>
+<div class="bg-background-light dark:bg-slate-800/50 p-1.5 rounded-lg border border-slate-100 dark:border-slate-800">
+<span class="block text-[8px] font-bold text-slate-400 uppercase leading-none mb-0.5">Compl.</span>
+<span class="text-[11px] font-bold">88%</span>
+</div>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto custom-scrollbar px-3 py-3 space-y-0">
+<div class="relative group">
+<div class="h-[44px] bg-white dark:bg-slate-800 rounded-lg px-2 py-1.5 border border-slate-200 dark:border-slate-700 shadow-sm relative z-10 hover:border-primary transition-all cursor-pointer flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center shrink-0">
+<span class="text-white text-[10px] font-bold">1</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-2">
+<h4 class="text-[11px] font-bold truncate">North Plaza Lobby</h4>
+<div class="flex items-center gap-1.5 shrink-0">
+<span class="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[8px] font-bold uppercase">On-time</span>
+<span class="text-[9px] font-medium text-slate-400">08:12A</span>
+</div>
+</div>
+<p class="text-[8px] text-slate-500 truncate mt-0.5">1022 West 6th St, Austin</p>
+</div>
+</div>
+<div class="relative flex ml-[15px] h-4">
+<div class="w-[1px] bg-slate-200 dark:bg-slate-700 h-full"></div>
+<span class="ml-2 text-[9px] font-bold text-slate-400 self-center">12m</span>
+</div>
+</div>
+<div class="relative group">
+<div class="h-[44px] bg-white dark:bg-slate-800 rounded-lg px-2 py-1.5 border border-slate-200 dark:border-slate-700 shadow-sm relative z-10 hover:border-primary transition-all cursor-pointer flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center shrink-0">
+<span class="text-white text-[10px] font-bold">2</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-2">
+<h4 class="text-[11px] font-bold truncate">Central Logistics Hub</h4>
+<div class="flex items-center gap-1.5 shrink-0">
+<span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-600 text-[8px] font-bold uppercase">Delayed</span>
+<span class="text-[9px] font-medium text-slate-400">08:45A</span>
+</div>
+</div>
+<p class="text-[8px] text-slate-500 truncate mt-0.5">440 East Riverside Dr, Austin</p>
+</div>
+</div>
+<div class="relative flex ml-[15px] h-4">
+<div class="w-[1px] bg-slate-200 dark:bg-slate-700 h-full"></div>
+<span class="ml-2 text-[9px] font-bold text-slate-400 self-center">8m</span>
+</div>
+</div>
+<div class="relative group">
+<div class="h-[44px] bg-white dark:bg-slate-800 rounded-lg px-2 py-1.5 border border-slate-200 dark:border-slate-700 shadow-sm relative z-10 border-l-4 border-l-primary hover:border-primary transition-all cursor-pointer flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center shrink-0">
+<span class="text-white text-[10px] font-bold">3</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-2">
+<h4 class="text-[11px] font-bold truncate">East Gate Security</h4>
+<div class="flex items-center gap-1.5 shrink-0">
+<span class="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[8px] font-bold uppercase">On-time</span>
+<span class="text-[9px] font-medium text-slate-400">09:10A</span>
+</div>
+</div>
+<p class="text-[8px] text-slate-500 truncate mt-0.5">2100 East MLK Blvd, Austin</p>
+</div>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+<h3 class="text-[10px] font-bold text-rose-500 uppercase tracking-wider flex items-center gap-1 mb-2">
+<span class="material-icons-outlined text-[12px]">warning</span>
+                    Missed Plans (2)
+                </h3>
+<div class="space-y-1.5">
+<div class="h-[44px] bg-rose-50 dark:bg-rose-950/20 rounded-lg px-2 py-1.5 border border-rose-100 dark:border-rose-900/50 flex items-center gap-2">
+<div class="w-5 h-5 rounded-full bg-rose-500 flex items-center justify-center shrink-0">
+<span class="text-white text-[9px] font-bold">!</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<h4 class="text-[10px] font-bold truncate">Harbor Side Pier</h4>
+<span class="text-[8px] font-bold text-rose-500">FAILED</span>
+</div>
+<p class="text-[8px] text-rose-400">09:45 AM</p>
+</div>
+</div>
+<div class="h-[44px] bg-rose-50 dark:bg-rose-950/20 rounded-lg px-2 py-1.5 border border-rose-100 dark:border-rose-900/50 opacity-60 flex items-center gap-2">
+<div class="w-5 h-5 rounded-full bg-rose-500 flex items-center justify-center shrink-0">
+<span class="text-white text-[9px] font-bold">!</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<h4 class="text-[10px] font-bold truncate">South Warehouse 4</h4>
+<span class="text-[8px] font-bold text-rose-500">PENDING</span>
+</div>
+<p class="text-[8px] text-rose-400">10:20 AM</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="p-3 border-t border-slate-100 dark:border-slate-800">
+<button class="w-full bg-primary hover:bg-emerald-600 text-white font-bold text-[10px] py-2 rounded transition-all shadow-md shadow-primary/20 flex items-center justify-center gap-2 uppercase">
+<span class="material-icons-outlined text-sm">download</span>
+                Export Report
+            </button>
+</div>
+</aside>
+</main>
+
+</body></html>

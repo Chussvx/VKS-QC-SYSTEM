@@ -1,0 +1,70 @@
+<!-- Modal_Dashboard.html - Dashboard modals -->
+<!-- Contains: Alert Detail Modal -->
+
+<template id="modal-alert-detail">
+    <div class="modal-header-refined">
+        <div class="modal-title-group">
+            <div class="modal-icon-box critical" id="alert-det-icon-box">
+                <span class="material-symbols-outlined" id="alert-det-icon">warning</span>
+            </div>
+            <div>
+                <h3 class="modal-title" id="alert-det-title">LATE PATROL</h3>
+                <div class="modal-subtitle-flex">
+                    <span class="text-xs text-muted">ID: <span id="alert-det-id">#LP-1204</span></span>
+                    <span class="badge badge-danger-solid badge-xs">ACTIVE</span>
+                </div>
+            </div>
+        </div>
+        <button class="btn-close" onclick="closeModal()">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+    </div>
+
+    <div class="modal-body p-0">
+        <!-- Metadata Bar -->
+        <div class="modal-meta-bar">
+            <div class="meta-item">
+                <span class="meta-label" data-i18n="dashboard.alert.site_name">SITE NAME</span>
+                <span class="meta-value" id="alert-det-site">Crowne Plaza</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label" data-i18n="dashboard.alert.zone">ZONE</span>
+                <span class="meta-value" id="alert-det-zone">Main Lobby</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label" data-i18n="dashboard.alert.shift">SHIFT</span>
+                <span class="meta-value" id="alert-det-shift">Night Shift</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label" data-i18n="dashboard.alert.time">TIME</span>
+                <span class="meta-value" id="alert-det-time">14:30 UTC</span>
+            </div>
+        </div>
+
+        <div class="p-6">
+            <div class="section-title" data-i18n="dashboard.alert.description">ALERT DESCRIPTION</div>
+            <p class="text-sm text-secondary leading-relaxed mb-6" id="alert-det-desc">
+                Patrol was scheduled for 14:00. Guard has not checked in for over 30 minutes.
+                Attempted contact via radio but no response.
+            </p>
+
+            <div class="section-title" data-i18n="dashboard.alert.sla_status">SLA STATUS</div>
+            <div class="flex items-center gap-3 p-3 bg-red-50 rounded-lg border border-red-100 mb-6">
+                <span class="material-symbols-outlined text-red-500 text-sm">schedule</span>
+                <div class="text-xs font-bold text-red-700">Breached: 15 minutes over SLA threshold</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-footer-refined">
+        <button class="btn btn-ghost" onclick="closeModal()" data-i18n="common.cancel">CANCEL</button>
+        <div class="flex gap-2">
+            <button class="btn btn-danger-solid" onclick="escalateAlert()"
+                data-i18n="dashboard.alert.escalate">ESCALATE</button>
+            <button class="btn btn-secondary" onclick="contactSite('site-123')"
+                data-i18n="dashboard.alert.contact">CONTACT SITE</button>
+            <button class="btn btn-primary" onclick="updateAlertStatus('resolved')"
+                data-i18n="dashboard.alert.mark_fixed">MARK FIXED</button>
+        </div>
+    </div>
+</template>

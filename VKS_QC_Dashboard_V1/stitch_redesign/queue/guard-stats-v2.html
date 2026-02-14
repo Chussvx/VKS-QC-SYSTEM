@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Guard Activity Statistics Modal - Variant 2</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Noto+Sans+Lao:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#21c45d",
+                        "background-light": "#f6f8f7",
+                        "background-dark": "#122017",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "Noto Sans Lao", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.5rem", "lg": "0.625rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', 'Noto Sans Lao', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark min-h-screen flex items-center justify-center p-4">
+<!-- Modal Backdrop / Container -->
+<div class="relative w-full max-w-[420px] bg-white dark:bg-[#1a2c22] rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col">
+<!-- Header Section -->
+<div class="p-6 pb-2">
+<div class="flex items-start gap-4">
+<div class="relative shrink-0">
+<div class="w-16 h-16 rounded-full bg-cover bg-center border-2 border-white dark:border-[#2a4034] shadow-sm" data-alt="Portrait of Inspector Somsack Phomvihane" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuD__OBjlA0uOddR5dvVgJDSHOSvdx1rf2Hiu4JJOuFTZiNkjOUF3qRXXuCMrlBOD-XhJM-9xHC_Jmb8ZToNg5SfuCyWoCK-nhv-jFvAz20PaDK-Hj6LysYwrlq0ZqX4mejoLaivRz76hOs-W3n5s_jhcd3K8dhpRYJorC3w0mUQOgl-yGqCy06GuShl754GWF003HL6b-qkYohFKpjcIb68ybqD-VCJTB2EnVsd5KOw-RvbH_2fX0kw08y8jboAGtAdPMEpyIxgIkys");'></div>
+<div class="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white dark:border-[#1a2c22] rounded-full" title="Active"></div>
+</div>
+<div class="flex flex-col pt-1">
+<h2 class="text-slate-900 dark:text-white text-lg font-bold leading-tight">Somsack Phomvihane</h2>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="inline-flex items-center rounded-md bg-amber-100 dark:bg-amber-900/40 px-2 py-1 text-xs font-medium text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-amber-600/20">
+                            Inspector / ຜູ້ກວດກາ
+                        </span>
+</div>
+</div>
+<button class="ml-auto text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Stats Section -->
+<div class="p-6 py-4 grid grid-cols-2 gap-4">
+<!-- On-Time Rate Card with Sparkline -->
+<div class="flex flex-col p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 shadow-sm relative overflow-hidden group">
+<p class="text-slate-500 dark:text-slate-400 text-xs font-medium mb-1">On-Time Rate</p>
+<div class="flex items-end gap-2 z-10">
+<span class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">98%</span>
+<span class="text-xs font-medium text-primary mb-1.5">+1.2%</span>
+</div>
+<!-- Micro Sparkline SVG -->
+<div class="absolute bottom-0 right-0 w-24 h-12 opacity-80 translate-y-1 translate-x-2">
+<svg class="w-full h-full fill-none stroke-primary" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 100 40">
+<path d="M0 35 Q10 32 20 25 T40 20 T60 15 T80 8 L100 5" fill="none"></path>
+<defs>
+<lineargradient id="gradient" x1="0%" x2="0%" y1="0%" y2="100%">
+<stop offset="0%" style="stop-color:rgb(33, 196, 93);stop-opacity:0.2"></stop>
+<stop offset="100%" style="stop-color:rgb(33, 196, 93);stop-opacity:0"></stop>
+</lineargradient>
+</defs>
+<path d="M0 35 Q10 32 20 25 T40 20 T60 15 T80 8 L100 5 V 40 H 0 Z" fill="url(#gradient)" stroke="none"></path>
+</svg>
+</div>
+</div>
+<!-- Patrols Count Card -->
+<div class="flex flex-col p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 shadow-sm">
+<p class="text-slate-500 dark:text-slate-400 text-xs font-medium mb-1">Patrols This Month</p>
+<div class="flex items-end gap-2">
+<span class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">42</span>
+</div>
+<p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Target: 40/mo</p>
+</div>
+</div>
+<!-- Recent Activity List -->
+<div class="px-6 pb-2">
+<h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center justify-between">
+<span>Other Sites Visited</span>
+<span class="text-xs font-normal text-slate-400 dark:text-slate-500">ສະຖານທີ່ອື່ນໆ</span>
+</h3>
+<div class="flex flex-col gap-2">
+<!-- List Item 1 -->
+<div class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer">
+<div class="flex items-center justify-center shrink-0 w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">domain</span>
+</div>
+<div class="flex flex-col min-w-0 flex-1">
+<span class="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">Vientiane Center</span>
+<span class="text-xs text-slate-400 dark:text-slate-500">2h ago</span>
+</div>
+<span class="material-symbols-outlined text-slate-300 text-[18px]">chevron_right</span>
+</div>
+<!-- List Item 2 -->
+<div class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer">
+<div class="flex items-center justify-center shrink-0 w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">business</span>
+</div>
+<div class="flex flex-col min-w-0 flex-1">
+<span class="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">Royal Square Office</span>
+<span class="text-xs text-slate-400 dark:text-slate-500">Yesterday</span>
+</div>
+<span class="material-symbols-outlined text-slate-300 text-[18px]">chevron_right</span>
+</div>
+<!-- List Item 3 -->
+<div class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer">
+<div class="flex items-center justify-center shrink-0 w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">storefront</span>
+</div>
+<div class="flex flex-col min-w-0 flex-1">
+<span class="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">That Luang Plaza</span>
+<span class="text-xs text-slate-400 dark:text-slate-500">2 days ago</span>
+</div>
+<span class="material-symbols-outlined text-slate-300 text-[18px]">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Footer Actions -->
+<div class="p-6 mt-2 flex items-center gap-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-[#15231c]">
+<button class="flex-1 rounded-lg bg-primary hover:bg-green-600 text-white font-medium text-sm h-10 px-4 transition-all shadow-sm shadow-green-500/20 flex items-center justify-center gap-2">
+<span>View Full Profile</span>
+<span class="font-normal opacity-80 hidden sm:inline text-xs">(ເບິ່ງປະຫວັດ)</span>
+</button>
+<button class="shrink-0 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium text-sm h-10 px-4 transition-all flex items-center justify-center">
+                Close
+            </button>
+</div>
+</div>
+</body></html>

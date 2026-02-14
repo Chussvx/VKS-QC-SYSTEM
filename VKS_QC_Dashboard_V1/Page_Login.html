@@ -1,0 +1,558 @@
+<!-- Page_Login.html - VKS Authentication Screen (Light Theme) -->
+<div id="login-overlay" class="login-overlay">
+    <div class="login-background"></div>
+
+    <div class="login-container">
+        <!-- Logo & Brand -->
+        <div class="login-brand">
+            <div class="login-logo">
+                <img src="https://drive.google.com/thumbnail?id=1o7UGoZhLBG43hm-5eao8UYB4YjeQ_IhT&sz=w200"
+                    alt="VKS Logo" class="login-logo-img">
+            </div>
+            <h1 class="login-title">VKS Quality Control</h1>
+            <p class="login-subtitle">Security Operations Dashboard</p>
+        </div>
+
+        <!-- Login Card -->
+        <div class="login-card">
+            <div class="login-card-header">
+                <h2 class="login-card-title" data-i18n="login.title">Sign In</h2>
+                <p class="login-card-desc" data-i18n="login.subtitle">Enter your credentials to continue</p>
+            </div>
+
+            <!-- Error Message -->
+            <div id="login-error" class="login-error" style="display: none;">
+                <span class="material-symbols-outlined" style="font-size: 16px;">error</span>
+                <span id="login-error-text">Invalid credentials</span>
+            </div>
+
+            <!-- Form -->
+            <form id="login-form" onsubmit="return handleLogin(event)">
+                <div class="login-form-group">
+                    <label class="login-label" data-i18n="login.email">Email</label>
+                    <div class="login-input-wrapper">
+                        <span class="material-symbols-outlined login-input-icon">mail</span>
+                        <input type="email" id="login-email" class="login-input" placeholder="your@email.com" required
+                            autocomplete="email">
+                    </div>
+                </div>
+
+                <div class="login-form-group">
+                    <label class="login-label" data-i18n="login.password">Password</label>
+                    <div class="login-input-wrapper">
+                        <span class="material-symbols-outlined login-input-icon">lock</span>
+                        <input type="password" id="login-password" class="login-input" placeholder="••••••••" required
+                            autocomplete="current-password">
+                        <button type="button" class="login-toggle-pwd" onclick="togglePasswordVisibility()"
+                            tabindex="-1">
+                            <span class="material-symbols-outlined" id="login-pwd-icon">visibility_off</span>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="login-btn" id="login-btn">
+                    <span id="login-btn-text" data-i18n="login.signin">Sign In</span>
+                    <span id="login-btn-loading" style="display: none;" class="login-spinner"></span>
+                </button>
+            </form>
+
+            <div class="login-footer">
+                <span class="material-symbols-outlined" style="font-size: 14px;">info</span>
+                <span data-i18n="login.hint">Contact admin if you don't have an account</span>
+            </div>
+        </div>
+
+        <!-- Version -->
+        <p class="login-version">v2.1.0</p>
+    </div>
+</div>
+
+<style>
+    /* ─── LOGIN OVERLAY ─────────────────────────── */
+    .login-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .login-overlay.hidden {
+        display: none;
+    }
+
+    /* ─── LIGHT BACKGROUND ─────────────────────── */
+    .login-background {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(160deg, #f0f4f8 0%, #e2e8f0 40%, #f8fafc 100%);
+        overflow: hidden;
+    }
+
+    .login-background::before {
+        content: '';
+        position: absolute;
+        width: 500px;
+        height: 500px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, transparent 70%);
+        top: -15%;
+        right: -10%;
+    }
+
+    .login-background::after {
+        content: '';
+        position: absolute;
+        width: 400px;
+        height: 400px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(59, 130, 246, 0.06) 0%, transparent 70%);
+        bottom: -10%;
+        left: -10%;
+    }
+
+    /* ─── CONTAINER ─────────────────────────────── */
+    .login-container {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 28px;
+        width: 100%;
+        max-width: 400px;
+        padding: 24px;
+        animation: loginReveal 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    @keyframes loginReveal {
+        from {
+            opacity: 0;
+            transform: translateY(20px) scale(0.97);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    /* ─── BRAND ─────────────────────────────────── */
+    .login-brand {
+        text-align: center;
+    }
+
+    .login-logo {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .login-logo-img {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        border-radius: 16px;
+        filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.08));
+    }
+
+    .login-title {
+        font-size: 22px;
+        font-weight: 800;
+        color: #1e293b;
+        margin: 0;
+        letter-spacing: -0.02em;
+    }
+
+    .login-subtitle {
+        font-size: 13px;
+        color: #64748b;
+        margin: 4px 0 0;
+        font-weight: 500;
+    }
+
+    /* ─── CARD ──────────────────────────────────── */
+    .login-card {
+        width: 100%;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 20px;
+        padding: 32px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04);
+    }
+
+    .login-card-header {
+        text-align: center;
+        margin-bottom: 24px;
+    }
+
+    .login-card-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .login-card-desc {
+        font-size: 13px;
+        color: #94a3b8;
+        margin: 4px 0 0;
+    }
+
+    /* ─── ERROR ─────────────────────────────────── */
+    .login-error {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #dc2626;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 20px;
+        animation: loginShake 400ms ease;
+    }
+
+    @keyframes loginShake {
+
+        0%,
+        100% {
+            transform: translateX(0);
+        }
+
+        20% {
+            transform: translateX(-8px);
+        }
+
+        40% {
+            transform: translateX(8px);
+        }
+
+        60% {
+            transform: translateX(-4px);
+        }
+
+        80% {
+            transform: translateX(4px);
+        }
+    }
+
+    /* ─── FORM ──────────────────────────────────── */
+    .login-form-group {
+        margin-bottom: 18px;
+    }
+
+    .login-label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 6px;
+    }
+
+    .login-input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .login-input-icon {
+        position: absolute;
+        left: 14px;
+        font-size: 18px;
+        color: #94a3b8;
+        pointer-events: none;
+        transition: color 200ms;
+    }
+
+    .login-input {
+        width: 100%;
+        height: 48px;
+        padding: 0 14px 0 44px;
+        font-size: 14px;
+        font-family: var(--font-family, 'Noto Sans', sans-serif);
+        color: #1e293b;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        outline: none;
+        transition: border-color 200ms cubic-bezier(0.2, 0, 0, 1),
+            box-shadow 200ms cubic-bezier(0.2, 0, 0, 1),
+            background 200ms;
+    }
+
+    .login-input::placeholder {
+        color: #94a3b8;
+    }
+
+    .login-input:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+        background: #ffffff;
+    }
+
+    .login-input-wrapper:focus-within .login-input-icon {
+        color: #10b981;
+    }
+
+    .login-toggle-pwd {
+        position: absolute;
+        right: 12px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #94a3b8;
+        padding: 4px;
+        display: flex;
+        align-items: center;
+        transition: color 150ms;
+    }
+
+    .login-toggle-pwd:hover {
+        color: #64748b;
+    }
+
+    .login-toggle-pwd .material-symbols-outlined {
+        font-size: 18px;
+    }
+
+    /* ─── BUTTON ────────────────────────────────── */
+    .login-btn {
+        width: 100%;
+        height: 48px;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        font-size: 15px;
+        font-weight: 700;
+        font-family: var(--font-family, 'Noto Sans', sans-serif);
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1),
+            box-shadow 200ms;
+        box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
+        margin-top: 4px;
+    }
+
+    .login-btn:hover {
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+        transform: translateY(-1px);
+    }
+
+    .login-btn:active {
+        transform: scale(0.97);
+        transition-duration: 50ms;
+    }
+
+    .login-btn:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    /* ─── SPINNER ───────────────────────────────── */
+    .login-spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: loginSpin 600ms linear infinite;
+    }
+
+    @keyframes loginSpin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* ─── FOOTER ────────────────────────────────── */
+    .login-footer {
+        text-align: center;
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid #f1f5f9;
+        font-size: 12px;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .login-version {
+        font-size: 11px;
+        color: #94a3b8;
+        margin: 0;
+    }
+
+    /* ─── RESPONSIVE ────────────────────────────── */
+    @media (max-width: 480px) {
+        .login-container {
+            padding: 16px;
+            gap: 24px;
+        }
+
+        .login-card {
+            padding: 24px 20px;
+            border-radius: 16px;
+        }
+
+        .login-logo {
+            width: 64px;
+            height: 64px;
+        }
+
+        .login-logo-img {
+            width: 64px;
+            height: 64px;
+        }
+
+        .login-title {
+            font-size: 20px;
+        }
+    }
+
+    /* ─── PREFERS REDUCED MOTION ────────────────── */
+    @media (prefers-reduced-motion: reduce) {
+        .login-container {
+            animation: none;
+        }
+
+        .login-error {
+            animation: none;
+        }
+
+        .login-spinner {
+            animation-duration: 1s;
+        }
+    }
+</style>
+
+<script>
+    // ─── PASSWORD VISIBILITY TOGGLE ─────────────
+    function togglePasswordVisibility() {
+        var input = document.getElementById('login-password');
+        var icon = document.getElementById('login-pwd-icon');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.textContent = 'visibility';
+        } else {
+            input.type = 'password';
+            icon.textContent = 'visibility_off';
+        }
+    }
+
+    // ─── SHA-256 HASH (Client-side via SubtleCrypto) ─
+    function sha256(message) {
+        var msgBuffer = new TextEncoder().encode(message);
+        return crypto.subtle.digest('SHA-256', msgBuffer).then(function (hashBuffer) {
+            var hashArray = Array.from(new Uint8Array(hashBuffer));
+            var hashHex = hashArray.map(function (b) {
+                return b.toString(16).padStart(2, '0');
+            }).join('');
+            return hashHex;
+        });
+    }
+
+    // ─── HANDLE LOGIN ───────────────────────────
+    function handleLogin(event) {
+        event.preventDefault();
+
+        var email = document.getElementById('login-email').value.trim();
+        var password = document.getElementById('login-password').value;
+        var btn = document.getElementById('login-btn');
+        var btnText = document.getElementById('login-btn-text');
+        var btnLoading = document.getElementById('login-btn-loading');
+        var errorDiv = document.getElementById('login-error');
+        var errorText = document.getElementById('login-error-text');
+
+        if (!email || !password) {
+            showLoginError('Please enter both email and password.');
+            return false;
+        }
+
+        // Show loading
+        btn.disabled = true;
+        btnText.style.display = 'none';
+        btnLoading.style.display = 'block';
+        errorDiv.style.display = 'none';
+
+        // Hash password client-side, then send hash to backend
+        sha256(password).then(function (passwordHash) {
+            google.script.run
+                .withSuccessHandler(function (result) {
+                    btn.disabled = false;
+                    btnText.style.display = 'block';
+                    btnLoading.style.display = 'none';
+
+                    if (result && result.success) {
+                        // Save session
+                        var session = {
+                            userId: result.user.userId,
+                            name: result.user.name,
+                            surname: result.user.surname,
+                            email: result.user.email,
+                            role: result.user.role,
+                            loginTimestamp: Date.now()
+                        };
+                        localStorage.setItem('vks_session', JSON.stringify(session));
+
+                        // Hide login, show dashboard
+                        onLoginSuccess();
+                    } else {
+                        showLoginError(result ? result.message : 'Login failed. Please try again.');
+                    }
+                })
+                .withFailureHandler(function (error) {
+                    btn.disabled = false;
+                    btnText.style.display = 'block';
+                    btnLoading.style.display = 'none';
+                    showLoginError('Connection error. Please try again.');
+                })
+                .validateLogin(email, passwordHash);
+        }).catch(function (err) {
+            btn.disabled = false;
+            btnText.style.display = 'block';
+            btnLoading.style.display = 'none';
+            showLoginError('Browser encryption error. Please try a different browser.');
+        });
+
+        return false;
+    }
+
+    function showLoginError(message) {
+        var errorDiv = document.getElementById('login-error');
+        var errorText = document.getElementById('login-error-text');
+        errorText.textContent = message;
+        errorDiv.style.display = 'flex';
+        // Re-trigger shake animation
+        errorDiv.style.animation = 'none';
+        errorDiv.offsetHeight; // Force reflow
+        errorDiv.style.animation = 'loginShake 400ms ease';
+    }
+
+    function onLoginSuccess() {
+        var overlay = document.getElementById('login-overlay');
+        if (overlay) {
+            overlay.style.opacity = '0';
+            overlay.style.transition = 'opacity 300ms cubic-bezier(0.16, 1, 0.3, 1)';
+            setTimeout(function () {
+                overlay.classList.add('hidden');
+                document.querySelector('.app-container').style.display = '';
+                // Initialize the dashboard now
+                if (typeof initApp === 'function') initApp();
+            }, 300);
+        }
+    }
+</script>

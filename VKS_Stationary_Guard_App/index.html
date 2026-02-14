@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="lo" class="light">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>VKS Guard Portal</title>
+    <!-- Tailwind for rapid layout, base styles in Styles.html -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <?!= include('State'); ?>
+    <?!= include('Styles'); ?>
+</head>
+
+<body
+    class="bg-[#f8fafc] text-slate-900 min-h-screen flex flex-col items-center justify-start overflow-x-hidden antialiased">
+
+    <!-- FULL SCREEN FIXED SCANNER CONTAINER -->
+    <div id="page-scanner" class="fixed inset-0 z-[100] bg-black hidden">
+        <?!= include('Step_Scanner'); ?>
+    </div>
+
+    <!-- Elite Header -->
+    <nav id="app-header"
+        class="w-full max-w-md px-6 pt-8 flex items-center justify-between z-40 transition-opacity duration-300">
+        <div id="vks-logo-trigger" onclick="handleLogoTap()" class="flex items-center gap-4 cursor-pointer select-none">
+            <div class="w-12 h-12 relative filter drop-shadow-sm transition-transform hover:scale-105 duration-300">
+                <img src="https://drive.google.com/thumbnail?id=1o7UGoZhLBG43hm-5eao8UYB4YjeQ_IhT&sz=w200"
+                    alt="VKS Logo" class="w-full h-full object-cover"
+                    style="clip-path: polygon(29% 0, 71% 0, 100% 29%, 100% 71%, 71% 100%, 29% 100%, 0 71%, 0 29%);">
+            </div>
+            <span class="font-extrabold text-2xl tracking-tighter text-slate-900">VKS <span
+                    class="text-[#C5A059]">GUARD</span></span>
+        </div>
+        <div class="flex gap-2">
+
+            <!-- Streak Counter -->
+            <div id="streak-container"
+                class="hidden flex items-center gap-1 bg-white border border-orange-100 rounded-full py-1 pl-2 pr-3 shadow-sm grayscale opacity-50 transition-all duration-500">
+                <span id="streak-icon"
+                    class="material-symbols-outlined text-xl text-slate-300 transition-colors">local_fire_department</span>
+                <span id="streak-counter" class="text-xs font-black text-slate-400 font-mono pt-0.5">0</span>
+            </div>
+
+            <button
+                class="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center bg-white shadow-sm hover:bg-slate-50 transition-colors">
+                <span class="material-symbols-outlined text-slate-600">notifications</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Views Main Container -->
+    <main class="w-full max-w-md flex-1">
+
+        <!-- HOME -->
+        <div id="page-home" class="page-container">
+            <?!= include('Step_Home'); ?>
+        </div>
+
+        <!-- CHECKIN CONFIRM -->
+        <div id="page-checkin" class="page-container hidden">
+            <?!= include('Step_Checkin'); ?>
+        </div>
+
+        <!-- PATROL PROGRESS -->
+        <div id="page-patrol" class="page-container hidden">
+            <?!= include('Step_PatrolProgress'); ?>
+        </div>
+
+        <!-- PATROL SCAN ASSESSMENT -->
+        <div id="page-patrol-scan" class="page-container hidden">
+            <?!= include('Step_PatrolScan'); ?>
+        </div>
+
+        <!-- CHECKOUT -->
+        <div id="page-checkout" class="page-container hidden">
+            <?!= include('Step_Checkout'); ?>
+        </div>
+
+        <!-- SUCCESS -->
+        <div id="page-success" class="page-container hidden">
+            <?!= include('Step_Success'); ?>
+        </div>
+
+        <!-- HISTORY -->
+        <div id="page-history" class="page-container hidden">
+            <?!= include('Step_History'); ?>
+        </div>
+
+        <!-- PROFILE -->
+        <div id="page-profile" class="page-container hidden">
+            <?!= include('Step_Profile'); ?>
+        </div>
+
+    </main>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="hidden">
+        <div class="spinner"></div>
+        <div id="loading-text" class="mt-4 font-bold text-emerald-600 uppercase tracking-widest text-xs">
+            ກຳລັງປະມວນຜົນ...
+        </div>
+    </div>
+
+    <!-- Success Popup Modal -->
+    <div id="success-modal" class="modal-backdrop">
+        <div class="success-popup">
+            <div class="success-icon-lottie">
+                <span class="material-symbols-outlined text-6xl">check_circle</span>
+            </div>
+            <h3 class="text-2xl font-bold text-slate-900 mb-2" id="success-title">ຢືນຢັນແລ້ວ</h3>
+            <p class="text-slate-500 text-sm mb-8 leading-relaxed" id="success-message">ດຳເນີນການສຳເລັດແລ້ວ.
+            </p>
+            <button id="success-done-btn" onclick="closeSuccess()"
+                class="w-full py-4 bg-emerald-600 text-white rounded-[1.5rem] font-bold text-sm tracking-widest uppercase tactile-btn shadow-lg shadow-emerald-200">
+                ຕໍ່ໄປ
+            </button>
+        </div>
+    </div>
+
+    <!-- Error Popup Modal -->
+    <div id="error-modal" class="modal-backdrop">
+        <div class="error-popup">
+            <div class="error-icon-container">
+                <span class="material-symbols-outlined text-4xl">warning</span>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900 mb-2" id="error-title">ຂໍ້ຜິດພາດ</h3>
+            <p class="text-slate-500 text-sm mb-8 leading-relaxed" id="error-message">ມີບາງຢ່າງຜິດພາດ.</p>
+            <button onclick="closeError()"
+                class="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm tracking-widest uppercase tactile-btn">
+                ປິດ
+            </button>
+        </div>
+    </div>
+    <!-- Critical Alert Modal -->
+    <div id="critical-alert-modal" class="modal-backdrop hidden">
+        <div class="fixed inset-0 z-[999] bg-red-900/90 flex items-center justify-center p-6 backdrop-blur-xl">
+            <div class="bg-white rounded-[2.5rem] p-8 text-center max-w-sm w-full shadow-2xl space-y-6 animate-pulse">
+                <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto text-red-600">
+                    <span class="material-symbols-outlined text-5xl">notifications_active</span>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-black text-slate-900 leading-none mb-2">ແຈ້ງເຕືອນດ່ວນ!</h2>
+                    <p class="text-slate-500 font-medium">ກະລຸນາລາດຕະເວນດຽວນີ້ (Patrol Required)</p>
+                </div>
+
+                <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
+                    <p class="text-emerald-700 font-bold italic text-sm">"ການຍ່າງອອກກຳລັງກາຍຊ່ວຍໃຫ້ຮ່າງກາຍແຂງແຮງ!"
+                    </p>
+                    <p class="text-emerald-600 text-xs mt-1">Stretch your legs! Taking a walk helps you stay alert
+                        and healthy.</p>
+                </div>
+
+                <button onclick="PatrolMonitor.hideAlerts()"
+                    class="w-full bg-red-600 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-sm shadow-lg shadow-red-500/30 active:scale-95 transition-transform">
+                    ຮັບຊາບ (Acknowledge)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logout-modal" class="modal-backdrop">
+        <div class="bg-white rounded-[2.5rem] p-8 text-center max-w-sm w-full shadow-2xl space-y-5">
+            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto text-red-500">
+                <span class="material-symbols-outlined text-4xl">logout</span>
+            </div>
+            <div>
+                <h3 class="text-xl font-black text-slate-900 mb-2">ຢືນຢັນການອອກຈາກລະບົບ</h3>
+                <p class="text-slate-500 text-sm">ກະລຸນາປ້ອນ ID ພະນັກງານຂອງທ່ານເພື່ອຢືນຢັນ</p>
+                <p class="text-slate-400 text-xs mt-1">(Enter your Employee ID to confirm logout)</p>
+            </div>
+
+            <div class="space-y-2">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Your ID: <span
+                        id="logout-expected-id" class="text-slate-600">---</span></p>
+                <input type="text" id="logout-confirm-input" placeholder="ປ້ອນ ID ຂອງທ່ານ..."
+                    class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-3 px-4 text-center text-slate-900 font-bold focus:border-red-400 focus:ring-4 focus:ring-red-100 transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
+                <p id="logout-error-msg" class="text-red-500 text-xs font-bold hidden">ID ບໍ່ຖືກຕ້ອງ (ID does not match)
+                </p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button onclick="closeLogoutModal()"
+                    class="py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-slate-200 transition-colors">
+                    ຍົກເລີກ
+                </button>
+                <button onclick="confirmLogout()"
+                    class="py-4 bg-red-600 text-white rounded-2xl font-bold text-sm uppercase tracking-widest shadow-lg shadow-red-200 hover:bg-red-700 transition-colors">
+                    ຢືນຢັນອອກ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dev Mode Unlock Modal -->
+    <div id="dev-unlock-modal" class="modal-backdrop">
+        <div class="bg-white rounded-[2.5rem] p-8 text-center max-w-sm w-full shadow-2xl space-y-5">
+            <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto text-indigo-600">
+                <span class="material-symbols-outlined text-4xl">developer_mode</span>
+            </div>
+            <h3 class="text-xl font-black text-slate-900">Developer Mode</h3>
+            <p class="text-slate-500 text-sm">Enter password to unlock dev tools</p>
+            <input type="password" id="dev-password-input" placeholder="Enter password..."
+                class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-3 px-4 text-center font-bold focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 transition-all outline-none">
+            <p id="dev-password-error" class="text-red-500 text-xs font-bold hidden">Incorrect password</p>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="closeDevModal()"
+                    class="py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-slate-200 transition-colors">
+                    Cancel
+                </button>
+                <button onclick="verifyDevPassword()"
+                    class="py-4 bg-indigo-600 text-white rounded-2xl font-bold text-sm uppercase tracking-widest shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-colors">
+                    Unlock
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showCriticalModal() {
+            const el = document.getElementById('critical-alert-modal');
+            if (el) el.classList.remove('hidden');
+        }
+        function closeCriticalModal() {
+            const el = document.getElementById('critical-alert-modal');
+            if (el) el.classList.add('hidden');
+        }
+
+        function showLogoutModal() {
+            var modal = document.getElementById('logout-modal');
+            var expectedIdEl = document.getElementById('logout-expected-id');
+            var input = document.getElementById('logout-confirm-input');
+            var errorMsg = document.getElementById('logout-error-msg');
+
+            // Show expected ID
+            if (expectedIdEl) expectedIdEl.innerText = State.currentGuardId || '---';
+            // Clear input
+            if (input) input.value = '';
+            // Hide error
+            if (errorMsg) errorMsg.classList.add('hidden');
+            // Show modal
+            if (modal) modal.classList.add('active');
+        }
+
+        function closeLogoutModal() {
+            var modal = document.getElementById('logout-modal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        function confirmLogout() {
+            var input = document.getElementById('logout-confirm-input');
+            var errorMsg = document.getElementById('logout-error-msg');
+            var enteredId = input ? input.value.trim() : '';
+            var expectedId = State.currentGuardId || '';
+
+            if (enteredId.toUpperCase() === expectedId.toUpperCase()) {
+                // ID matches - proceed with logout
+                closeLogoutModal();
+                if (typeof resetIdentity === 'function') resetIdentity();
+                navigateTo('home');
+            } else {
+                // Show error
+                if (errorMsg) errorMsg.classList.remove('hidden');
+                if (input) {
+                    input.classList.add('border-red-400');
+                    input.focus();
+                }
+            }
+        }
+
+        // ========================================
+        // DEV MODE UNLOCK SYSTEM
+        // ========================================
+        var devTapCount = 0;
+        var devTapTimer = null;
+        var DEV_PASSWORD = 'vks2025';
+        var devModeUnlocked = false;
+
+        function handleLogoTap() {
+            devTapCount++;
+            console.log('[DevMode] Tap count:', devTapCount);
+
+            if (devTapTimer) clearTimeout(devTapTimer);
+            devTapTimer = setTimeout(function () {
+                devTapCount = 0;
+                console.log('[DevMode] Tap count reset');
+            }, 2000);
+
+            if (devTapCount >= 5) {
+                devTapCount = 0;
+                if (devTapTimer) clearTimeout(devTapTimer);
+                showDevModal();
+            }
+        }
+
+        function showDevModal() {
+            console.log('[DevMode] Showing password modal');
+            var modal = document.getElementById('dev-unlock-modal');
+            var input = document.getElementById('dev-password-input');
+            var error = document.getElementById('dev-password-error');
+
+            if (input) input.value = '';
+            if (error) error.classList.add('hidden');
+            if (modal) modal.classList.add('active');
+            if (input) setTimeout(function () { input.focus(); }, 100);
+        }
+
+        function closeDevModal() {
+            console.log('[DevMode] Closing modal');
+            var modal = document.getElementById('dev-unlock-modal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        function verifyDevPassword() {
+            var input = document.getElementById('dev-password-input');
+            var error = document.getElementById('dev-password-error');
+            var password = input ? input.value.trim() : '';
+
+            console.log('[DevMode] Verifying password...');
+
+            if (password === DEV_PASSWORD) {
+                console.log('[DevMode] Password correct!');
+                devModeUnlocked = true;
+                closeDevModal();
+                unlockDevTools();
+                if (typeof showToast === 'function') {
+                    showToast('Developer Mode Activated', 'success');
+                }
+            } else {
+                console.log('[DevMode] Password incorrect');
+                if (error) error.classList.remove('hidden');
+                if (input) {
+                    input.value = '';
+                    input.focus();
+                }
+            }
+        }
+
+        function unlockDevTools() {
+            console.log('[DevMode] Unlocking dev tools...');
+            var fab = document.getElementById('dev-tools-fab');
+            if (fab) {
+                fab.classList.remove('hidden');
+                console.log('[DevMode] FAB visible');
+            }
+            var testSection = document.getElementById('test-bypass-section');
+            if (testSection) {
+                testSection.classList.remove('hidden');
+                console.log('[DevMode] Test section visible');
+            }
+            var testFillButtons = document.getElementById('dev-test-fill-buttons');
+            if (testFillButtons) {
+                testFillButtons.classList.remove('hidden');
+                console.log('[DevMode] Test fill buttons visible');
+            }
+        }
+    </script>
+
+    <!-- Round Completion Celebration Modal -->
+    <div id="celebration-modal" class="celebration-modal">
+        <div id="celebration-content" class="celebration-content">
+            <div id="confetti-container" class="confetti-container"></div>
+
+            <div id="celebration-checkmark" class="celebration-checkmark">
+                <span class="material-symbols-outlined text-5xl">check</span>
+            </div>
+
+            <div id="progress-ring-container" class="progress-ring-container">
+                <svg class="progress-ring" width="120" height="120">
+                    <circle class="progress-ring-bg" cx="60" cy="60" r="45"></circle>
+                    <circle id="progress-ring-fill" class="progress-ring-fill" cx="60" cy="60" r="45"></circle>
+                </svg>
+                <div class="progress-text">
+                    <span id="progress-current" class="current">4</span>
+                    <span id="progress-total" class="total">/ 7 ຮອບ</span>
+                </div>
+            </div>
+
+            <p id="encouragement-text" class="encouragement-text">ດີຫຼາຍ!</p>
+            <p id="encouragement-subtitle" class="encouragement-subtitle">Round Complete</p>
+
+            <button onclick="closeCelebration()" class="celebration-btn">
+                ສືບຕໍ່ <span class="material-symbols-outlined text-lg ml-1">arrow_forward</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        var LAO_ENCOURAGEMENTS = [
+            'ດີຫຼາຍ!',
+            'ເກັ່ງຫຼາຍ!',
+            'ເຮັດໄດ້ດີ!',
+            'ສືບຕໍ່ເລີຍ!'
+        ];
+
+        var EPIC_ENCOURAGEMENTS = [
+            'ສຳເລັດແລ້ວ!',
+            'ເຮັດໄດ້ຄົບແລ້ວ!',
+            'ຍອດເຍຍ!'
+        ];
+
+        function showRoundComplete(currentRound, totalRounds) {
+            var modal = document.getElementById('celebration-modal');
+            var content = document.getElementById('celebration-content');
+            var checkmark = document.getElementById('celebration-checkmark');
+            var ringFill = document.getElementById('progress-ring-fill');
+            var currentEl = document.getElementById('progress-current');
+            var totalEl = document.getElementById('progress-total');
+            var encourageEl = document.getElementById('encouragement-text');
+            var subtitleEl = document.getElementById('encouragement-subtitle');
+            var btn = modal.querySelector('.celebration-btn');
+            var confettiContainer = document.getElementById('confetti-container');
+
+            var isEpic = currentRound >= totalRounds;
+
+            // Reset animations
+            if (content) {
+                content.classList.remove('epic');
+                if (isEpic) content.classList.add('epic');
+            }
+            if (ringFill) {
+                ringFill.classList.remove('epic');
+                if (isEpic) ringFill.classList.add('epic');
+            }
+            if (btn) {
+                btn.classList.remove('epic');
+                if (isEpic) btn.classList.add('epic');
+            }
+
+            // Update checkmark icon for epic
+            if (checkmark) {
+                var iconEl = checkmark.querySelector('.material-symbols-outlined');
+                if (iconEl) iconEl.innerText = isEpic ? 'emoji_events' : 'check';
+            }
+
+            // Update progress
+            if (currentEl) currentEl.innerText = currentRound;
+            if (totalEl) totalEl.innerText = '/ ' + totalRounds + ' ຮອບ';
+
+            // Calculate progress ring offset (circumference = 2 * PI * 45 = 283)
+            var progress = currentRound / totalRounds;
+            var offset = 283 - (283 * progress);
+            if (ringFill) ringFill.style.setProperty('--progress-offset', offset);
+
+            // Random encouragement
+            var phrases = isEpic ? EPIC_ENCOURAGEMENTS : LAO_ENCOURAGEMENTS;
+            var randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+            if (encourageEl) encourageEl.innerText = randomPhrase;
+            if (subtitleEl) subtitleEl.innerText = isEpic ? 'Shift Complete!' : 'Round ' + currentRound + ' Complete';
+
+            // Generate confetti
+            if (confettiContainer) {
+                confettiContainer.innerHTML = '';
+                var colors = isEpic ? ['#fbbf24', '#f59e0b', '#d97706', '#fef3c7'] : ['#10b981', '#34d399', '#6ee7b7', '#a7f3d0'];
+                for (var i = 0; i < 30; i++) {
+                    var piece = document.createElement('div');
+                    piece.className = 'confetti-piece';
+                    piece.style.left = Math.random() * 100 + '%';
+                    piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    piece.style.animationDelay = (Math.random() * 0.5) + 's';
+                    piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                    confettiContainer.appendChild(piece);
+                }
+            }
+
+            // Play celebration sound
+            playCelebrationSound(isEpic);
+
+            // Haptic feedback
+            if (navigator.vibrate) {
+                navigator.vibrate(isEpic ? [100, 50, 100, 50, 100] : [50, 30, 50]);
+            }
+
+            // Show modal
+            if (modal) modal.classList.add('active');
+
+            // Auto-dismiss after 4 seconds for regular, 6 for epic
+            setTimeout(function () {
+                closeCelebration();
+            }, isEpic ? 6000 : 4000);
+        }
+
+        function closeCelebration() {
+            var modal = document.getElementById('celebration-modal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        function playCelebrationSound(isEpic) {
+            try {
+                var ctx = new (window.AudioContext || window.webkitAudioContext)();
+                var now = ctx.currentTime;
+
+                var notes = isEpic ? [523, 659, 784, 1047] : [880, 1320];
+                var delays = isEpic ? [0, 0.12, 0.24, 0.36] : [0, 0.15];
+
+                notes.forEach(function (freq, i) {
+                    var osc = ctx.createOscillator();
+                    var gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.frequency.value = freq;
+                    osc.type = 'sine';
+                    gain.gain.setValueAtTime(0.2, now + delays[i]);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + delays[i] + 0.4);
+                    osc.start(now + delays[i]);
+                    osc.stop(now + delays[i] + 0.4);
+                });
+            } catch (e) {
+                console.log('Audio not supported');
+            }
+        }
+    </script>
+
+    <!-- External Libs -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <?!= include('i18n'); ?>
+    <!-- DEV TOOLS (Floating Action Button) -->
+    <div id="dev-tools-fab" class="fixed bottom-4 left-4 z-[100] hidden">
+        <button onclick="toggleDevTools()"
+            class="w-12 h-12 rounded-full bg-slate-800 text-white shadow-xl flex items-center justify-center hover:bg-slate-700 transition-colors border-2 border-slate-600">
+            <span class="material-symbols-outlined text-xl">bug_report</span>
+        </button>
+    </div>
+
+    <!-- DEV TOOLS PANEL -->
+    <div id="dev-tools-panel"
+        class="hidden fixed bottom-20 left-4 z-[100] w-64 bg-white rounded-xl shadow-2xl border border-slate-200 p-4">
+        <h4 class="font-bold text-slate-800 mb-3 text-sm uppercase tracking-wider">Developer Tools</h4>
+
+        <div class="space-y-2">
+            <button onclick="dev_registerGuards()"
+                class="w-full py-2 px-3 bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold hover:bg-indigo-200 text-left">
+                1. Register Test Guards
+            </button>
+            <div class="h-px bg-slate-100 my-2"></div>
+
+            <p class="text-[10px] font-bold text-slate-400 uppercase">Simulate Check-in</p>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="dev_checkin('TEST001')"
+                    class="py-2 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold border border-emerald-100 hover:bg-emerald-100">
+                    Guard 1
+                </button>
+                <button onclick="dev_checkin('TEST002')"
+                    class="py-2 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold border border-emerald-100 hover:bg-emerald-100">
+                    Guard 2
+                </button>
+            </div>
+
+            <p class="text-[10px] font-bold text-slate-400 uppercase mt-2">Simulate Patrol</p>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="dev_patrol('TEST001')"
+                    class="py-2 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold border border-blue-100 hover:bg-blue-100">
+                    Guard 1
+                </button>
+                <button onclick="dev_patrol('TEST002')"
+                    class="py-2 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold border border-blue-100 hover:bg-blue-100">
+                    Guard 2
+                </button>
+            </div>
+
+            <!-- Notification Tests -->
+            <p class="text-[10px] font-bold text-slate-400 uppercase mt-2">Test Alerts</p>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="showToast('This is a test toast', 'info')"
+                    class="py-2 bg-slate-50 text-slate-600 rounded-lg text-[10px] font-bold border border-slate-200 hover:bg-slate-100">Toast
+                    (Info)</button>
+                <button onclick="PatrolMonitor.triggerSuggestion()"
+                    class="py-2 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold border border-blue-200 hover:bg-blue-100">Suggest
+                    (S1)</button>
+                <button onclick="PatrolMonitor.triggerWarning()"
+                    class="py-2 bg-yellow-50 text-yellow-600 rounded-lg text-[10px] font-bold border border-yellow-200 hover:bg-yellow-100">Warn
+                    (S2)</button>
+                <button onclick="PatrolMonitor.triggerCritical()"
+                    class="py-2 bg-red-50 text-red-600 rounded-lg text-[10px] font-bold border border-red-200 hover:bg-red-100">Critical
+                    (S3)</button>
+            </div>
+
+            <!-- Lifecycle Tests -->
+            <p class="text-[10px] font-bold text-slate-400 uppercase mt-2">Lifecycle</p>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="showRoundComplete(4, 7)"
+                    class="py-2 bg-purple-50 text-purple-600 rounded-lg text-[10px] font-bold border border-purple-200 hover:bg-purple-100">Celebrate
+                    🎉</button>
+                <button onclick="navigateTo('checkout')"
+                    class="py-2 bg-slate-50 text-slate-600 rounded-lg text-[10px] font-bold border border-slate-200 hover:bg-slate-100">Checkout</button>
+            </div>
+
+            <button onclick="dev_resetApp()"
+                class="w-full mt-2 py-2 bg-red-100 text-red-700 rounded-lg text-[10px] font-bold border border-red-200 hover:bg-red-200">
+                ⚠️ Reset App (Clear Data)
+            </button>
+
+            <div class="mt-3 pt-2 border-t border-slate-100">
+                <input type="text" id="dev-site-id" value="VKS-A-001"
+                    class="w-full text-xs border border-slate-300 rounded px-2 py-1" placeholder="Site Code">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleDevTools() {
+            document.getElementById('dev-tools-panel').classList.toggle('hidden');
+        }
+
+        function dev_resetApp() {
+            if (confirm('Reset App? This will clear all data and reload.')) {
+                localStorage.clear();
+                window.location.reload();
+            }
+        }
+
+        function dev_registerGuards() {
+            showLoading(true);
+            google.script.run
+                .withSuccessHandler(res => {
+                    showLoading(false);
+                    alert(res.message);
+                })
+                .test_registerGuards();
+        }
+
+        function dev_checkin(guardId) {
+            const siteId = document.getElementById('dev-site-id').value;
+            showLoading(true);
+            google.script.run
+                .withSuccessHandler(res => {
+                    showLoading(false);
+                    console.log(res);
+                    if (res.success) {
+                        alert(`Checkin Success: ${guardId}\nConfig: ${res.roundsTarget} Rounds, ${res.checkpointTarget} Points`);
+
+                        // UPDATE STATE (Mimic Real Checkin)
+                        State.isOnDuty = true;
+                        State.checkinData = {
+                            locationName: res.locationName || res.locationId,
+                            shift: res.shift,
+                            shiftTiming: res.shiftTiming,
+                            isOT: res.isOT,
+                            checkinTime: new Date().toISOString()
+                        };
+                        State.currentSite = res.locationId; // Normalized ID
+
+                        // SYNC CONFIG
+                        if (res.checkpointTarget) State.pointsPerRound = res.checkpointTarget;
+                        if (res.roundsTarget) State.totalPatrols = res.roundsTarget;
+
+                        saveSessionState();
+                        updateDutyStatusUI();
+
+                    } else {
+                        alert('Error: ' + res.message);
+                    }
+                })
+                .test_performCheckin(guardId, siteId);
+        }
+
+        let pt_round_counters = { 'TEST001': 1, 'TEST002': 1 };
+
+        function dev_patrol(guardId) {
+            const siteId = document.getElementById('dev-site-id').value;
+            const pt = pt_round_counters[guardId]++;
+
+            showLoading(true);
+            google.script.run
+                .withSuccessHandler(res => {
+                    showLoading(false);
+                    if (res.success) alert(`Patrol Point ${res.checkpoint} Saved`);
+                    else alert('Error: ' + res.message);
+                })
+                .test_performPatrol(guardId, siteId, pt);
+        }
+    </script>
+
+    <?!= include('JavaScript'); ?>
+
+</body>
+
+</html>

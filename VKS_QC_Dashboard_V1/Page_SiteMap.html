@@ -1,0 +1,1514 @@
+<!-- Page_SiteMap.html - Site Map View -->
+<div id="page-site-map" class="page-content">
+
+    <!-- Header / Filter Bar -->
+    <div class="filter-bar mb-6">
+        <div class="filter-group">
+            <div class="search-input">
+                <span class="material-symbols-outlined">search</span>
+                <input type="text" id="map-search" data-i18n-placeholder="sitemap.search" placeholder="Search sites..."
+                    oninput="filterMapMarkers()">
+            </div>
+
+        </div>
+
+        <div class="header-toggle-group">
+            <button class="toggle-btn" id="sitemap-btn-sat" data-i18n="sitemap.satellite">Satellite</button>
+            <button class="toggle-btn active" id="sitemap-btn-view" data-i18n="sitemap.map_view">Map View</button>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <span class="text-xs font-semibold text-muted" id="map-site-count">0 sites displayed</span>
+            <button class="btn btn-secondary btn-sm" onclick="toggleMapFullscreen()" title="Fullscreen"
+                id="map-fullscreen-btn">
+                <span class="material-symbols-outlined">fullscreen</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="refreshMapData()">
+                <span class="material-symbols-outlined">refresh</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Map Container -->
+    <div id="map-card-container" class="card p-0 overflow-hidden mb-6"
+        style="height: calc(100vh - 220px); min-height: 500px;">
+        <div id="site-map-leaflet" class="w-full h-full relative">
+        </div>
+    </div>
+
+    <!-- Sites List (Alternative View) -->
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="card-title flex items-center gap-2">
+            <span class="material-symbols-outlined text-muted">list</span>
+            <span data-i18n="sitemap.sites_overview">Sites Overview</span>
+        </h3>
+        <button class="btn btn-ghost btn-sm" onclick="navigateTo('sites')">
+            <span data-i18n="sitemap.manage_sites">Manage Sites</span> <span
+                class="material-symbols-outlined">arrow_forward</span>
+        </button>
+    </div>
+
+    <div id="map-sites-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-8">
+        <!-- Site cards populated here -->
+    </div>
+</div>
+
+<!-- ========================================= -->
+<!-- SITE DETAIL MODAL - Premium Style        -->
+<!-- ========================================= -->
+<div id="modal-sitemap-detail"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999; align-items: center; justify-content: center; background: rgba(0,0,0,0.5);">
+    <div class="modal-overlay" onclick="closeSiteDetailModal()"
+        style="position: absolute; top: 0; left: 0; right: 0; bottom: 0;"></div>
+    <div class="modal-container"
+        style="position: relative; max-width: 720px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; background: white; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
+
+
+        <!-- Header with Gradient (Emerald Theme) -->
+        <div class="site-modal-header"
+            style="position: relative; min-height: 120px; background: linear-gradient(135deg, #059669, #047857); padding: 20px 24px; display: flex; align-items: flex-end;">
+            <button onclick="closeSiteDetailModal()"
+                style="position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; transition: background 0.2s;">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+
+            <div style="color: white; width: 100%;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <span id="detail-status-badge" class="badge badge-success"
+                                style="font-size: 10px; padding: 4px 12px; background: rgba(255,255,255,0.25); border: none;">Active</span>
+                            <span id="detail-last-visit" style="font-size: 11px; opacity: 0.9;">
+                                <span class="material-symbols-outlined"
+                                    style="font-size: 14px; vertical-align: middle;">schedule</span> 2h ago
+                            </span>
+                        </div>
+                        <h2 id="detail-site-name" style="font-size: 22px; font-weight: 700; margin-bottom: 4px;">Site
+                            Name</h2>
+                        <p id="detail-last-inspector" style="font-size: 12px; opacity: 0.85;">
+                            <span class="material-symbols-outlined"
+                                style="font-size: 14px; vertical-align: middle;">person</span> Last: N/A
+                        </p>
+                    </div>
+                    <div style="text-align: right;">
+                        <div id="detail-avg-score" style="font-size: 40px; font-weight: 800; line-height: 1;">0</div>
+                        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.8;"
+                            data-i18n="sitemap.avg_score">
+                            Avg Score</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scrollable Body -->
+        <div style="padding: 20px 24px; overflow-y: auto; flex: 1; background: #f8fafc;">
+
+            <!-- Key Stats Row -->
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px;">
+                <div class="stat-mini-card">
+                    <span class="material-symbols-outlined" style="font-size: 20px; color: #059669;">shield</span>
+                    <div id="detail-patrols" style="font-size: 24px; font-weight: 700;">0</div>
+                    <div class="stat-label" data-i18n="sitemap.patrols">Patrols</div>
+                </div>
+                <div class="stat-mini-card">
+                    <span class="material-symbols-outlined" style="font-size: 20px; color: #eab308;">hotel</span>
+                    <div id="detail-sleep" style="font-size: 24px; font-weight: 700;">0</div>
+                    <div class="stat-label" data-i18n="sitemap.sleep">Sleep</div>
+                </div>
+                <div class="stat-mini-card">
+                    <span class="material-symbols-outlined" style="font-size: 20px; color: #ef4444;">warning</span>
+                    <div id="detail-issues" style="font-size: 24px; font-weight: 700;">0</div>
+                    <div class="stat-label" data-i18n="sitemap.issues">Issues</div>
+                </div>
+                <div class="stat-mini-card">
+                    <span class="material-symbols-outlined" style="font-size: 20px; color: #3b82f6;">timer</span>
+                    <div id="detail-duration" style="font-size: 24px; font-weight: 700;">0</div>
+                    <div class="stat-label" data-i18n="sitemap.avg_min">Avg Min</div>
+                </div>
+            </div>
+
+            <!-- GUARD EQUIPMENT SECTION -->
+            <div class="site-detail-section">
+                <div class="section-header">
+                    <h4><span class="material-symbols-outlined" style="color: #059669;">checkroom</span> <span
+                            data-i18n="sitemap.guard_equipment">Guard Equipment</span>
+                    </h4>
+                    <span id="detail-equipment-overall" class="badge badge-success">0%</span>
+                </div>
+                <div id="detail-equipment-grid" class="compliance-grid">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- GUARD DISCIPLINE SECTION -->
+            <div class="site-detail-section">
+                <div class="section-header">
+                    <h4><span class="material-symbols-outlined" style="color: #10b981;">verified_user</span> <span
+                            data-i18n="sitemap.guard_discipline">Guard
+                            Discipline</span></h4>
+                    <span id="detail-discipline-overall" class="badge badge-success">0%</span>
+                </div>
+                <div id="detail-discipline-grid" class="compliance-grid">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- SITE SECURITY SECTION -->
+            <div class="site-detail-section">
+                <div class="section-header">
+                    <h4><span class="material-symbols-outlined" style="color: #3b82f6;">lock</span> <span
+                            data-i18n="sitemap.site_security">Site Security</span></h4>
+                    <span id="detail-security-overall" class="badge badge-warning">0%</span>
+                </div>
+                <div id="detail-security-grid" class="compliance-grid">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- SPECIAL ACTIVITIES -->
+            <div class="site-detail-section">
+                <h4><span class="material-symbols-outlined" style="color: #8b5cf6;">assignment</span> <span
+                        data-i18n="sitemap.special_activities">Special Activities
+                        (This Period)</span></h4>
+                <div style="display: flex; gap: 12px; margin-top: 12px;">
+                    <div class="activity-card">
+                        <span class="material-symbols-outlined" style="font-size: 24px; color: #10b981;">school</span>
+                        <div>
+                            <div id="detail-onboarding" style="font-size: 22px; font-weight: 700;">0</div>
+                            <div style="font-size: 10px; color: var(--text-muted);" data-i18n="sitemap.onboarding">
+                                Onboarding</div>
+                        </div>
+                    </div>
+                    <div class="activity-card">
+                        <span class="material-symbols-outlined"
+                            style="font-size: 24px; color: #3b82f6;">visibility</span>
+                        <div>
+                            <div id="detail-stationary" style="font-size: 22px; font-weight: 700;">0</div>
+                            <div style="font-size: 10px; color: var(--text-muted);" data-i18n="sitemap.stationary">
+                                Stationary</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RECENT ACTIVITY TIMELINE -->
+            <div class="site-detail-section">
+                <h4><span class="material-symbols-outlined" style="color: #f59e0b;">history</span> <span
+                        data-i18n="sitemap.recent_activity">Recent Activity</span></h4>
+                <div id="detail-recent-activity" class="activity-timeline">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- LATEST HANDOVER NOTE -->
+            <div id="detail-handover-section" class="site-detail-section" style="display: none;">
+                <h4><span class="material-symbols-outlined" style="color: #059669;">chat</span> <span
+                        data-i18n="sitemap.latest_handover">Latest Handover Note</span>
+                </h4>
+                <div class="handover-card">
+                    <p id="detail-handover-comment">...</p>
+                    <p id="detail-handover-meta" class="handover-meta">
+                        <span class="material-symbols-outlined">person</span> ... • <span
+                            class="material-symbols-outlined">schedule</span> ...
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div
+            style="padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; gap: 12px; background: white;">
+            <button class="btn btn-secondary" onclick="closeSiteDetailModal()" data-i18n="common.close">Close</button>
+            <button class="btn btn-primary" onclick="viewSiteFullHistory()">
+                <span class="material-symbols-outlined">history</span> <span data-i18n="sitemap.view_history">View Full
+                    History</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================= -->
+<!-- INSPECTION LOG DETAIL MODAL               -->
+<!-- ========================================= -->
+<div id="modal-inspection-log"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 10000; align-items: center; justify-content: center; background: rgba(0,0,0,0.6);">
+    <div class="modal-overlay" onclick="closeInspectionLogModal()"
+        style="position: absolute; top: 0; left: 0; right: 0; bottom: 0;"></div>
+    <div class="modal-container"
+        style="position: relative; max-width: 520px; width: 95%; max-height: 85vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; background: white; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35);">
+
+        <!-- Header -->
+        <div
+            style="position: relative; padding: 20px 24px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white;">
+            <button onclick="closeInspectionLogModal()"
+                style="position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white;">
+                <span class="material-symbols-outlined" style="font-size: 20px;">close</span>
+            </button>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span class="material-symbols-outlined" style="font-size: 28px;">assignment</span>
+                <div>
+                    <h3 style="font-size: 18px; font-weight: 700; margin: 0;" data-i18n="sitemap.log.title">Inspection
+                        Log</h3>
+                    <p id="log-modal-date" style="font-size: 12px; opacity: 0.9; margin: 0;">--</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Body -->
+        <div style="padding: 20px 24px; overflow-y: auto; flex: 1; background: #f8fafc;">
+
+            <!-- Key Info -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
+                <div
+                    style="background: white; padding: 12px; border-radius: 10px; text-align: center; border: 1px solid var(--border);">
+                    <div id="log-modal-score" style="font-size: 24px; font-weight: 700; color: #059669;">0</div>
+                    <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;"
+                        data-i18n="sitemap.log.score">Score</div>
+                </div>
+                <div
+                    style="background: white; padding: 12px; border-radius: 10px; text-align: center; border: 1px solid var(--border);">
+                    <div id="log-modal-duration" style="font-size: 18px; font-weight: 700; color: #3b82f6;">0 min</div>
+                    <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;"
+                        data-i18n="sitemap.log.duration">Duration</div>
+                </div>
+                <div
+                    style="background: white; padding: 12px; border-radius: 10px; text-align: center; border: 1px solid var(--border);">
+                    <div id="log-modal-status" style="font-size: 14px; font-weight: 600; color: #6b7280;">N/A</div>
+                    <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;"
+                        data-i18n="sitemap.log.status">Status</div>
+                </div>
+            </div>
+
+            <!-- Personnel -->
+            <div
+                style="background: white; padding: 16px; border-radius: 12px; margin-bottom: 16px; border: 1px solid var(--border);">
+                <h4
+                    style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">group</span> <span
+                        data-i18n="sitemap.log.personnel">Personnel</span>
+                </h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                        <div style="font-size: 10px; color: var(--text-muted);" data-i18n="sitemap.log.inspector">
+                            Inspector</div>
+                        <div id="log-modal-inspector" style="font-size: 13px; font-weight: 600;">--</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 10px; color: var(--text-muted);" data-i18n="sitemap.log.guard">Guard
+                        </div>
+                        <div id="log-modal-guard" style="font-size: 13px; font-weight: 600;">--</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 10px; color: var(--text-muted);" data-i18n="sitemap.log.shift">Shift
+                        </div>
+                        <div id="log-modal-shift" style="font-size: 13px; font-weight: 600;">--</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Equipment Checks -->
+            <div
+                style="background: white; padding: 16px; border-radius: 12px; margin-bottom: 16px; border: 1px solid var(--border);">
+                <h4
+                    style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">checkroom</span> <span
+                        data-i18n="sitemap.log.equipment">Equipment Checks</span>
+                </h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div
+                        style="display: flex; justify-content: space-between; padding: 8px 12px; background: #f8fafc; border-radius: 8px;">
+                        <span style="font-size: 12px;" data-i18n="sitemap.log.uniform">Uniform</span>
+                        <span id="log-modal-uniform" style="font-size: 12px; font-weight: 600;">--</span>
+                    </div>
+                    <div
+                        style="display: flex; justify-content: space-between; padding: 8px 12px; background: #f8fafc; border-radius: 8px;">
+                        <span style="font-size: 12px;" data-i18n="sitemap.log.flashlight">Flashlight</span>
+                        <span id="log-modal-flashlight" style="font-size: 12px; font-weight: 600;">--</span>
+                    </div>
+                    <div
+                        style="display: flex; justify-content: space-between; padding: 8px 12px; background: #f8fafc; border-radius: 8px;">
+                        <span style="font-size: 12px;" data-i18n="sitemap.log.defense">Defense Tools</span>
+                        <span id="log-modal-defense" style="font-size: 12px; font-weight: 600;">--</span>
+                    </div>
+                    <div
+                        style="display: flex; justify-content: space-between; padding: 8px 12px; background: #f8fafc; border-radius: 8px;">
+                        <span style="font-size: 12px;" data-i18n="sitemap.log.logbook">Logbook</span>
+                        <span id="log-modal-logbook" style="font-size: 12px; font-weight: 600;">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Site Security -->
+            <div
+                style="background: white; padding: 16px; border-radius: 12px; margin-bottom: 16px; border: 1px solid var(--border);">
+                <h4
+                    style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">lock</span> <span
+                        data-i18n="sitemap.log.security">Site Security</span>
+                </h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                    <div
+                        style="display: flex; flex-direction: column; align-items: center; padding: 10px; background: #f8fafc; border-radius: 8px;">
+                        <span style="font-size: 10px; color: var(--text-muted);"
+                            data-i18n="sitemap.log.gates">Gates</span>
+                        <span id="log-modal-gates" style="font-size: 12px; font-weight: 600;">--</span>
+                    </div>
+                    <div
+                        style="display: flex; flex-direction: column; align-items: center; padding: 10px; background: #f8fafc; border-radius: 8px;">
+                        <span style="font-size: 10px; color: var(--text-muted);"
+                            data-i18n="sitemap.log.lighting">Lighting</span>
+                        <span id="log-modal-lighting" style="font-size: 12px; font-weight: 600;">--</span>
+                    </div>
+                    <div
+                        style="display: flex; flex-direction: column; align-items: center; padding: 10px; background: #f8fafc; border-radius: 8px;">
+                        <span style="font-size: 10px; color: var(--text-muted);" data-i18n="sitemap.log.fire">Fire
+                            Safety</span>
+                        <span id="log-modal-fire" style="font-size: 12px; font-weight: 600;">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div style="background: white; padding: 16px; border-radius: 12px; border: 1px solid var(--border);">
+                <h4
+                    style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">notes</span> <span
+                        data-i18n="sitemap.log.notes">Notes & Issues</span>
+                </h4>
+                <div id="log-modal-notes" style="font-size: 13px; line-height: 1.6;">
+                    <p style="color: var(--text-muted);" data-i18n="sitemap.log.no_notes">No notes</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="padding: 16px 24px; border-top: 1px solid var(--border); background: white;">
+            <button class="btn btn-secondary w-full" onclick="closeInspectionLogModal()"
+                data-i18n="common.close">Close</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Site Detail Modal Styles */
+    .stat-mini-card {
+        background: white;
+        padding: 16px;
+        border-radius: 12px;
+        text-align: center;
+        border: 1px solid var(--border);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    /* ===== iOS SITE OVERVIEW CARDS ===== */
+    .site-ov-card {
+        display: flex;
+        background: #fff;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    }
+
+    .site-ov-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+        border-color: rgba(16, 185, 129, 0.25);
+    }
+
+    .site-ov-card:active {
+        transform: scale(0.98);
+        transition-duration: 0.1s;
+    }
+
+    .site-ov-bar {
+        width: 5px;
+        flex-shrink: 0;
+    }
+
+    .site-ov-bar.health-good {
+        background: linear-gradient(to bottom, #10b981, #059669);
+    }
+
+    .site-ov-bar.health-warn {
+        background: linear-gradient(to bottom, #f59e0b, #d97706);
+    }
+
+    .site-ov-bar.health-bad {
+        background: linear-gradient(to bottom, #ef4444, #dc2626);
+    }
+
+    .site-ov-bar.health-none {
+        background: linear-gradient(to bottom, #cbd5e1, #94a3b8);
+    }
+
+    .site-ov-body {
+        flex: 1;
+        padding: 14px 16px;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .site-ov-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .site-ov-name {
+        font-weight: 700;
+        font-size: 14px;
+        color: var(--text-primary);
+        line-height: 1.3;
+        word-break: break-word;
+    }
+
+    .site-ov-address {
+        font-size: 12px;
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .site-ov-address .material-symbols-outlined {
+        font-size: 13px;
+        flex-shrink: 0;
+    }
+
+    .site-ov-stats {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .site-ov-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 8px;
+        white-space: nowrap;
+    }
+
+    .site-ov-chip.chip-patrol {
+        background: #eff6ff;
+        color: #2563eb;
+    }
+
+    .site-ov-chip.chip-issue {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+
+    .site-ov-chip.chip-time {
+        background: #f8fafc;
+        color: #64748b;
+    }
+
+    .site-ov-chip .material-symbols-outlined {
+        font-size: 12px;
+    }
+
+    /* Score ring container */
+    .site-ov-score {
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+        position: relative;
+    }
+
+    .site-ov-score svg {
+        width: 40px;
+        height: 40px;
+        transform: rotate(-90deg);
+    }
+
+    .site-ov-score-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .site-ov-score-na {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: 600;
+        color: #94a3b8;
+        flex-shrink: 0;
+    }
+
+    .stat-mini-card .stat-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        font-weight: 600;
+    }
+
+    .site-detail-section {
+        margin-bottom: 24px;
+    }
+
+    .site-detail-section h4 {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .site-detail-section h4 .material-symbols-outlined {
+        font-size: 18px;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .section-header h4 {
+        margin-bottom: 0;
+    }
+
+    .compliance-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .compliance-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 14px;
+        background: white;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+    }
+
+    .compliance-item .label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    .compliance-item .label .material-symbols-outlined {
+        font-size: 18px;
+        color: var(--text-muted);
+    }
+
+    .compliance-item .stats {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+    }
+
+    .compliance-item .count {
+        color: var(--text-muted);
+    }
+
+    .compliance-item .rate {
+        font-weight: 600;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 10px;
+    }
+
+    .compliance-item .rate.good {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .compliance-item .rate.warning {
+        background: #fef9c3;
+        color: #854d0e;
+    }
+
+    .compliance-item .rate.bad {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .activity-card {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        background: white;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+    }
+
+    .activity-timeline {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        overflow: hidden;
+        margin-top: 12px;
+    }
+
+    .timeline-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .timeline-item:last-child {
+        border-bottom: none;
+    }
+
+    .timeline-item .icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(5, 150, 105, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #059669;
+    }
+
+    .timeline-item .icon .material-symbols-outlined {
+        font-size: 18px;
+    }
+
+    .timeline-item .content {
+        flex: 1;
+    }
+
+    .timeline-item .title {
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    .timeline-item .meta {
+        font-size: 11px;
+        color: var(--text-muted);
+    }
+
+    .timeline-item .time {
+        font-size: 10px;
+        color: var(--text-muted);
+    }
+
+    .handover-card {
+        background: linear-gradient(135deg, rgba(5, 150, 105, 0.05), rgba(5, 150, 105, 0.02));
+        border-left: 3px solid #059669;
+        padding: 16px 18px;
+        border-radius: 0 12px 12px 0;
+        margin-top: 12px;
+    }
+
+    .handover-card p:first-child {
+        font-size: 14px;
+        line-height: 1.6;
+        margin-bottom: 10px;
+    }
+
+    .handover-meta {
+        font-size: 11px;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .handover-meta .material-symbols-outlined {
+        font-size: 14px;
+    }
+</style>
+
+<script>
+    // Map state
+    let siteMapObj = null;
+    let siteMarkers = [];
+    let mapSitesData = [];
+    let markerClusterGroup = null; // For clustering
+
+    // Helper: Get badge class based on status
+    function getMapStatusBadge(status) {
+        switch (status) {
+            case 'alert': return 'badge-error';
+            case 'warning': return 'badge-warning';
+            case 'idle': return 'badge-secondary';
+            case 'active': return 'badge-success';
+            default: return 'badge-secondary';
+        }
+    }
+
+    // Helper: Get status icon
+    function getStatusIcon(status) {
+        switch (status) {
+            case 'alert': return '<span class="material-symbols-outlined text-error" style="font-size: 20px;">error</span>';
+            case 'warning': return '<span class="material-symbols-outlined text-warning" style="font-size: 20px;">warning</span>';
+            case 'idle': return '<span class="material-symbols-outlined text-muted" style="font-size: 20px;">schedule</span>';
+            case 'active': return '<span class="material-symbols-outlined text-success" style="font-size: 20px;">check_circle</span>';
+            default: return '<span class="material-symbols-outlined text-muted" style="font-size: 20px;">location_on</span>';
+        }
+    }
+
+    // Initialize Map page
+    function init_site_map() {
+        initSitemapLeaflet();
+        loadMapSites();
+
+        // Fix: Leaflet needs invalidateSize after the page transition completes
+        // because the container has zero dimensions during animation
+        setTimeout(function () {
+            if (siteMapObj) {
+                siteMapObj.invalidateSize();
+                // Re-center on Vientiane if no markers loaded yet
+                siteMapObj.setView([17.9757, 102.6331], 13);
+            }
+        }, 400);
+
+        setInterval(updateSitemapClock, 1000);
+        updateSitemapClock();
+    }
+
+    // Initialize Leaflet
+    function initSitemapLeaflet() {
+        if (siteMapObj) return;
+
+        const standardLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: ''
+        });
+
+        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: ''
+        });
+
+        siteMapObj = L.map('site-map-leaflet', {
+            center: [17.9757, 102.6331],
+            zoom: 13,
+            layers: [standardLayer],
+            zoomControl: false,
+            attributionControl: false
+        });
+
+        L.control.zoom({
+            position: 'topright'
+        }).addTo(siteMapObj);
+
+        // Map Toggle Logic
+        document.getElementById('sitemap-btn-sat').addEventListener('click', () => {
+            siteMapObj.addLayer(satelliteLayer);
+            siteMapObj.removeLayer(standardLayer);
+            document.getElementById('sitemap-btn-sat').classList.add('active');
+            document.getElementById('sitemap-btn-view').classList.remove('active');
+        });
+
+        document.getElementById('sitemap-btn-view').addEventListener('click', () => {
+            siteMapObj.addLayer(standardLayer);
+            siteMapObj.removeLayer(satelliteLayer);
+            document.getElementById('sitemap-btn-view').classList.add('active');
+            document.getElementById('sitemap-btn-sat').classList.remove('active');
+        });
+    }
+
+    function updateSitemapClock() {
+        const now = new Date();
+        const clockEl = document.getElementById('sitemap-clock');
+
+        if (clockEl) {
+            clockEl.textContent = now.getUTCHours().toString().padStart(2, '0') + ' : ' + now.getUTCMinutes().toString().padStart(2, '0') + ' : ' + now.getUTCSeconds().toString().padStart(2, '0');
+        }
+    }
+
+    // Load sites for map (with aggregated stats)
+    function loadMapSites() {
+        google.script.run
+            .withSuccessHandler(function (sites) {
+                // getSiteMapAggregatedData returns array directly, not {sites:[]}
+                mapSitesData = sites || [];
+                renderMapMarkers(mapSitesData);
+                renderSitesList(mapSitesData);
+            })
+            .withFailureHandler(function (error) {
+                console.error('Failed to load site map data:', error);
+                showToast('Failed to load site data', 'error');
+            })
+            .getSiteMapAggregatedData(30);  // 30 days lookback
+    }
+
+    // Render markers on Leaflet map with clustering
+    function renderMapMarkers(sites) {
+        if (!siteMapObj) return;
+
+        // Clear existing cluster group
+        if (markerClusterGroup) {
+            siteMapObj.removeLayer(markerClusterGroup);
+        }
+        siteMarkers = [];
+
+        // Create new cluster group with custom styling
+        markerClusterGroup = L.markerClusterGroup({
+            maxClusterRadius: 50,
+            spiderfyOnMaxZoom: true,
+            showCoverageOnHover: false,
+            zoomToBoundsOnClick: true,
+            iconCreateFunction: function (cluster) {
+                const childMarkers = cluster.getAllChildMarkers();
+
+                return L.divIcon({
+                    html: `<div style="
+                        background: #3b82f6;
+                        color: white;
+                        width: 36px;
+                        height: 36px;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-weight: 700;
+                        font-size: 14px;
+                        font-family: 'Noto Sans', sans-serif;
+                        border: 3px solid white;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                    ">${childMarkers.length}</div>`,
+                    className: 'custom-cluster-icon',
+                    iconSize: L.point(36, 36)
+                });
+            }
+        });
+
+        sites.forEach(site => {
+            if (site.lat && site.lng) {
+                const marker = L.circleMarker([site.lat, site.lng], {
+                    radius: 10,
+                    fillColor: '#3b82f6',
+                    color: "#fff",
+                    weight: 3,
+                    opacity: 1,
+                    fillOpacity: 1
+                });
+
+                // Mini stats with null safety
+                const stats = site.stats || {};
+                const patrols = stats.patrols || 0;
+                const avgScore = stats.avgScore || 0;
+                const lastVisit = site.lastVisit ? site.lastVisit.timeAgo : 'Never';
+
+                // Improved popup with mini stats
+                marker.bindPopup(`
+                    <div class="popup-content" style="font-family: 'Noto Sans', 'Noto Sans Lao', sans-serif; min-width: 200px;">
+                        <strong style="display:block; margin-bottom:6px; font-size:14px;">${escapeHtml(site.name)}</strong>
+                        <div style="font-size:11px; color:#64748b; margin-bottom:10px;">${escapeHtml(site.address || '')}</div>
+                        
+                        <div style="display:flex; gap:8px; margin:12px 0; justify-content:space-between;">
+                            <div style="text-align:center; flex:1; background:#f8fafc; padding:8px 4px; border-radius:8px;">
+                                <div style="font-size:18px; font-weight:700; color:#059669;">${patrols}</div>
+                                <div style="font-size:10px; color:#64748b;">Patrols</div>
+                            </div>
+                            <div style="text-align:center; flex:1; background:#f8fafc; padding:8px 4px; border-radius:8px;">
+                                <div style="font-size:18px; font-weight:700; color:#3b82f6;">${avgScore}</div>
+                                <div style="font-size:10px; color:#64748b;">Score</div>
+                            </div>
+                            <div style="text-align:center; flex:1; background:#f8fafc; padding:8px 4px; border-radius:8px;">
+                                <div style="font-size:12px; font-weight:600; color:#6b7280;">${lastVisit}</div>
+                                <div style="font-size:10px; color:#64748b;">Last Visit</div>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-primary btn-xs w-full" onclick="openSiteDetailFromPopup('${site.id}')">View Details</button>
+                    </div>
+                `, { maxWidth: 280 });
+
+                markerClusterGroup.addLayer(marker);
+                siteMarkers.push(marker);
+            }
+        });
+
+        siteMapObj.addLayer(markerClusterGroup);
+
+        if (siteMarkers.length > 0) {
+            const group = L.featureGroup(siteMarkers);
+            // Ensure map dimensions are correct before fitting bounds
+            siteMapObj.invalidateSize();
+            setTimeout(function () {
+                siteMapObj.invalidateSize();
+                siteMapObj.fitBounds(group.getBounds().pad(0.1));
+            }, 300);
+        }
+    }
+
+    // Helper to open modal from popup (since popup onclick can't access site object directly)
+    function openSiteDetailFromPopup(siteId) {
+        const site = mapSitesData.find(s => s.id === siteId);
+        if (site) {
+            openSiteDetailModal(site);
+        }
+    }
+
+    // Render sites list (iOS-Style Card Redesign)
+    function renderSitesList(sites) {
+        var container = document.getElementById('map-sites-list');
+        document.getElementById('map-site-count').textContent = sites.length + ' sites displayed';
+
+        if (sites.length === 0) {
+            container.innerHTML = '<div class="empty-state py-12 col-span-full"><span class="material-symbols-outlined text-4xl">search_off</span><p>No sites match your criteria</p></div>';
+            return;
+        }
+
+        container.innerHTML = sites.map(function (site) {
+            var score = (site.stats && site.stats.avgScore) ? site.stats.avgScore : 0;
+            var patrols = (site.stats && site.stats.patrols) ? site.stats.patrols : 0;
+            var issues = (site.stats && site.stats.issues) ? site.stats.issues : 0;
+            var timeAgo = (site.lastVisit && site.lastVisit.timeAgo) ? site.lastVisit.timeAgo : 'Never';
+
+            // Health tier for left bar
+            var healthClass = 'health-none';
+            if (patrols > 0) {
+                if (score >= 4) healthClass = 'health-good';
+                else if (score >= 3) healthClass = 'health-warn';
+                else healthClass = 'health-bad';
+            }
+
+            // Score ring SVG
+            var scoreHtml = '';
+            if (score > 0) {
+                var pct = (score / 5) * 100;
+                var circumference = 2 * Math.PI * 16; // r=16
+                var offset = circumference - (pct / 100) * circumference;
+                var ringColor = score >= 4 ? '#10b981' : score >= 3 ? '#f59e0b' : '#ef4444';
+                var textColor = score >= 4 ? '#15803d' : score >= 3 ? '#b45309' : '#dc2626';
+
+                scoreHtml = '<div class="site-ov-score">' +
+                    '<svg viewBox="0 0 36 36">' +
+                    '<circle cx="18" cy="18" r="16" fill="none" stroke="#f1f5f9" stroke-width="3"/>' +
+                    '<circle cx="18" cy="18" r="16" fill="none" stroke="' + ringColor + '" stroke-width="3" ' +
+                    'stroke-dasharray="' + circumference.toFixed(1) + '" ' +
+                    'stroke-dashoffset="' + offset.toFixed(1) + '" ' +
+                    'stroke-linecap="round"/>' +
+                    '</svg>' +
+                    '<div class="site-ov-score-text" style="color:' + textColor + ';">' + score.toFixed(1) + '</div>' +
+                    '</div>';
+            } else {
+                scoreHtml = '<div class="site-ov-score-na">N/A</div>';
+            }
+
+            // Issue chip (only if issues exist)
+            var issueChip = '';
+            if (issues > 0) {
+                issueChip = '<span class="site-ov-chip chip-issue">' +
+                    '<span class="material-symbols-outlined">warning</span>' +
+                    issues + (issues === 1 ? ' issue' : ' issues') +
+                    '</span>';
+            }
+
+            return '<div class="site-ov-card" onclick="focusSiteOnMap(' + site.lat + ', ' + site.lng + ', \'' + site.id + '\')">' +
+                '<div class="site-ov-bar ' + healthClass + '"></div>' +
+                '<div class="site-ov-body">' +
+                '<div class="site-ov-header">' +
+                '<div style="min-width:0;flex:1;">' +
+                '<div class="site-ov-name">' + escapeHtml(site.name) + '</div>' +
+                '<div class="site-ov-address">' +
+                '<span class="material-symbols-outlined">location_on</span>' +
+                escapeHtml(site.address || 'No address') +
+                '</div>' +
+                '</div>' +
+                scoreHtml +
+                '</div>' +
+                '<div class="site-ov-stats">' +
+                '<span class="site-ov-chip chip-patrol">' +
+                '<span class="material-symbols-outlined">shield</span>' +
+                patrols + ' patrols' +
+                '</span>' +
+                issueChip +
+                '<span class="site-ov-chip chip-time">' +
+                '<span class="material-symbols-outlined">schedule</span>' +
+                escapeHtml(timeAgo) +
+                '</span>' +
+                '</div>' +
+                '</div>' +
+                '</div>';
+        }).join('');
+    }
+
+    function focusSiteOnMap(lat, lng, id) {
+        if (!siteMapObj) return;
+        siteMapObj.setView([lat, lng], 16);
+
+        // Find the site data and open modal
+        var site = mapSitesData.find(function (s) { return s.id === id; });
+        if (site) {
+            openSiteDetailModal(site);
+        }
+
+        window.scrollTo({
+            top: 0, behavior: 'smooth'
+        });
+    }
+
+    // Filter map markers
+    function filterMapMarkers() {
+        const search = document.getElementById('map-search').value.toLowerCase();
+
+        const filtered = mapSitesData.filter(s => {
+            const matchesSearch = !search || s.name.toLowerCase().includes(search) || (s.address && s.address.toLowerCase().includes(search));
+            return matchesSearch;
+        });
+
+        renderMapMarkers(filtered);
+        renderSitesList(filtered);
+    }
+
+    // ===== FULLSCREEN MAP =====
+    var isMapFullscreen = false;
+    var _mapCardOriginalParent = null;
+    var _mapCardNextSibling = null;
+
+    function toggleMapFullscreen() {
+        var mapCard = document.getElementById('map-card-container');
+        var btn = document.getElementById('map-fullscreen-btn');
+        var icon = btn ? btn.querySelector('.material-symbols-outlined') : null;
+
+        if (!isMapFullscreen) {
+            // Save original position in DOM so we can restore later
+            _mapCardOriginalParent = mapCard.parentNode;
+            _mapCardNextSibling = mapCard.nextSibling;
+
+            // Move to body to escape any parent transform/overflow constraints
+            document.body.appendChild(mapCard);
+
+            // Enter fullscreen
+            mapCard.style.position = 'fixed';
+            mapCard.style.top = '0';
+            mapCard.style.left = '0';
+            mapCard.style.right = '0';
+            mapCard.style.bottom = '0';
+            mapCard.style.width = '100vw';
+            mapCard.style.height = '100vh';
+            mapCard.style.zIndex = '99999';
+            mapCard.style.margin = '0';
+            mapCard.style.borderRadius = '0';
+            mapCard.style.minHeight = '100vh';
+            if (icon) icon.textContent = 'fullscreen_exit';
+            isMapFullscreen = true;
+        } else {
+            // Exit fullscreen — restore to original position in DOM
+            if (_mapCardOriginalParent) {
+                if (_mapCardNextSibling) {
+                    _mapCardOriginalParent.insertBefore(mapCard, _mapCardNextSibling);
+                } else {
+                    _mapCardOriginalParent.appendChild(mapCard);
+                }
+            }
+
+            mapCard.style.position = '';
+            mapCard.style.top = '';
+            mapCard.style.left = '';
+            mapCard.style.right = '';
+            mapCard.style.bottom = '';
+            mapCard.style.width = '';
+            mapCard.style.height = 'calc(100vh - 220px)';
+            mapCard.style.zIndex = '';
+            mapCard.style.margin = '';
+            mapCard.style.borderRadius = '';
+            mapCard.style.minHeight = '500px';
+            if (icon) icon.textContent = 'fullscreen';
+            isMapFullscreen = false;
+        }
+
+        // Tell Leaflet to recalculate dimensions
+        setTimeout(function () {
+            if (siteMapObj) siteMapObj.invalidateSize();
+        }, 200);
+    }
+
+    // ESC key to exit fullscreen
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && isMapFullscreen) {
+            toggleMapFullscreen();
+        }
+    });
+
+    function getMapStatusBadge(status) {
+        const badges = {
+            'active': 'badge-success',
+            'idle': 'badge-warning',
+            'alert': 'badge-danger',
+            'offline': 'badge-default'
+        }
+
+            ;
+        return badges[status] || 'badge-default';
+    }
+
+    function refreshMapData() {
+        loadMapSites();
+        showToast('Map data refreshed', 'success');
+    }
+
+    // ===== SITE DETAIL MODAL FUNCTIONS =====
+    var currentSiteDetail = null;
+
+    function openSiteDetailModal(site) {
+        currentSiteDetail = site;
+
+        // Header
+        document.getElementById('detail-site-name').textContent = site.name || 'Unknown Site';
+        document.getElementById('detail-avg-score').textContent = (site.stats && site.stats.avgScore) || 0;
+        document.getElementById('detail-last-visit').innerHTML =
+            '<span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">schedule</span> ' +
+            (site.lastVisit ? site.lastVisit.timeAgo : 'Never');
+        document.getElementById('detail-last-inspector').innerHTML =
+            '<span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">person</span> Last: ' +
+            (site.lastVisit ? site.lastVisit.inspector : 'N/A');
+
+        // Status Badge
+        var badge = document.getElementById('detail-status-badge');
+        var statusMap = {
+            alert: { text: '🔴 Alert' },
+            warning: { text: '🟡 Warning' },
+            active: { text: '🟢 Active' },
+            idle: { text: '⚪ Idle' }
+        };
+        var sm = statusMap[site.status] || statusMap.active;
+        badge.textContent = sm.text;
+
+        // Key Stats
+        var stats = site.stats || {};
+        document.getElementById('detail-patrols').textContent = stats.patrols || 0;
+        document.getElementById('detail-sleep').textContent = stats.sleep || 0;
+        document.getElementById('detail-issues').textContent = stats.issues || 0;
+        document.getElementById('detail-duration').textContent = stats.avgDuration || 0;
+
+        // Equipment Section
+        renderComplianceSection('detail-equipment-grid', site.equipment || {}, {
+            uniform: { icon: 'checkroom', label: t('sitemap.item.uniform') },
+            flashlight: { icon: 'flashlight_on', label: t('sitemap.item.flashlight') },
+            defenseTools: { icon: 'construction', label: t('sitemap.item.safety_gear') },
+            logbook: { icon: 'menu_book', label: t('sitemap.item.logbook') }
+        });
+        var equipmentRate = site.overallEquipmentRate || 0;
+        document.getElementById('detail-equipment-overall').textContent = equipmentRate + '%';
+        updateBadgeColor('detail-equipment-overall', equipmentRate);
+
+        // Discipline Section
+        renderComplianceSection('detail-discipline-grid', site.behavior || {}, {
+            sleeping: { icon: 'hotel', label: t('sitemap.item.awake') },
+            offPosition: { icon: 'location_on', label: t('sitemap.item.on_position') }
+        }, true);
+        var disciplineRate = site.overallDisciplineRate || 0;
+        document.getElementById('detail-discipline-overall').textContent = disciplineRate + '%';
+        updateBadgeColor('detail-discipline-overall', disciplineRate);
+
+        // Security Section
+        renderComplianceSection('detail-security-grid', site.security || {}, {
+            gates: { icon: 'door_front', label: t('sitemap.item.gate') },
+            lighting: { icon: 'lightbulb', label: t('sitemap.item.lighting') },
+            fireSafety: { icon: 'local_fire_department', label: t('sitemap.item.fire_safety') },
+            camera: { icon: 'videocam', label: t('sitemap.item.cctv') }
+        });
+        var securityRate = site.overallSecurityRate || 0;
+        document.getElementById('detail-security-overall').textContent = securityRate + '%';
+        updateBadgeColor('detail-security-overall', securityRate);
+
+        // Special Activities
+        var activities = site.specialActivities || {};
+        document.getElementById('detail-onboarding').textContent = activities.onboarding || 0;
+        document.getElementById('detail-stationary').textContent = activities.stationary || 0;
+
+        // Recent Activity Timeline
+        renderRecentActivity(site.recentActivity || []);
+
+        // Handover Note
+        var handoverSection = document.getElementById('detail-handover-section');
+        if (site.lastHandover && site.lastHandover.comment) {
+            handoverSection.style.display = 'block';
+            document.getElementById('detail-handover-comment').textContent = site.lastHandover.comment;
+            document.getElementById('detail-handover-meta').innerHTML =
+                '<span class="material-symbols-outlined">person</span> ' + (site.lastHandover.guard || 'Unknown') +
+                ' • <span class="material-symbols-outlined">schedule</span> ' + formatSiteTimeAgo(site.lastHandover.timestamp);
+        } else {
+            handoverSection.style.display = 'none';
+        }
+
+        // Show modal
+        document.getElementById('modal-sitemap-detail').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSiteDetailModal() {
+        document.getElementById('modal-sitemap-detail').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    function renderComplianceSection(containerId, data, fieldsConfig, isBehavior) {
+        var container = document.getElementById(containerId);
+        container.innerHTML = '';
+
+        for (var key in fieldsConfig) {
+            var config = fieldsConfig[key];
+            var item = data[key];
+            if (!item) {
+                // Default empty item
+                item = { ok: 0, issues: 0, rate: 0, total: 0, incidents: 0 };
+            }
+
+            var total = isBehavior ? item.total : (item.ok + item.issues);
+            var issues = isBehavior ? item.incidents : item.issues;
+            var ok = isBehavior ? (item.total - item.incidents) : item.ok;
+            var rate = item.rate || 0;
+
+            var rateClass = rate >= 90 ? 'good' : (rate >= 70 ? 'warning' : 'bad');
+
+            container.innerHTML +=
+                '<div class="compliance-item">' +
+                '  <div class="label">' +
+                '    <span class="material-symbols-outlined">' + config.icon + '</span>' +
+                '    <span>' + config.label + '</span>' +
+                '  </div>' +
+                '  <div class="stats">' +
+                '    <span class="count">' + ok + '✓ / ' + issues + '✗</span>' +
+                '    <span class="rate ' + rateClass + '">' + rate + '%</span>' +
+                '  </div>' +
+                '</div>';
+        }
+    }
+
+    // Store current site's activities for click access
+    var currentSiteActivities = [];
+
+    function renderRecentActivity(activities) {
+        var container = document.getElementById('detail-recent-activity');
+        currentSiteActivities = activities || []; // Store for click handler
+
+        if (!activities || activities.length === 0) {
+            container.innerHTML =
+                '<div style="padding: 24px; text-align: center; color: var(--text-muted);">' +
+                '  <span class="material-symbols-outlined" style="font-size: 32px; opacity: 0.3; margin-bottom: 8px;">inbox</span>' +
+                '  <p style="font-size: 12px;">No recent activity</p>' +
+                '</div>';
+            return;
+        }
+
+        container.innerHTML = activities.map(function (a, index) {
+            return '<div class="timeline-item" style="cursor: pointer; transition: background 0.2s;" onclick="openInspectionLogModal(' + index + ')" onmouseover="this.style.background=\'rgba(5,150,105,0.05)\'" onmouseout="this.style.background=\'transparent\'">' +
+                '  <div class="icon"><span class="material-symbols-outlined">shield</span></div>' +
+                '  <div class="content">' +
+                '    <div class="title">' + (a.type || 'Patrol') + ' by ' + escapeHtml(a.inspector || 'Unknown') + '</div>' +
+                '    <div class="meta">Score: ' + (a.score || 0) + ' • Duration: ' + (a.duration || 0) + ' min</div>' +
+                '  </div>' +
+                '  <div class="time" style="display: flex; align-items: center; gap: 4px;">' + formatSiteTimeAgo(a.timestamp) +
+                '    <span class="material-symbols-outlined" style="font-size: 16px; color: var(--text-muted);">chevron_right</span>' +
+                '  </div>' +
+                '</div>';
+        }).join('');
+    }
+
+    // Open inspection log detail modal
+    function openInspectionLogModal(index) {
+        var activity = currentSiteActivities[index];
+        if (!activity) return;
+
+        // Populate modal
+        document.getElementById('log-modal-date').textContent = new Date(activity.timestamp).toLocaleString('en-GB', {
+            day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+        document.getElementById('log-modal-inspector').textContent = activity.inspector || 'Unknown';
+        document.getElementById('log-modal-guard').textContent = activity.guardName || 'N/A';
+        document.getElementById('log-modal-shift').textContent = activity.shift || 'N/A';
+        document.getElementById('log-modal-score').textContent = activity.score || 0;
+        document.getElementById('log-modal-duration').textContent = (activity.duration || 0) + ' min';
+        document.getElementById('log-modal-status').textContent = activity.status || 'N/A';
+
+        // Equipment checks
+        document.getElementById('log-modal-uniform').textContent = activity.uniform || 'N/A';
+        document.getElementById('log-modal-flashlight').textContent = activity.flashlight || 'N/A';
+        document.getElementById('log-modal-defense').textContent = activity.defenseTools || 'N/A';
+        document.getElementById('log-modal-logbook').textContent = activity.logbook || 'N/A';
+
+        // Site security
+        document.getElementById('log-modal-gates').textContent = activity.gates || 'N/A';
+        document.getElementById('log-modal-lighting').textContent = activity.lighting || 'N/A';
+        document.getElementById('log-modal-fire').textContent = activity.fireSafety || 'N/A';
+
+        // Notes
+        var details = activity.details || '';
+        var issues = activity.issues || '';
+        var notesHtml = '';
+        if (details) notesHtml += '<p><strong>Details:</strong> ' + escapeHtml(details) + '</p>';
+        if (issues) notesHtml += '<p style="color: #ef4444;"><strong>Issues:</strong> ' + escapeHtml(issues) + '</p>';
+        document.getElementById('log-modal-notes').innerHTML = notesHtml || '<p style="color: var(--text-muted);">No notes</p>';
+
+        // Show modal
+        document.getElementById('modal-inspection-log').style.display = 'flex';
+    }
+
+    function closeInspectionLogModal() {
+        document.getElementById('modal-inspection-log').style.display = 'none';
+    }
+
+    function updateBadgeColor(elementId, rate) {
+        var badge = document.getElementById(elementId);
+        badge.className = 'badge ' + (rate >= 90 ? 'badge-success' : (rate >= 70 ? 'badge-warning' : 'badge-danger'));
+    }
+
+    function formatSiteTimeAgo(timestamp) {
+        if (!timestamp) return 'Unknown';
+        var now = new Date();
+        var date = new Date(timestamp);
+        var diffMs = now - date;
+        var diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        var diffDays = Math.floor(diffHours / 24);
+
+        if (diffDays > 0) return diffDays + 'd ago';
+        if (diffHours > 0) return diffHours + 'h ago';
+        return 'Just now';
+    }
+
+    function viewSiteFullHistory() {
+        if (currentSiteDetail) {
+            var siteName = currentSiteDetail.name || '';
+            closeSiteDetailModal();
+            // Navigate to Inspection Logs with site pre-selected
+            navigateTo('inspection-logs');
+            // Apply filter after navigation (slight delay for page load)
+            setTimeout(function () {
+                var siteSelect = document.getElementById('inspection-site');
+                if (siteSelect) {
+                    siteSelect.value = siteName;
+                    // Update the visible trigger text
+                    var trigger = document.querySelector('[data-select-id="inspection-site"] .custom-select-value');
+                    if (trigger) trigger.textContent = siteName || 'All Sites';
+                    // Trigger filter
+                    if (typeof filterInspections === 'function') {
+                        filterInspections();
+                    }
+                }
+            }, 300);
+        }
+    }
+
+</script>
+<style>
+    /* Site Map Custom Overlays */
+    .map-time-overlay {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(8px);
+        padding: 0.75rem 1.25rem;
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-lg);
+        z-index: 1000;
+        font-weight: 700;
+        font-size: 1.25rem;
+        color: var(--text-primary);
+        pointer-events: none;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    .map-time-overlay .utc-label {
+        font-size: 0.625rem;
+        color: #10b981;
+        margin-left: 0.25rem;
+    }
+
+    .map-legend {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        background: white;
+        padding: 1rem;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        border: 1px solid var(--border);
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
+
+    .legend-item .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+    }
+
+    /* Markers */
+    .dot.active {
+        background: #10b981;
+        box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.15);
+    }
+
+    .dot.idle {
+        background: #f59e0b;
+    }
+
+    .dot.alert {
+        background: #ef4444;
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15);
+    }
+
+    .dot.offline {
+        background: #94a3b8;
+    }
+
+    /* Popup Styling */
+    .leaflet-popup-content-wrapper {
+        border-radius: var(--radius-lg);
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .leaflet-popup-content {
+        margin: 12px;
+        font-family: inherit;
+    }
+
+    .popup-content .btn {
+        margin-top: 8px;
+    }
+
+    /* Grid cards refinement */
+    .hover-shadow:hover {
+        box-shadow: var(--shadow-md);
+        border-color: var(--primary);
+    }
+</style>

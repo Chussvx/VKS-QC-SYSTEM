@@ -1,0 +1,730 @@
+<!-- Page_Complaints.html - Complaints Management -->
+<div id="page-complaints" class="page-content">
+
+    <!-- KPI Cards Row -->
+    <div class="kpi-grid mb-4">
+        <div class="kpi-card kpi-card-strip kpi-blue">
+            <div class="kpi-header">
+                <span class="kpi-label" data-i18n="complaints.total">Total Cases</span>
+                <span class="kpi-icon bg-blue"><span class="material-symbols-outlined">folder_shared</span></span>
+            </div>
+            <div class="kpi-value" id="complaints-total">--</div>
+            <span class="kpi-sublabel" data-i18n="complaints.lifetime">Lifetime</span>
+        </div>
+        <div class="kpi-card kpi-card-strip kpi-red">
+            <div class="kpi-header">
+                <span class="kpi-label" data-i18n="complaints.waiting">Waiting</span>
+                <span class="kpi-icon bg-red"><span class="material-symbols-outlined">hourglass_empty</span></span>
+            </div>
+            <div class="kpi-value" id="complaints-waiting">--</div>
+            <span class="kpi-sublabel text-danger" data-i18n="complaints.pending_response">Pending response</span>
+        </div>
+        <div class="kpi-card kpi-card-strip kpi-orange">
+            <div class="kpi-header">
+                <span class="kpi-label" data-i18n="complaints.in_progress">In Progress</span>
+                <span class="kpi-icon bg-orange"><span class="material-symbols-outlined">sync_problem</span></span>
+            </div>
+            <div class="kpi-value" id="complaints-progress">--</div>
+            <span class="kpi-sublabel" data-i18n="complaints.reviewing">Reviewing</span>
+        </div>
+        <div class="kpi-card kpi-card-strip kpi-green">
+            <div class="kpi-header">
+                <span class="kpi-label" data-i18n="complaints.resolved">Resolved</span>
+                <span class="kpi-icon bg-green"><span class="material-symbols-outlined">thumb_up_alt</span></span>
+            </div>
+            <div class="kpi-value" id="complaints-resolved">--%</div>
+            <span class="kpi-sublabel text-success" data-i18n="complaints.resolution_rate">Resolution rate</span>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="filter-group">
+            <div class="search-input w-56">
+                <span class="material-symbols-outlined">search</span>
+                <input type="text" id="complaint-search" data-i18n-placeholder="complaints.search"
+                    placeholder="Search Case ID / Reporter..." onkeyup="filterComplaints()">
+            </div>
+            <div class="custom-select w-40" data-select-id="complaint-category" data-onchange="filterComplaints">
+                <button class="custom-select-trigger" onclick="toggleSelect('complaint-category')">
+                    <span class="custom-select-value" data-i18n="complaints.category_all">Category: All</span>
+                    <span class="material-symbols-outlined">expand_more</span>
+                </button>
+                <div class="custom-select-menu">
+                    <div class="custom-select-item selected" data-value=""
+                        onclick="selectOption('complaint-category', '', t('complaints.category_all'))"><span
+                            data-i18n="complaints.category_all">Category: All</span></div>
+                    <div class="custom-select-item" data-value="service"
+                        onclick="selectOption('complaint-category', 'service', t('complaint.cat.service'))"><span
+                            data-i18n="complaint.cat.service">Service Quality</span></div>
+                    <div class="custom-select-item" data-value="behavior"
+                        onclick="selectOption('complaint-category', 'behavior', t('complaint.cat.behavior'))"><span
+                            data-i18n="complaint.cat.behavior">Guard Behavior</span></div>
+                    <div class="custom-select-item" data-value="billing"
+                        onclick="selectOption('complaint-category', 'billing', t('complaint.cat.billing'))"><span
+                            data-i18n="complaint.cat.billing">Billing</span></div>
+                    <div class="custom-select-item" data-value="punctuality"
+                        onclick="selectOption('complaint-category', 'punctuality', t('complaint.cat.punctuality'))">
+                        <span data-i18n="complaint.cat.punctuality">Punctuality</span>
+                    </div>
+                    <div class="custom-select-item" data-value="uniform"
+                        onclick="selectOption('complaint-category', 'uniform', t('complaint.cat.uniform'))"><span
+                            data-i18n="complaint.cat.uniform">Uniform</span></div>
+                </div>
+                <input type="hidden" name="complaint-category" value="">
+            </div>
+            <div class="custom-select w-36" data-select-id="complaint-priority" data-onchange="filterComplaints">
+                <button class="custom-select-trigger" onclick="toggleSelect('complaint-priority')">
+                    <span class="custom-select-value" data-i18n="complaints.priority_all">Priority: All</span>
+                    <span class="material-symbols-outlined">expand_more</span>
+                </button>
+                <div class="custom-select-menu">
+                    <div class="custom-select-item selected" data-value=""
+                        onclick="selectOption('complaint-priority', '', t('complaints.priority_all'))"><span
+                            data-i18n="complaints.priority_all">Priority: All</span></div>
+                    <div class="custom-select-item" data-value="p1"
+                        onclick="selectOption('complaint-priority', 'p1', t('incident.priority.p1'))"><span
+                            data-i18n="incident.priority.p1">P1 - Critical</span></div>
+                    <div class="custom-select-item" data-value="p2"
+                        onclick="selectOption('complaint-priority', 'p2', t('incident.priority.p2'))"><span
+                            data-i18n="incident.priority.p2">P2 - High</span></div>
+                    <div class="custom-select-item" data-value="p3"
+                        onclick="selectOption('complaint-priority', 'p3', t('incident.priority.p3'))"><span
+                            data-i18n="incident.priority.p3">P3 - Medium</span></div>
+                    <div class="custom-select-item" data-value="p4"
+                        onclick="selectOption('complaint-priority', 'p4', t('incident.priority.p4'))"><span
+                            data-i18n="incident.priority.p4">P4 - Low</span></div>
+                </div>
+                <input type="hidden" name="complaint-priority" value="">
+            </div>
+            <div class="custom-select w-36" data-select-id="complaint-status" data-onchange="filterComplaints">
+                <button class="custom-select-trigger" onclick="toggleSelect('complaint-status')">
+                    <span class="custom-select-value" data-i18n="complaints.status_all">Status: All</span>
+                    <span class="material-symbols-outlined">expand_more</span>
+                </button>
+                <div class="custom-select-menu">
+                    <div class="custom-select-item selected" data-value=""
+                        onclick="selectOption('complaint-status', '', t('complaints.status_all'))"><span
+                            data-i18n="complaints.status_all">Status: All</span></div>
+                    <div class="custom-select-item" data-value="waiting"
+                        onclick="selectOption('complaint-status', 'waiting', t('status.waiting'))"><span
+                            data-i18n="status.waiting">Waiting</span></div>
+                    <div class="custom-select-item" data-value="in_progress"
+                        onclick="selectOption('complaint-status', 'in_progress', t('status.in_progress'))"><span
+                            data-i18n="status.in_progress">In Progress</span></div>
+                    <div class="custom-select-item" data-value="resolved"
+                        onclick="selectOption('complaint-status', 'resolved', t('status.resolved'))"><span
+                            data-i18n="status.resolved">Resolved</span></div>
+                    <div class="custom-select-item" data-value="closed"
+                        onclick="selectOption('complaint-status', 'closed', t('status.closed'))"><span
+                            data-i18n="status.closed">Closed</span></div>
+                </div>
+                <input type="hidden" name="complaint-status" value="">
+            </div>
+        </div>
+        <div class="flex items-center gap-3 ml-auto">
+            <button id="btn-new-complaint" class="btn btn-primary btn-sm"
+                onclick="console.log('Inline click fired'); openComplaintForm()">
+                <span class="material-symbols-outlined">add</span>
+                <span data-i18n="complaints.new_case">New Case</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Complaints Table -->
+    <div class="card p-0 overflow-hidden">
+        <div class="table-container">
+            <table class="data-table" id="complaints-table">
+                <thead>
+                    <tr>
+                        <th data-i18n="complaints.col.date_logged">Date Logged</th>
+                        <th data-i18n="complaints.col.customer">Reporter</th>
+                        <th data-i18n="complaints.col.site">Site</th>
+                        <th data-i18n="complaints.col.category">Category</th>
+                        <th data-i18n="complaints.col.priority">Priority</th>
+                        <th data-i18n="complaints.col.status">Status</th>
+                        <th data-i18n="complaints.col.due_date">Due Date</th>
+                        <th class="text-right"></th>
+                    </tr>
+                </thead>
+                <tbody id="complaints-tbody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex items-center justify-between mt-4">
+        <p class="text-sm text-muted">
+            <span data-i18n="pagination.showing_of">Showing</span> <strong id="complaint-showing">0</strong> <span
+                data-i18n="pagination.of">of</span> <strong id="complaint-count">0</strong> <span
+                data-i18n="complaints.records">complaints</span>
+        </p>
+        <div class="flex items-center gap-2">
+            <button class="btn btn-secondary btn-sm" id="complaint-prev" onclick="prevComplaintPage()" disabled
+                data-i18n="pagination.prev">Previous</button>
+            <button class="btn btn-secondary btn-sm" id="complaint-next" onclick="nextComplaintPage()"
+                data-i18n="pagination.next">Next</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+
+    // Complaints page state
+    let complaintsData = [];
+    let complaintsFiltered = [];
+    let complaintPage = 0;
+    const COMPLAINTS_PER_PAGE = 10;
+    let lastComplaintSignal = 0;
+    let complaintPoller = null;
+
+    // ComplaintCache - In-memory cache for faster page loads (Amazon-style)
+    const ComplaintCache = {
+        data: null,
+        timestamp: 0,
+        maxAge: 60000,
+
+        get: function () {
+            if (this.data && (Date.now() - this.timestamp) < this.maxAge) {
+                console.log('[ComplaintCache] HIT');
+                return this.data;
+            }
+            console.log('[ComplaintCache] MISS');
+            return null;
+        },
+
+        set: function (data) {
+            this.data = data;
+            this.timestamp = Date.now();
+            console.log('[ComplaintCache] SET');
+        },
+
+        clear: function () {
+            this.data = null;
+            this.timestamp = 0;
+        }
+    };
+
+    // Initialize Complaints page
+    function init_complaints() {
+        // Robust listener attachment
+        const btnNewComp = document.getElementById('btn-new-complaint');
+        if (btnNewComp) {
+            btnNewComp.onclick = function (e) {
+                e.preventDefault();
+                openComplaintForm();
+            };
+        }
+        // Elite Standard: Render memory data instantly if it exists
+        if (complaintsData && complaintsData.length > 0) {
+            console.log('[Complaints] Memory Entry Render');
+            renderComplaintsTable();
+        }
+
+        startComplaintSignalListener();
+
+        // If memory is empty, we MUST fetch. If not, only fetch if signal changed.
+        if (complaintsData.length === 0) {
+            loadComplaints();
+        } else {
+            checkComplaintUpdate();
+        }
+    }
+
+    // Load complaints
+    function loadComplaints() {
+        // Check cache first (Amazon-style instant loading)
+        const cached = ComplaintCache.get();
+        if (cached) {
+            processComplaintsData(cached);
+            return;
+        }
+
+        // Elite Standard: Render memory data instantly if it exists
+        if (complaintsData && complaintsData.length > 0) {
+            console.log('[Complaints] Memory First Render');
+            renderComplaintsTable();
+            showSync();
+        } else {
+            showTableLoading('complaints-tbody', 9);
+        }
+
+        google.script.run
+            .withSuccessHandler(function (data) {
+                hideSync();
+
+                // Guard against null response
+                if (!data) {
+                    console.error('getComplaints returned null');
+                    showTableError('complaints-tbody', 9, 'No data received from server');
+                    return;
+                }
+
+                // Cache for next time
+                ComplaintCache.set(data);
+                processComplaintsData(data);
+            })
+            .withFailureHandler(function (error) {
+                hideSync();
+                // Error Persistence: Only show error if we have NO data
+                if (!complaintsData || complaintsData.length === 0) {
+                    showTableError('complaints-tbody', 9, 'Failed to load: ' + error.message);
+                } else {
+                    showToast('Sync failed: ' + error.message, 'error');
+                }
+            })
+            .getComplaints({});
+    }
+
+    // Process complaints data (from cache or server)
+    function processComplaintsData(data) {
+        complaintsData = data.complaints || [];
+        complaintsFiltered = [...complaintsData];
+        complaintPage = 0;
+
+        // Update KPIs (with null-safe access)
+        var stats = data.stats || {};
+        document.getElementById('complaints-total').textContent = stats.total || 0;
+        document.getElementById('complaints-waiting').textContent = stats.waiting || 0;
+        document.getElementById('complaints-progress').textContent = stats.inProgress || 0;
+        document.getElementById('complaints-resolved').textContent = (stats.resolvedRate || 0) + '%';
+
+        renderComplaintsTable();
+        updateComplaintPagination();
+    }
+
+    // Filter complaints
+    function filterComplaints() {
+        const search = document.getElementById('complaint-search').value.toLowerCase();
+        const category = document.getElementById('complaint-category').value;
+        const priority = document.getElementById('complaint-priority').value;
+        const status = document.getElementById('complaint-status').value;
+
+        complaintsFiltered = complaintsData.filter(c => {
+            const matchSearch = !search || c.id.toLowerCase().includes(search) ||
+                (c.customerName && c.customerName.toLowerCase().includes(search));
+            const matchCategory = !category || c.category === category;
+            const matchPriority = !priority || c.priority === priority;
+            const matchStatus = !status || c.status === status;
+
+            return matchSearch && matchCategory && matchPriority && matchStatus;
+        });
+
+        complaintPage = 0;
+        renderComplaintsTable();
+        updateComplaintPagination();
+    }
+
+    // Pagination
+    function updateComplaintPagination() {
+        const total = complaintsFiltered.length;
+        const start = complaintPage * COMPLAINTS_PER_PAGE + 1;
+        const end = Math.min((complaintPage + 1) * COMPLAINTS_PER_PAGE, total);
+
+        document.getElementById('complaint-showing').textContent = total > 0 ? `${start}-${end}` : '0';
+        document.getElementById('complaint-count').textContent = total;
+        document.getElementById('complaint-prev').disabled = complaintPage === 0;
+        document.getElementById('complaint-next').disabled = end >= total;
+    }
+
+    function prevComplaintPage() {
+        if (complaintPage > 0) { complaintPage--; renderComplaintsTable(); updateComplaintPagination(); }
+    }
+
+    function nextComplaintPage() {
+        if ((complaintPage + 1) * COMPLAINTS_PER_PAGE < complaintsFiltered.length) {
+            complaintPage++; renderComplaintsTable(); updateComplaintPagination();
+        }
+    }
+
+    // Render table
+    function renderComplaintsTable() {
+        const tbody = document.getElementById('complaints-tbody');
+        const start = complaintPage * COMPLAINTS_PER_PAGE;
+        const pageData = complaintsFiltered.slice(start, start + COMPLAINTS_PER_PAGE);
+
+        if (pageData.length === 0) {
+            tbody.innerHTML = `
+      <tr><td colspan="9" class="text-center py-8 text-muted">
+        <span class="material-symbols-outlined text-5xl mb-2">report_problem</span>
+        <p>${t('complaint.no_data')}</p>
+      </td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = pageData.map(c => `
+    <tr class="clickable-row" onclick="openComplaintDetail('${c.id}')">
+      <td>
+        <div><p class="font-medium">${c.dateDisplay}</p><p class="text-xs text-muted">${c.timeDisplay}</p></div>
+      </td>
+      <td class="font-medium">${escapeHtml(c.customerName)}</td>
+      <td>${escapeHtml(c.siteName)}</td>
+      <td>
+        <div class="flex items-center gap-2">
+          <span class="complaint-icon complaint-${c.category}">
+            <span class="material-symbols-outlined text-lg">${getComplaintIcon(c.category)}</span>
+          </span>
+          <span>${formatComplaintCategory(c.category)}</span>
+        </div>
+      </td>
+      <td>
+        <div class="flex items-center gap-1.5">
+          <span class="priority-dot priority-${c.priority}"></span>
+          <span class="font-medium">${formatPriority(c.priority)}</span>
+        </div>
+      </td>
+      <td>${getStatusBadge(c.status)}</td>
+      <td class="${c.isOverdue ? 'text-danger font-medium' : 'text-muted'}">${c.dueDisplay || '-'}</td>
+      <td class="text-right">
+        <span class="material-symbols-outlined text-muted">chevron_right</span>
+      </td>
+    </tr>
+  `).join('');
+    }
+
+    // Helper functions
+    function getComplaintIcon(cat) {
+        const icons = {
+            'service': 'sentiment_dissatisfied', 'behavior': 'badge',
+            'billing': 'receipt_long', 'punctuality': 'schedule', 'uniform': 'checkroom'
+        };
+        return icons[cat] || 'help';
+    }
+
+    function formatComplaintCategory(cat) {
+        return t('complaint.cat.' + cat, cat);
+    }
+
+    function formatPriority(p) {
+        const names = {
+            'p1': t('incident.priority.p1'),
+            'p2': t('incident.priority.p2'),
+            'p3': t('incident.priority.p3'),
+            'p4': t('incident.priority.p4')
+        };
+        return names[p] || p;
+    }
+
+    function getSeverityBadge(sev) {
+        const badges = {
+            'critical': '<span class="badge badge-danger-solid">' + t('status.critical') + '</span>',
+            'high': '<span class="badge badge-warning-solid">' + t('status.high') + '</span>',
+            'medium': '<span class="badge badge-info-solid">' + t('status.medium') + '</span>',
+            'low': '<span class="badge badge-default">' + t('status.low') + '</span>'
+        };
+        return badges[sev] || badges['low'];
+    }
+
+    function getStatusBadge(status) {
+        const badges = {
+            'waiting': '<span class="badge badge-danger">' + t('status.waiting') + '</span>',
+            'in_progress': '<span class="badge badge-info">' + t('status.in_progress') + '</span>',
+            'resolved': '<span class="badge badge-success">' + t('status.resolved') + '</span>',
+            'closed': '<span class="badge badge-default">' + t('status.closed') + '</span>'
+        };
+        return badges[status] || badges['waiting'];
+    }
+
+    // Open complaint form (NEW comprehensive 2-tab form)
+    function openComplaintForm(complaintId) {
+        // Open modal with NEW comprehensive form template
+        openModal('complaint-form-new');
+
+        // Reset to first tab
+        if (typeof switchComplaintTab === 'function') {
+            switchComplaintTab('customer');
+        }
+
+        // Set title using i18n key (so it translates)
+        var titleKey = complaintId ? 'complaint.form.edit_title' : 'complaint.form.title';
+        var titleEl = document.querySelector('#modal-container .modal-title');
+        if (titleEl) {
+            titleEl.setAttribute('data-i18n', titleKey);
+            // Use TranslationManager as single source of truth
+            var lang = (typeof TranslationManager !== 'undefined' && TranslationManager.currentLang)
+                ? TranslationManager.currentLang
+                : (localStorage.getItem('vks-app-language') || 'en');
+            if (typeof I18N !== 'undefined' && I18N[lang] && I18N[lang][titleKey]) {
+                titleEl.textContent = I18N[lang][titleKey];
+            } else {
+                titleEl.textContent = complaintId ? 'Edit Complaint' : 'Log New Complaint';
+            }
+        }
+
+        var form = document.getElementById('form-complaint-new');
+        if (form) {
+            form.reset();
+            form.dataset.complaintId = complaintId || '';
+        }
+
+        // Find complaint data if editing
+        var c = null;
+        if (complaintId) {
+            for (var i = 0; i < complaintsData.length; i++) {
+                if (complaintsData[i].id === complaintId) {
+                    c = complaintsData[i];
+                    break;
+                }
+            }
+        }
+
+        // Load site options (needs siteId for pre-selection)
+        var siteIdToSelect = c ? c.siteId : null;
+        // Initialize premium custom controls
+        if (typeof initComplaintFormControls === 'function') {
+            initComplaintFormControls();
+        }
+
+        // Load site options into VKS dropdown (needs siteId for pre-selection)
+        var siteIdToSelect = c ? c.siteId : null;
+        loadSiteOptionsVKS('complaint-site-dropdown', siteIdToSelect);
+
+        // Initialize form (auto-fill recorded by)
+        if (typeof initComplaintForm === 'function') {
+            initComplaintForm();
+        }
+
+        // If editing, populate all fields
+        if (c) {
+            console.log('Populating form with complaint data:', c);
+
+            // Tab 1: Customer Info
+            var customerName = document.getElementById('complaint-customer-new');
+            var customerPhone = document.getElementById('complaint-phone-new');
+            var customerType = document.getElementById('complaint-customer-type-new');
+
+            if (customerName) customerName.value = c.customerName || '';
+            if (customerPhone) customerPhone.value = c.customerPhone || '';
+            if (c.customerType) setVKSDropdownValue('complaint-type-dropdown', c.customerType);
+
+            // Tab 2: Case Details  
+            if (c.category) setVKSDropdownValue('complaint-category-dropdown', c.category);
+            var description = document.getElementById('complaint-description-new');
+            // Guard: Load options for this site, then select
+            if (c.siteId) {
+                loadGuardOptionsVKS('complaint-guard-dropdown', c.siteId, c.guardId);
+            }
+
+            var notifiedBy = document.getElementById('complaint-notified-by-new');
+            if (description) description.value = c.description || '';
+            if (notifiedBy) notifiedBy.value = c.notifiedBy || '';
+
+            // Customer email
+            var emailField = document.getElementById('complaint-email-new');
+            if (emailField) emailField.value = c.customerEmail || '';
+
+            // Complaint datetime (flatpickr)
+            if (c.timestamp) {
+                try {
+                    var dt = new Date(c.timestamp);
+                    var fp = window._vksFlatpickrs && window._vksFlatpickrs['complaint-datetime-new'];
+                    if (fp) fp.setDate(dt);
+                } catch (e) { console.warn('Could not parse timestamp:', e); }
+            }
+
+            // Status dropdown
+            if (c.status) setVKSDropdownValue('complaint-status-dropdown', c.status);
+
+            // Recorded by (restore, don't overwrite with current user)
+            var recordedByField = document.getElementById('complaint-recorded-by-new');
+            if (recordedByField && c.recordedBy) recordedByField.value = c.recordedBy;
+
+            // Evidence links
+            var evidenceField = document.getElementById('complaint-evidence-new');
+            if (evidenceField) evidenceField.value = c.evidence || '';
+
+            // Resolution notes
+            var resolutionField = document.getElementById('complaint-resolution-notes-new');
+            if (resolutionField) resolutionField.value = c.resolution || '';
+
+            // Follow-up date (flatpickr)
+            if (c.followUpDate) {
+                try {
+                    var fdt = new Date(c.followUpDate);
+                    var fpf = window._vksFlatpickrs && window._vksFlatpickrs['complaint-followup-new'];
+                    if (fpf) fpf.setDate(fdt);
+                } catch (e) { console.warn('Could not parse followUpDate:', e); }
+            }
+
+            // Set priority radio
+            var priorityRadio = document.querySelector('input[name="complaint-priority-new"][value="' + c.priority + '"]');
+            if (priorityRadio) priorityRadio.checked = true;
+        }
+    }
+
+    // Open complaint detail (NEW comprehensive view)
+    function openComplaintDetail(complaintId) {
+        var c = null;
+        for (var i = 0; i < complaintsData.length; i++) {
+            if (complaintsData[i].id === complaintId) {
+                c = complaintsData[i];
+                break;
+            }
+        }
+        if (!c) {
+            showToast('Complaint not found', 'error');
+            return;
+        }
+
+        // Store for status updates
+        window.currentComplaintId = complaintId;
+
+        // Open modal FIRST
+        openModal('complaint-detail-new');
+
+        // Populate Fields
+        setCompText('view-comp-id', c.id);
+        setCompText('view-comp-site', c.siteName || 'Unknown');
+        setCompText('view-comp-customer', c.customerName || '-');
+        setCompText('view-comp-customer-type', c.customerType || '-');
+        setCompText('view-comp-phone', c.customerPhone || '-');
+
+        // Dates
+        setCompText('view-comp-time', (c.dateDisplay || '-') + ' ' + (c.timeDisplay || ''));
+        setCompText('view-comp-due-date', c.dueDate ? new Date(c.dueDate).toLocaleDateString() : '-');
+        setCompText('view-comp-completion-date', c.completionDate ? new Date(c.completionDate).toLocaleString() : '-');
+
+        // Case Info
+        setCompText('view-comp-category', c.category || '-');
+        setCompText('view-comp-severity', c.severity || '-'); // Will badge/color via helper?
+        // Guard
+        setCompText('view-comp-guard', c.guardId || '-');
+
+        // Details
+        setCompText('view-comp-description', c.description || 'No description.');
+
+        // Workflow
+        setCompText('view-comp-notified-by', c.notifiedBy || '-');
+        setCompText('view-comp-recorded-by', c.recordedBy || '-');
+        setCompText('view-comp-assigned-to', c.assignedTo || '-');
+
+        // Resolution
+        setCompText('view-comp-resolution', c.resolution || '-');
+        setCompText('view-comp-discipline', c.disciplinaryAction || '-');
+        setCompText('view-comp-approved-by', c.approvedBy || '-');
+
+        // Badges
+        updateCompPriorityBadge(c.priority);
+        updateCompStatusBadge(c.status);
+        updateCompSeverityBadge(c.severity); // Optional distinct styling if needed
+
+        // Setup Resolve/Edit Button
+        var btn = document.getElementById('btn-comp-resolve');
+        if (btn) {
+            btn.onclick = function () {
+                closeModal();
+                openComplaintForm(c.id); // Open form to edit/resolve
+            };
+        }
+    }
+
+    // Helper to set text content
+    function setCompText(id, text) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = text;
+    }
+
+    function updateCompPriorityBadge(priority) {
+        var el = document.getElementById('view-comp-priority');
+        if (!el) return;
+        var p = (priority || '').toLowerCase();
+        // Priority styling (p1=critical, etc or high/med/low)
+        // Adjusting based on likely values: high, medium, low
+        el.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide ';
+
+        if (p.includes('high') || p === 'p1') el.className += 'bg-red-100 text-red-800';
+        else if (p.includes('medium') || p === 'p2') el.className += 'bg-orange-100 text-orange-800';
+        else if (p.includes('low') || p === 'p3') el.className += 'bg-blue-100 text-blue-800';
+        else el.className += 'bg-gray-100 text-gray-800';
+
+        el.textContent = priority || 'NORMAL';
+    }
+
+    function updateCompStatusBadge(status) {
+        var el = document.getElementById('view-comp-status');
+        if (!el) return;
+        var s = (status || '').toLowerCase();
+        el.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold capitalize ';
+        if (s === 'waiting') el.className += 'bg-gray-100 text-gray-800';
+        else if (s === 'in_progress') el.className += 'bg-blue-100 text-blue-800';
+        else if (s === 'resolved') el.className += 'bg-green-100 text-green-800';
+        else if (s === 'closed') el.className += 'bg-gray-800 text-white';
+        el.textContent = status || 'Waiting';
+    }
+
+    function updateCompSeverityBadge(severity) {
+        var el = document.getElementById('view-comp-severity');
+        if (!el) return;
+        var sev = (severity || '').toLowerCase();
+        el.className = 'px-2 py-0.5 rounded text-xs font-medium uppercase ';
+        if (sev === 'critical') el.className += 'bg-red-50 text-red-700 border border-red-100';
+        else if (sev === 'high') el.className += 'bg-orange-50 text-orange-700 border border-orange-100';
+        else if (sev === 'medium') el.className += 'bg-yellow-50 text-yellow-700 border border-yellow-100';
+        else el.className += 'bg-green-50 text-green-700 border border-green-100';
+        el.textContent = severity || 'Low';
+    }
+
+    // Export complaints
+    function exportComplaints() {
+        showToast('Exporting complaints...', 'info');
+        google.script.run.withSuccessHandler(function (url) { window.open(url, '_blank'); }).exportComplaints({});
+    }
+
+    // REAL-TIME SIGNALING
+    function startComplaintSignalListener() {
+        if (complaintPoller) clearInterval(complaintPoller);
+        complaintPoller = setInterval(checkComplaintUpdate, 10000);
+    }
+
+    function checkComplaintUpdate() {
+        if (currentPage !== 'complaints') return;
+
+        google.script.run
+            .withSuccessHandler(function (signals) {
+                if (!signals) return;
+
+                // Check Master signal (Consolidated complaints)
+                if (signals.lastMaster > lastComplaintSignal) {
+                    if (lastComplaintSignal !== 0) {
+                        console.log('[Complaints] Signal update! Refreshing...');
+                        loadComplaints();
+                        showToast('Complaints updated', 'info');
+                    } else {
+                        loadComplaints();
+                    }
+                    lastComplaintSignal = signals.lastMaster;
+                } else if (lastComplaintSignal === 0) {
+                    loadComplaints();
+                }
+            })
+            .getUpdateSignals();
+    }
+
+    function getSeverityBadge(sev) {
+        const badges = {
+            'critical': '<span class="badge badge-danger-solid">Critical</span>',
+            'high': '<span class="badge badge-warning-solid">High</span>',
+            'medium': '<span class="badge badge-info-solid">Medium</span>',
+            'low': '<span class="badge badge-default">Low</span>'
+        };
+        return badges[sev] || badges['low'];
+    }
+
+    function getStatusBadge(status) {
+        const badges = {
+            'waiting': '<span class="badge badge-danger">Waiting</span>',
+            'in_progress': '<span class="badge badge-info">In Progress</span>',
+            'resolved': '<span class="badge badge-success">Resolved</span>',
+            'closed': '<span class="badge badge-default">Closed</span>'
+        };
+        return badges[status] || badges['waiting'];
+    }
+
+    // Expose functions globally for onclick handlers
+    window.openComplaintForm = openComplaintForm;
+    window.openComplaintDetail = openComplaintDetail;
+    window.init_complaints = init_complaints;
+
+</script>

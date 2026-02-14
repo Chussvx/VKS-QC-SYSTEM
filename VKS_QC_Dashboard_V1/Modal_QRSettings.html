@@ -1,0 +1,170 @@
+<!-- Modal_QRSettings.html - QR Generator and Settings modals -->
+<!-- Contains: Add Checkpoint, QR Preview, Print Layout, Change Password, Clear Cache, Logout -->
+
+<!-- Modal: Add/Edit Checkpoint -->
+<div id="modal-checkpoint-form" class="modal" style="display: none;" role="dialog" aria-modal="true"
+    aria-labelledby="modal-cp-title">
+    <div class="modal-overlay" onclick="closeModal()"></div>
+    <div class="modal-container modal-md">
+        <div class="modal-header">
+            <h3 class="modal-title" id="modal-cp-title" data-i18n="qr.modal.add">Add New Checkpoint</h3>
+            <button class="btn-close" onclick="closeModal()" aria-label="Close">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <form id="form-checkpoint" onsubmit="saveCheckpoint(event)">
+            <div class="modal-body space-y-4">
+                <!-- Hidden field for site ID -->
+                <input type="hidden" id="cp-site-id" name="siteId">
+                <input type="hidden" id="cp-id" name="id">
+
+                <!-- Standard Location (Dropdown) -->
+                <div class="form-group">
+                    <label class="form-label" for="cp-standard-location" data-i18n="qr.modal.select_location">Standard
+                        Location</label>
+                    <div class="custom-select w-full" data-select-id="cp-standard-location"
+                        data-onchange="onLocationSelect">
+                        <button type="button" class="custom-select-trigger"
+                            onclick="toggleSelect('cp-standard-location')">
+                            <span class="custom-select-value">Select Location...</span>
+                            <span class="material-symbols-outlined ml-auto">expand_more</span>
+                        </button>
+                        <div class="custom-select-menu" id="cp-standard-location-menu">
+                            <!-- Options populated by JS -->
+                            <div class="custom-select-item" data-value=""
+                                onclick="selectOption('cp-standard-location', '', 'Select Location...')">Select
+                                Location...</div>
+                        </div>
+                        <input type="hidden" id="cp-standard-location" name="standard-location">
+                    </div>
+                </div>
+
+                <!-- Checkpoint Name (Required) -->
+                <div class="form-group">
+                    <label class="form-label" for="cp-name">
+                        <span data-i18n="qr.modal.name">Checkpoint Name</span>
+                        <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" id="cp-name" name="name" class="form-input" placeholder="e.g. Main Entrance Gate"
+                        required minlength="3">
+                </div>
+
+                <!-- Location Description -->
+                <div class="form-group">
+                    <label class="form-label" for="cp-location" data-i18n="qr.modal.location">Location
+                        Description</label>
+                    <input type="text" id="cp-location" name="location" class="form-input"
+                        placeholder="e.g. Right pillar next to scanner" maxlength="100">
+                </div>
+
+                <!-- Sequence & Required Row -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label class="form-label" for="cp-sequence" data-i18n="qr.modal.sequence">Sequence Order</label>
+                        <input type="number" id="cp-sequence" name="sequence" class="form-input" value="1" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" data-i18n="qr.modal.required">Required Scan</label>
+                        <label class="switch mt-2">
+                            <input type="checkbox" id="cp-required" name="required" checked>
+                            <span class="slider"></span>
+                            <span class="switch-label" data-i18n="common.yes">Yes</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()"
+                    data-i18n="common.cancel">Cancel</button>
+                <button type="submit" class="btn btn-primary" data-i18n="qr.modal.save">Save Checkpoint</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<template id="modal-qr-preview">
+    <div class="modal-header">
+        <h3 data-i18n="qr.preview.title">QR Code Preview</h3>
+        <button class="btn-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body text-center">
+        <div id="qr-display"></div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()" data-i18n="common.close">Close</button>
+        <button class="btn btn-primary" data-i18n="common.download">Download</button>
+    </div>
+</template>
+
+<template id="modal-print-layout">
+    <div class="modal-header">
+        <h3 data-i18n="qr.print.title">Print Layout</h3>
+        <button class="btn-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+        <form id="form-print-layout">
+            <!-- TODO: Print layout options -->
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()" data-i18n="common.cancel">Cancel</button>
+        <button class="btn btn-primary" data-i18n="common.print">Print</button>
+    </div>
+</template>
+
+<!-- Settings Modals -->
+<template id="modal-change-password">
+    <div class="modal-header">
+        <h3 data-i18n="settings.password.title">Change Password</h3>
+        <button class="btn-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+        <form id="form-password">
+            <div class="form-group">
+                <label data-i18n="settings.password.current">Current Password</label>
+                <input type="password" name="current" required>
+            </div>
+            <div class="form-group">
+                <label data-i18n="settings.password.new">New Password</label>
+                <input type="password" name="new" required>
+            </div>
+            <div class="form-group">
+                <label data-i18n="settings.password.confirm">Confirm Password</label>
+                <input type="password" name="confirm" required>
+            </div>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()" data-i18n="common.cancel">Cancel</button>
+        <button class="btn btn-primary" type="submit" form="form-password" data-i18n="settings.password.btn">Change
+            Password</button>
+    </div>
+</template>
+
+<template id="modal-clear-cache">
+    <div class="modal-header">
+        <h3 data-i18n="settings.cache.title">Clear Cache?</h3>
+        <button class="btn-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+        <p data-i18n="settings.cache.desc">This will clear all cached data. You'll need to reload.</p>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()" data-i18n="common.cancel">Cancel</button>
+        <button class="btn btn-danger" data-i18n="settings.cache.btn">Clear Cache</button>
+    </div>
+</template>
+
+<template id="modal-logout">
+    <div class="modal-header">
+        <h3 data-i18n="settings.logout.title">Sign Out?</h3>
+        <button class="btn-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+        <p data-i18n="settings.logout.desc">You will need to log in again.</p>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()" data-i18n="common.cancel">Cancel</button>
+        <button class="btn btn-primary" data-i18n="settings.logout.btn">Sign Out</button>
+    </div>
+</template>

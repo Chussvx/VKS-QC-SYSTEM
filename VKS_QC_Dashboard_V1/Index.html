@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VKS Quality Control Dashboard</title>
+    <base target="_top">
+
+    <!-- Include global styles -->
+    <?!= include('TailwindJS'); ?>
+    <?!= include('Styles'); ?>
+
+    <!-- Leaflet Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- Leaflet MarkerCluster for grouping nearby markers -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
+    <!-- Leaflet Heatmap for coverage visualization -->
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+    <!-- Flatpickr Date Picker -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/light.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <!-- PDF Export Dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <!-- Chart.js for Polar Area Charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Material Symbols -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Professional UI Support (Tailwind & Inter & Material Icons Round) -->
+    <!-- Removed Tailwind CDN as per request -->
+    <!-- Removed Inter font as per request -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Lao:wght@400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
+
+    <style>
+        /* Force Noto Sans Globally */
+        body {
+            font-family: 'Noto Sans', 'Noto Sans Lao', sans-serif !important;
+        }
+
+        /* Progress Ring Animation */
+        .progress-ring__circle {
+            transition: stroke-dashoffset 0.35s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+
+        /* Material Icons Round Support */
+        .material-icons-round {
+            font-family: 'Material Icons Round';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+
+
+        /* FIX: Modal Double Border Logic */
+        /* Ensure the container itself is transparent so only the inner card renders */
+        #modal-container {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            /* Let the card handle spacing */
+        }
+    </style>
+</head>
+
+<body class="light">
+    <!-- Login Overlay (shown first if not authenticated) -->
+    <?!= include('Page_Login'); ?>
+
+    <div class="app-container" style="display: none;">
+        <!-- Sidebar Navigation -->
+        <?!= include('Sidebar'); ?>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Header -->
+            <?!= include('Header'); ?>
+
+            <!-- Page Container - Only one page visible at a time -->
+            <div class="page-container" id="page-container">
+                <!-- Pages will be loaded here via includes -->
+                <?!= include('Page_Dashboard'); ?>
+                <?!= include('Page_SiteMap'); ?>
+                <?!= include('Page_PatrolStatus'); ?>
+                <?!= include('Page_InspectionLogs'); ?>
+                <?!= include('Page_InspectorRoutes'); ?>
+                <?!= include('Page_Handover'); ?>
+                <?!= include('Page_SpecialDuty'); ?>
+                <?!= include('Page_GuardActivity'); ?>
+                <?!= include('Page_Incidents'); ?>
+                <?!= include('Page_Complaints'); ?>
+                <?!= include('Page_Performance'); ?>
+                <?!= include('Page_Reports'); ?>
+                <?!= include('Page_Guards'); ?>
+                <?!= include('Page_Sites'); ?>
+                <?!= include('Page_Calendar'); ?>
+                <?!= include('Page_Overtime'); ?>
+                <?!= include('Page_QRGenerator'); ?>
+                <?!= include('Page_Settings'); ?>
+                <?!= include('Page_SOP'); ?>
+                <?!= include('Page_UserManagement'); ?>
+                <?!= include('Page_ActivityLogs'); ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Container -->
+    <div class="modal-backdrop" id="modal-backdrop" onclick="closeModalOnBackdrop(event)">
+        <div class="modal" id="modal-container">
+            <!-- Modal content will be injected here -->
+        </div>
+    </div>
+
+    <!-- Modal Templates -->
+    <?!= include('Modal_Dashboard'); ?>
+    <?!= include('Modal_Sites'); ?>
+    <?!= include('Modal_Guards'); ?>
+    <?!= include('Modal_Inspection'); ?>
+    <!-- Old modals removed (Modal_Issues, Modal_IncidentForm, Modal_ComplaintForm) - superseded by _New versions -->
+    <?!= include('Modal_IncidentForm_New'); ?>
+    <?!= include('Modal_ComplaintForm_New'); ?>
+    <?!= include('Modal_IncidentDetail_New'); ?>
+    <?!= include('Modal_ComplaintDetail_New'); ?>
+    <?!= include('Modal_Reports'); ?>
+    <?!= include('Modal_Calendar'); ?>
+    <?!= include('Modal_Overtime'); ?>
+    <?!= include('Modal_QRSettings'); ?>
+    <?!= include('Modal_Checkpoints'); ?>
+    <?!= include('Modal_Confirm'); ?>
+    <?!= include('Modal_Handover'); ?>
+    <?!= include('Modal_ValidationError'); ?>
+    <?!= include('Modal_ResolveCase'); ?>
+    <?!= include('Modal_GuardStats'); ?>
+    <?!= include('Modal_SiteMap'); ?>
+    <?!= include('Modal_ChangePassword'); ?>
+    <?!= include('Modal_UserCredentials'); ?>
+
+    <!-- i18n Translations -->
+    <?!= include('i18n'); ?>
+
+    <!-- Include JavaScript -->
+    <?!= include('JavaScript'); ?>
+</body>
+
+</html>

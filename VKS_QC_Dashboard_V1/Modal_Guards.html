@@ -1,0 +1,306 @@
+<!-- Modal_Guards.html - Guard management modals -->
+
+<!-- Guard Detail Modal Template - SAAS PREMIUM -->
+<template id="modal-guard-detail">
+    <div class="flex flex-col h-full bg-white sm:rounded-xl shadow-2xl overflow-hidden max-h-[90vh] max-w-2xl w-full">
+
+        <!-- Header -->
+        <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-start bg-white z-10">
+            <div class="flex items-center gap-4">
+                <!-- Avatar -->
+                <div class="relative">
+                    <div class="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold text-white shadow-sm ring-4 ring-white"
+                        id="guard-det-avatar" style="background: #3b82f6;">
+                        TG
+                    </div>
+                    <div class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white shadow-sm bg-gray-400"
+                        id="guard-det-status-dot"></div>
+                </div>
+
+                <!-- Title Info -->
+                <div>
+                    <h3 class="text-xl font-bold text-slate-900 leading-tight" id="guard-det-name">Guard Name</h3>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span
+                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200"
+                            id="guard-det-id">
+                            VKS-000
+                        </span>
+                        <span
+                            class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700"
+                            id="guard-det-status">
+                            ON-DUTY
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <button
+                class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                onclick="closeModal()">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-y-auto bg-slate-50/50 p-6 space-y-6 scrollbar-hide">
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <!-- Site -->
+                <div
+                    class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
+                    <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
+                        <span class="material-symbols-outlined icon-md">business</span>
+                    </div>
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1"
+                        data-i18n="guards.modal.assigned_site">Assigned
+                        Site</span>
+                    <span class="text-sm font-bold text-slate-800 line-clamp-1 w-full"
+                        id="guard-det-meta-site">Loading...</span>
+                </div>
+
+                <!-- Score -->
+                <div
+                    class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
+                    <div
+                        class="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
+                        <span class="material-symbols-outlined icon-md">workspace_premium</span>
+                    </div>
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1"
+                        data-i18n="guards.modal.quality_score">Quality
+                        Score</span>
+                    <span class="text-sm font-bold text-slate-800" id="guard-det-meta-score">--</span>
+                </div>
+
+                <!-- Experience -->
+                <div
+                    class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
+                    <div
+                        class="w-10 h-10 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center mb-3">
+                        <span class="material-symbols-outlined icon-md">badge</span>
+                    </div>
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1"
+                        data-i18n="guards.modal.experience">Experience</span>
+                    <span class="text-sm font-bold text-slate-800" id="guard-det-meta-exp">--</span>
+                </div>
+            </div>
+
+            <!-- Two Column Layout: Contact & Activity -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                <!-- Contact Section -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden h-full">
+                    <div class="px-5 py-4 border-b border-slate-100 flex items-center gap-2 bg-slate-50/50">
+                        <span class="material-symbols-outlined text-slate-400 text-sm">contact_phone</span>
+                        <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide"
+                            data-i18n="guards.modal.contact_details">Contact Details</h4>
+                    </div>
+                    <div class="p-5 space-y-4">
+                        <div class="flex items-start gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors group">
+                            <div
+                                class="w-10 h-10 rounded-lg bg-green-50 text-green-600 flex items-center justify-center flex-shrink-0 group-hover:bg-green-100 transition-colors">
+                                <span class="material-symbols-outlined">call</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <span class="text-xs text-slate-500 block mb-0.5"
+                                    data-i18n="guards.modal.mobile_phone">Mobile Phone</span>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-semibold text-slate-800 truncate" id="guard-det-phone">Not
+                                        provided</span>
+                                    <button class="text-slate-400 hover:text-green-600"
+                                        onclick="window.open('tel:' + document.getElementById('guard-det-phone').textContent)">
+                                        <span class="material-symbols-outlined text-sm">open_in_new</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors group">
+                            <div
+                                class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-100 transition-colors">
+                                <span class="material-symbols-outlined">mail</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <span class="text-xs text-slate-500 block mb-0.5"
+                                    data-i18n="guards.modal.email_address">Email Address</span>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-semibold text-slate-800 truncate" id="guard-det-email">Not
+                                        provided</span>
+                                    <button class="text-slate-400 hover:text-blue-600"
+                                        onclick="window.open('mailto:' + document.getElementById('guard-det-email').textContent)">
+                                        <span class="material-symbols-outlined text-sm">open_in_new</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activity Section -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden h-full flex flex-col">
+                    <div class="px-5 py-4 border-b border-slate-100 flex items-center gap-2 bg-slate-50/50">
+                        <span class="material-symbols-outlined text-slate-400 text-sm">history</span>
+                        <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide"
+                            data-i18n="guards.modal.recent_activity">Recent Activity</h4>
+                    </div>
+                    <div class="p-5 flex-1 max-h-[250px] overflow-y-auto custom-scrollbar" id="guard-det-activity">
+                        <!-- Filled by JS -->
+                        <div class="flex flex-col items-center justify-center h-32 text-slate-400">
+                            <span class="material-symbols-outlined text-4xl mb-2 opacity-20">schedule</span>
+                            <span class="text-sm" data-i18n="guards.modal.no_activity">No activity recorded today</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 bg-white border-t border-slate-200 flex justify-between items-center select-none">
+            <button
+                class="px-4 py-2 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+                onclick="closeModal()">
+                <span data-i18n="common.close">Close</span>
+            </button>
+            <div class="flex items-center gap-3">
+                <button
+                    class="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 shadow-sm transition-all flex items-center gap-2"
+                    onclick="closeModal(); navigateTo('guard-activity', {guardId: currentGuardId})">
+                    <span class="material-symbols-outlined text-lg">timeline</span>
+                    <span data-i18n="guards.modal.btn.history">History</span>
+                </button>
+                <button
+                    class="px-4 py-2 rounded-lg text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 shadow-md transition-all flex items-center gap-2"
+                    onclick="closeModal(); openGuardForm(currentGuardId)">
+                    <span class="material-symbols-outlined text-lg">edit</span>
+                    <span data-i18n="guards.modal.btn.edit">Edit Guard</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</template>
+
+<style>
+    /* Scoped Modal Styles */
+    .icon-md {
+        font-size: 20px;
+    }
+
+    /* Activity Feed Styles */
+    .timeline-item {
+        position: relative;
+        padding-left: 24px;
+        padding-bottom: 20px;
+        border-left: 2px solid #e2e8f0;
+    }
+
+    .timeline-item:last-child {
+        border-left-color: transparent;
+        padding-bottom: 0;
+    }
+
+    .timeline-dot {
+        position: absolute;
+        left: -5px;
+        top: 0;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: white;
+        border: 2px solid #cbd5e1;
+    }
+
+    .timeline-item.active .timeline-dot {
+        border-color: #3b82f6;
+        background: #3b82f6;
+    }
+</style>
+
+<!-- Add/Edit Guard Form Modal Template -->
+<template id="modal-guard-form">
+    <div class="modal-header">
+        <h3 class="modal-title" data-i18n="guards.form.title.add">Add New Guard</h3>
+        <button class="btn-close" onclick="closeModal()">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+    </div>
+    <div class="modal-body">
+        <form id="form-guard" data-guard-id="">
+
+            <div class="form-group">
+                <label class="form-label required" data-i18n="guards.form.full_name">Full Name</label>
+                <input type="text" id="guard-name" class="form-input"
+                    data-i18n-placeholder="guards.form.placeholder.name" placeholder="Enter full name" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label required" data-i18n="guards.form.emp_id">Employee ID</label>
+                <input type="text" id="guard-emp-id" class="form-input"
+                    data-i18n-placeholder="guards.form.placeholder.id" placeholder="VKS-XXX" required>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="form-group">
+                    <label class="form-label" data-i18n="guards.form.phone">Phone</label>
+                    <input type="tel" id="guard-phone" class="form-input"
+                        data-i18n-placeholder="guards.form.placeholder.phone" placeholder="+856 20 XXXXXXXX">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" data-i18n="guards.form.email">Email</label>
+                    <input type="email" id="guard-email" class="form-input"
+                        data-i18n-placeholder="guards.form.placeholder.email" placeholder="guard@vks.la">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" data-i18n="guards.form.assigned_site">Assigned Site</label>
+                <input type="hidden" id="guard-site">
+                <div class="custom-select" id="guard-site-dropdown"></div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" data-i18n="guards.form.status">Status</label>
+                <input type="hidden" id="guard-status" value="active">
+                <div class="custom-select" id="guard-status-dropdown"></div>
+            </div>
+
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()" data-i18n="guards.form.btn.cancel">Cancel</button>
+        <button id="btn-save-guard" class="btn btn-primary" onclick="saveGuard()">
+            <span class="material-symbols-outlined" id="btn-guard-icon">save</span>
+            <span id="btn-guard-text" data-i18n="guards.form.btn.save">Save Guard</span>
+        </button>
+    </div>
+</template>
+
+<script>
+    function initGuardFormControls() {
+        // Site dropdown (dynamic, searchable)
+        initVKSDropdown({
+            containerId: 'guard-site-dropdown',
+            hiddenInputId: 'guard-site',
+            placeholder: (typeof t === 'function' && t('guards.form.unassigned')) || 'Unassigned',
+            searchable: true,
+            items: []
+        });
+
+        // Status dropdown (static)
+        initVKSDropdown({
+            containerId: 'guard-status-dropdown',
+            hiddenInputId: 'guard-status',
+            placeholder: (typeof t === 'function' && t('guards.form.select_status')) || 'Select status...',
+            searchable: false,
+            items: [
+                { value: 'active', label: '🟢 ' + ((typeof t === 'function' && t('guards.status.active')) || 'Active') },
+                { value: 'on_leave', label: '🟡 ' + ((typeof t === 'function' && t('guards.status.on_leave')) || 'On Leave') },
+                { value: 'off_duty', label: '⚪ ' + ((typeof t === 'function' && t('guards.status.off_duty')) || 'Off-Duty') },
+                { value: 'terminated', label: '🔴 ' + ((typeof t === 'function' && t('guards.status.terminated')) || 'Terminated') }
+            ]
+        });
+        // Default to Active
+        setVKSDropdownValue('guard-status-dropdown', 'active');
+    }
+</script>

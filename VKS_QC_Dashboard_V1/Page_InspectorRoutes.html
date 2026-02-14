@@ -1,0 +1,3570 @@
+<!-- Page_InspectorRoutes.html - Inspector Route Tracking (v3 Premium) -->
+<div id="page-inspector-routes" class="page-content">
+
+    <!-- Page Header -->
+    <div class="mb-6">
+        <h2 class="text-2xl font-bold" data-i18n="routes.title">Inspector Routes</h2>
+        <p class="text-muted" data-i18n="routes.subtitle">Track patrol paths, verify GPS locations, and analyze route
+            performance</p>
+    </div>
+
+    <!-- Filter Bar (Card-Wrapped) -->
+    <div class="card mb-4">
+        <div class="p-4 flex items-center gap-4 flex-wrap">
+            <!-- Inspector Dropdown (VKS Custom) -->
+            <div class="form-group mb-0" style="min-width: 200px;">
+                <div id="route-inspector-dropdown" class="custom-select"></div>
+                <input type="hidden" id="route-inspector" name="route-inspector" value="">
+            </div>
+
+            <!-- Date Range Picker (Flatpickr) -->
+            <div class="form-group mb-0">
+                <button id="route-date-trigger" class="date-range-picker-btn">
+                    <span class="material-symbols-outlined">calendar_today</span>
+                    <span id="route-date-label" data-i18n="routes.last_7_days">Last 7 days</span>
+                </button>
+                <input type="hidden" id="route-start-date">
+                <input type="hidden" id="route-end-date">
+            </div>
+
+            <!-- Quick Presets -->
+            <div class="flex items-center gap-2">
+                <button class="btn btn-secondary btn-sm route-preset-btn" onclick="setRoutePreset('today', this)"
+                    data-i18n="routes.today">Today</button>
+                <button class="btn btn-secondary btn-sm route-preset-btn" onclick="setRoutePreset('yesterday', this)"
+                    data-i18n="routes.yesterday">Yesterday</button>
+                <button class="btn btn-secondary btn-sm route-preset-btn" onclick="setRoutePreset('week', this)"
+                    data-i18n="routes.this_week">This Week</button>
+                <button class="btn btn-secondary btn-sm route-preset-btn" onclick="setRoutePreset('30days', this)"
+                    data-i18n="routes.last_30_days">30 Days</button>
+            </div>
+
+            <!-- Shift Filter -->
+            <div class="custom-select w-36" data-select-id="route-shift" data-onchange="setShiftFilter"
+                style="border-left: 1px solid var(--border); padding-left: 12px; margin-left: 4px;">
+                <button class="custom-select-trigger" onclick="toggleSelect('route-shift')">
+                    <span class="custom-select-value">All Shifts</span>
+                    <span class="material-symbols-outlined">expand_more</span>
+                </button>
+                <div class="custom-select-menu" id="route-shift-menu">
+                    <div class="custom-select-item selected" data-value="all"
+                        onclick="selectOption('route-shift', 'all', 'All Shifts')">All Shifts</div>
+                    <div class="custom-select-item" data-value="morning"
+                        onclick="selectOption('route-shift', 'morning', '🌅 AM')">🌅 AM</div>
+                    <div class="custom-select-item" data-value="evening"
+                        onclick="selectOption('route-shift', 'evening', '🌆 PM')">🌆 PM</div>
+                    <div class="custom-select-item" data-value="night"
+                        onclick="selectOption('route-shift', 'night', '🌙 Night')">🌙 Night</div>
+                </div>
+                <input type="hidden" id="route-shift" name="route-shift" value="all">
+            </div>
+
+            <!-- Right-side actions -->
+            <div class="flex items-center gap-3 ml-auto">
+                <span class="text-xs font-semibold text-muted" id="route-info"></span>
+                <!-- Satellite Toggle -->
+                <div class="header-toggle-group" style="margin: 0;">
+                    <button class="toggle-btn" id="route-btn-sat" data-i18n="sitemap.satellite">Satellite</button>
+                    <button class="toggle-btn active" id="route-btn-map" data-i18n="sitemap.map_view">Map View</button>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="playbackToggle()" title="Play Route"
+                    id="route-play-btn">
+                    <span class="material-symbols-outlined">play_arrow</span>
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="toggleRouteMapFullscreen()" title="Fullscreen"
+                    id="route-fullscreen-btn">
+                    <span class="material-symbols-outlined">fullscreen</span>
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="loadRouteData()">
+                    <span class="material-symbols-outlined">refresh</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content: Side-by-Side Layout -->
+    <div class="ri-main-layout" id="ri-main-layout">
+
+        <!-- LEFT: Map Area -->
+        <div class="ri-map-area">
+            <div id="route-map-container" class="ri-map-card">
+                <div id="route-map-leaflet" class="w-full h-full relative">
+                    <!-- Loading state -->
+                    <div id="route-loading-state" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 501;
+                        display: none; align-items: center; justify-content: center; background: rgba(248, 250, 252, 0.95);
+                        pointer-events: none; font-family: var(--font-family);">
+                        <div style="text-align: center;">
+                            <span class="loading-spinner"
+                                style="width: 40px; height: 40px; margin-bottom: 16px; display: inline-block;"></span>
+                            <p style="font-size: 14px; font-weight: 500; color: var(--text-secondary);"
+                                data-i18n="routes.loading">Loading
+                                route data...</p>
+                        </div>
+                    </div>
+                    <!-- Empty state -->
+                    <div id="route-empty-state" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 500;
+                        display: flex; align-items: center; justify-content: center; background: rgba(242, 242, 247, 0.9);
+                        pointer-events: none; font-family: var(--font-family);">
+                        <div style="text-align: center; max-width: 320px;">
+                            <span class="material-symbols-outlined"
+                                style="font-size: 64px; color: var(--text-muted); margin-bottom: 12px; display: block;">route</span>
+                            <h3 style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;"
+                                data-i18n="routes.empty_title">Select an Inspector</h3>
+                            <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;"
+                                data-i18n="routes.empty_desc">Choose
+                                an inspector and date range to view their patrol route on the map.</p>
+                        </div>
+                    </div>
+
+                    <!-- Map Overlay Panel (Redesigned Layers) -->
+                    <div class="route-overlay-panel collapsed" id="route-overlay-panel">
+                        <div class="rop-header" onclick="toggleOverlayPanel()">
+                            <span style="display:flex;align-items:center;gap:6px;">
+                                <span class="material-symbols-outlined">layers</span>
+                                <span data-i18n="routes.layers">Layers</span>
+                            </span>
+                            <span class="material-symbols-outlined rop-chevron">expand_more</span>
+                        </div>
+                        <div class="rop-body">
+                            <!-- GPS Verify Toggle -->
+                            <div class="rop-section">
+                                <div class="rop-toggle" onclick="toggleGpsVerification()">
+                                    <span class="rop-toggle-label">
+                                        <span class="material-symbols-outlined"
+                                            style="font-size:16px;">my_location</span>
+                                        <span data-i18n="routes.gps_verify">GPS Verify</span>
+                                    </span>
+                                    <div class="rop-switch" id="rop-sw-gps"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Playback Bar -->
+                    <div class="route-playback-bar" id="route-playback-bar">
+                        <button class="rpb-btn" onclick="playbackPrev()" title="Previous">
+                            <span class="material-symbols-outlined">skip_previous</span>
+                        </button>
+                        <button class="rpb-btn rpb-play" id="rpb-play-btn" onclick="playbackToggle()">
+                            <span class="material-symbols-outlined" id="rpb-play-icon">play_arrow</span>
+                        </button>
+                        <button class="rpb-btn" onclick="playbackNext()" title="Next">
+                            <span class="material-symbols-outlined">skip_next</span>
+                        </button>
+                        <div class="rpb-progress">
+                            <div class="rpb-track">
+                                <div class="rpb-fill" id="rpb-fill"></div>
+                            </div>
+                            <span class="rpb-label" id="rpb-label">0 / 0</span>
+                        </div>
+                        <div class="rpb-speed" id="rpb-speed" onclick="cyclePlaybackSpeed()">1x</div>
+                        <button class="rpb-btn" onclick="stopPlayback()" title="Stop">
+                            <span class="material-symbols-outlined">stop</span>
+                        </button>
+                    </div>
+
+                    <!-- Day Legend -->
+                    <div class="route-day-legend" id="route-day-legend"></div>
+                    <div class="route-multi-legend" id="route-multi-legend"></div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Timeline Sidebar -->
+        <aside class="ri-sidebar" id="ri-sidebar" style="display: none;">
+            <!-- Sticky Header -->
+            <div class="ri-sidebar-header">
+                <!-- Inspector Profile -->
+                <div class="ri-sidebar-profile">
+                    <div class="ri-avatar" id="route-avatar">--</div>
+                    <div>
+                        <div class="ri-inspector-name" id="route-inspector-name">-</div>
+                        <div class="ri-shift-time" id="route-date-range">-</div>
+                    </div>
+                </div>
+                <!-- Compact Stats (3 boxes) -->
+                <div class="ri-sidebar-stats">
+                    <div class="ri-stat-box">
+                        <span class="ri-stat-box-label">Sites</span>
+                        <span class="ri-stat-box-value" id="route-total-sites">0</span>
+                    </div>
+                    <div class="ri-stat-box">
+                        <span class="ri-stat-box-label">Score</span>
+                        <span class="ri-stat-box-value ri-stat-primary" id="route-avg-score">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scrollable Timeline Body -->
+            <div class="ri-sidebar-body">
+                <div id="route-timeline" class="ri-timeline-list"></div>
+            </div>
+
+            <!-- Footer: Export Button -->
+            <div class="ri-sidebar-footer">
+                <button class="ri-export-btn" onclick="exportPatrolReport()">
+                    <span class="material-symbols-outlined" style="font-size:16px;">download</span>
+                    <span data-i18n="routes.export_report">Export Report</span>
+                </button>
+            </div>
+        </aside>
+
+    </div>
+</div>
+
+<style>
+    /* ===== SIDE-BY-SIDE LAYOUT ===== */
+    .ri-main-layout {
+        display: flex;
+        gap: 0;
+        height: calc(100vh - 200px);
+        min-height: 500px;
+        border-radius: var(--radius);
+        overflow: hidden;
+        border: 1px solid var(--border-primary);
+        background: var(--bg-primary);
+    }
+
+    .ri-map-area {
+        flex: 1;
+        min-width: 0;
+        position: relative;
+    }
+
+    .ri-map-card {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    /* ===== SIDEBAR ===== */
+    .ri-sidebar {
+        width: 340px;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        border-left: 1px solid var(--border-primary);
+        background: #ffffff;
+        box-shadow: -4px 0 16px rgba(0, 0, 0, 0.06);
+    }
+
+    .ri-sidebar-header {
+        flex-shrink: 0;
+        padding: 14px 16px 12px;
+        border-bottom: 1px solid #e5e7eb;
+        background: #f8fafc;
+    }
+
+    .ri-sidebar-profile {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+
+    .ri-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 12px;
+        flex-shrink: 0;
+    }
+
+    .ri-inspector-name {
+        font-weight: 700;
+        font-size: 14px;
+        color: var(--text-primary);
+        line-height: 1.2;
+    }
+
+    .ri-shift-time {
+        font-size: 11px;
+        color: var(--text-secondary);
+        margin-top: 2px;
+    }
+
+    /* Compact stat boxes */
+    .ri-sidebar-stats {
+        display: flex;
+        gap: 8px;
+    }
+
+    .ri-stat-box {
+        flex: 1;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 8px;
+        text-align: center;
+    }
+
+    .ri-stat-box-label {
+        display: block;
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        margin-bottom: 2px;
+    }
+
+    .ri-stat-box-value {
+        display: block;
+        font-size: 16px;
+        font-weight: 800;
+        color: var(--text-primary);
+        line-height: 1.2;
+    }
+
+    .ri-stat-primary {
+        color: #10b981;
+    }
+
+    /* Scrollable timeline body */
+    .ri-sidebar-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px 12px 0;
+    }
+
+    .ri-sidebar-body::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .ri-sidebar-body::-webkit-scrollbar-thumb {
+        background: var(--border-primary);
+        border-radius: 4px;
+    }
+
+    /* Timeline list */
+    .ri-timeline-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    /* Timeline cards (44px compact) */
+    .ri-timeline-card {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        height: 44px;
+        overflow: hidden;
+    }
+
+    .ri-timeline-card:hover {
+        background: #f1f5f9;
+        border-color: #3b82f6;
+    }
+
+    .ri-timeline-card.active {
+        border-left: 3px solid #10b981;
+        background: rgba(16, 185, 129, 0.04);
+    }
+
+    .ri-timeline-card .ri-tc-number {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .ri-timeline-card .ri-tc-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .ri-timeline-card .ri-tc-name {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .ri-timeline-card .ri-tc-meta {
+        font-size: 10px;
+        color: var(--text-secondary);
+    }
+
+    .ri-timeline-card .ri-tc-score {
+        font-size: 11px;
+        font-weight: 700;
+        flex-shrink: 0;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+    }
+
+    /* Travel time connector */
+    .ri-travel-connector {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0 0 0 20px;
+        height: 20px;
+    }
+
+    .ri-travel-connector .ri-travel-line {
+        width: 2px;
+        height: 12px;
+        background: #d1d5db;
+        margin-left: 9px;
+    }
+
+    .ri-travel-connector .ri-travel-time {
+        font-size: 9px;
+        color: #94a3b8;
+        font-weight: 500;
+    }
+
+    /* Sidebar footer */
+    .ri-sidebar-footer {
+        flex-shrink: 0;
+        padding: 12px 16px;
+        border-top: 1px solid #e5e7eb;
+        background: #f8fafc;
+    }
+
+    .ri-export-btn {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 10px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        font-family: var(--font-family);
+        color: #fff;
+        background: linear-gradient(135deg, #10b981, #059669);
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    }
+
+    .ri-export-btn:hover {
+        background: linear-gradient(135deg, #059669, #047857);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        transform: translateY(-1px);
+    }
+
+    /* Compliance dots in Layers panel */
+    .rop-status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        flex-shrink: 0;
+    }
+
+    .rop-count {
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--text-muted);
+        margin-left: auto;
+        padding-left: 8px;
+    }
+
+    /* ===== ROUTE MARKERS (Map) ===== */
+    .route-number-marker {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: #fff;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 13px;
+        font-family: 'Noto Sans', sans-serif;
+        border: 3px solid #fff;
+        box-shadow: 0 2px 12px rgba(59, 130, 246, 0.45);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .route-number-marker:hover {
+        transform: scale(1.25);
+        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.6);
+    }
+
+    /* Start marker (green) */
+    .route-marker-start {
+        background: linear-gradient(135deg, #10b981, #059669) !important;
+        box-shadow: 0 2px 12px rgba(34, 197, 94, 0.45) !important;
+        width: 34px !important;
+        height: 34px !important;
+        font-size: 11px !important;
+    }
+
+    /* End marker (red-orange) */
+    .route-marker-end {
+        background: linear-gradient(135deg, #f97316, #ea580c) !important;
+        box-shadow: 0 2px 12px rgba(249, 115, 22, 0.45) !important;
+        width: 34px !important;
+        height: 34px !important;
+        font-size: 11px !important;
+    }
+
+    /* ===== ANIMATED ROUTE LINE ===== */
+    .route-animated-line {
+        stroke-dasharray: 12, 8;
+        animation: routeFlow 1s linear infinite;
+    }
+
+    @keyframes routeFlow {
+        0% {
+            stroke-dashoffset: 0;
+        }
+
+        100% {
+            stroke-dashoffset: -20;
+        }
+    }
+
+    /* Direction arrow markers on map */
+    .route-arrow-icon {
+        background: none !important;
+        border: none !important;
+    }
+
+    .route-direction-arrow {
+        width: 14px;
+        height: 14px;
+        color: #2563eb;
+        filter: drop-shadow(0 1px 2px rgba(37, 99, 235, 0.4));
+    }
+
+    /* ===== POPUP PREMIUM ===== */
+    .route-popup .leaflet-popup-content-wrapper {
+        border-radius: 14px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        border: 1px solid rgba(59, 130, 246, 0.1);
+    }
+
+    .route-popup .leaflet-popup-tip {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    /* ===== iOS-INSPIRED DETAILS PANEL ===== */
+    .ri-summary-card {
+        background: var(--surface);
+        border-radius: 16px;
+        padding: 20px 24px;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .ri-summary-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+
+    .ri-inspector-info {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .ri-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 16px;
+        letter-spacing: 0.5px;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+    }
+
+    .ri-inspector-name {
+        font-weight: 700;
+        font-size: 17px;
+        color: var(--text-primary);
+        letter-spacing: -0.01em;
+    }
+
+    .ri-date-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        margin-top: 2px;
+    }
+
+    .ri-stats-row {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        background: rgba(242, 242, 247, 0.35);
+        border-radius: 12px;
+        padding: 14px 8px;
+    }
+
+    .ri-stat {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        justify-content: center;
+    }
+
+    .ri-stat-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .ri-stat-icon .material-symbols-outlined {
+        font-size: 18px;
+    }
+
+    .ri-stat-value {
+        font-weight: 800;
+        font-size: 20px;
+        color: var(--text-primary);
+        line-height: 1.1;
+    }
+
+    .ri-stat-label {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .ri-stat-divider {
+        width: 1px;
+        height: 32px;
+        background: var(--border);
+    }
+
+    /* Section header */
+    .ri-section-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 20px 0 12px 0;
+        letter-spacing: -0.01em;
+    }
+
+    /* Location cards grid */
+    .ri-locations-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .ri-location-card {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 16px;
+        background: var(--surface);
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .ri-location-card:hover {
+        border-color: rgba(16, 185, 129, 0.3);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+        transform: translateY(-1px);
+    }
+
+    .ri-location-card:active {
+        transform: scale(0.99);
+    }
+
+    .ri-location-number {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 13px;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+    }
+
+    .ri-location-number.start {
+        background: linear-gradient(135deg, #10b981, #059669);
+        box-shadow: 0 2px 8px rgba(34, 197, 94, 0.25);
+    }
+
+    .ri-location-number.end {
+        background: linear-gradient(135deg, #f97316, #ea580c);
+        box-shadow: 0 2px 8px rgba(249, 115, 22, 0.25);
+    }
+
+    .ri-location-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .ri-location-name {
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .ri-location-meta {
+        font-size: 12px;
+        color: var(--text-secondary);
+        margin-top: 2px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .ri-location-meta .material-symbols-outlined {
+        font-size: 14px;
+    }
+
+    .ri-score-badge {
+        font-weight: 700;
+        font-size: 13px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        white-space: nowrap;
+        letter-spacing: -0.01em;
+    }
+
+    /* Connector line between cards */
+    .ri-connector {
+        display: flex;
+        align-items: center;
+        padding-left: 30px;
+        height: 24px;
+    }
+
+    .ri-connector-time {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        margin-left: 10px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .ri-connector-time .material-symbols-outlined {
+        font-size: 13px;
+    }
+
+    .ri-connector-line {
+        width: 2px;
+        height: 100%;
+        background: linear-gradient(to bottom, #3b82f6, #93c5fd);
+        border-radius: 1px;
+    }
+
+    /* (Removed dead .ri-label-badge — not used anywhere) */
+
+    /* ===== ACTIVE PRESET BUTTON ===== */
+    .route-preset-btn.active {
+        background: var(--primary) !important;
+        color: #fff !important;
+        border-color: var(--primary) !important;
+    }
+
+    .route-shift-btn.active {
+        background: var(--primary) !important;
+        color: #fff !important;
+        border-color: var(--primary) !important;
+    }
+
+    /* ===== KPI ROW RESPONSIVE ===== */
+    @media (max-width: 768px) {
+        #route-kpi-row {
+            grid-template-columns: 1fr !important;
+        }
+    }
+
+    /* ===== GPS VERIFICATION TOGGLE ===== */
+    .gps-toggle-wrapper {
+        background: rgba(242, 242, 247, 0.5);
+        border-radius: 8px;
+        padding: 4px 8px;
+        border: 1px solid var(--border);
+    }
+
+    .gps-toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .gps-toggle input {
+        display: none;
+    }
+
+    .gps-toggle-slider {
+        width: 32px;
+        height: 18px;
+        background: #cbd5e1;
+        border-radius: 10px;
+        position: relative;
+        transition: background 0.25s ease;
+        flex-shrink: 0;
+    }
+
+    .gps-toggle-slider::after {
+        content: '';
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #fff;
+        top: 2px;
+        left: 2px;
+        transition: transform 0.25s ease;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    }
+
+    .gps-toggle input:checked+.gps-toggle-slider {
+        background: #3b82f6;
+    }
+
+    .gps-toggle input:checked+.gps-toggle-slider::after {
+        transform: translateX(14px);
+    }
+
+    .gps-toggle-label {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        white-space: nowrap;
+    }
+
+    /* ===== GPS VERIFICATION MARKERS ===== */
+    .gps-actual-marker {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 2px currentColor, 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .gps-actual-marker.gps-match {
+        background: #10b981;
+        color: #10b981;
+    }
+
+    .gps-actual-marker.gps-near {
+        background: #f59e0b;
+        color: #f59e0b;
+    }
+
+    .gps-actual-marker.gps-far {
+        background: #ef4444;
+        color: #ef4444;
+    }
+
+    .gps-marker-icon {
+        background: none !important;
+        border: none !important;
+    }
+
+    /* GPS pulse animation on actual markers */
+    .gps-actual-marker::before {
+        content: '';
+        position: absolute;
+        top: -4px;
+        left: -4px;
+        right: -4px;
+        bottom: -4px;
+        border-radius: 50%;
+        background: currentColor;
+        opacity: 0.3;
+        animation: gpsPulse 2s ease-out infinite;
+    }
+
+    @keyframes gpsPulse {
+        0% {
+            transform: scale(1);
+            opacity: 0.3;
+        }
+
+        100% {
+            transform: scale(2.5);
+            opacity: 0;
+        }
+    }
+
+    /* GPS distance badge in location cards */
+    .ri-gps-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 8px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .ri-gps-badge.gps-match {
+        background: #f0fdf4;
+        color: #15803d;
+    }
+
+    .ri-gps-badge.gps-near {
+        background: #fffbeb;
+        color: #b45309;
+    }
+
+    .ri-gps-badge.gps-far {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+
+    .ri-gps-badge.gps-none {
+        background: #f1f5f9;
+        color: #94a3b8;
+    }
+
+    .ri-gps-badge .material-symbols-outlined {
+        font-size: 13px;
+    }
+
+    /* ===== PULSING START/END MARKERS ===== */
+    .route-marker-start,
+    .route-marker-end {
+        position: relative;
+    }
+
+    .route-marker-start::after,
+    .route-marker-end::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        animation: markerPulse 2s ease-out infinite;
+        pointer-events: none;
+    }
+
+    .route-marker-start::after {
+        background: rgba(16, 185, 129, 0.35);
+    }
+
+    .route-marker-end::after {
+        background: rgba(249, 115, 22, 0.35);
+    }
+
+    @keyframes markerPulse {
+        0% {
+            transform: scale(1);
+            opacity: 0.7;
+        }
+
+        70% {
+            transform: scale(2.2);
+            opacity: 0;
+        }
+
+        100% {
+            transform: scale(2.2);
+            opacity: 0;
+        }
+    }
+
+    /* ===== MAP OVERLAY PANEL ===== */
+    .route-overlay-panel {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        z-index: 800;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-radius: 14px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.10);
+        padding: 0;
+        font-family: var(--font-family);
+        font-size: 12px;
+        min-width: 180px;
+        transition: all 0.25s ease;
+        overflow: hidden;
+    }
+
+    .route-overlay-panel.collapsed .rop-body {
+        display: none;
+    }
+
+    .rop-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        cursor: pointer;
+        user-select: none;
+        font-weight: 600;
+        font-size: 12px;
+        color: var(--text-primary);
+        border-bottom: 1px solid var(--border);
+    }
+
+    .rop-header .material-symbols-outlined {
+        font-size: 16px;
+        color: var(--text-secondary);
+        transition: transform 0.2s;
+    }
+
+    .route-overlay-panel.collapsed .rop-header {
+        border-bottom: none;
+    }
+
+    .route-overlay-panel.collapsed .rop-header .rop-chevron {
+        transform: rotate(-90deg);
+    }
+
+    .rop-body {
+        padding: 10px 14px;
+    }
+
+    .rop-section {
+        margin-bottom: 10px;
+    }
+
+    .rop-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .rop-label {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+    }
+
+    .rop-radios {
+        display: flex;
+        gap: 4px;
+    }
+
+    .rop-radio {
+        flex: 1;
+        text-align: center;
+        padding: 5px 8px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        user-select: none;
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
+        border: 1.5px solid transparent;
+        transition: all 0.15s ease;
+    }
+
+    .rop-radio:hover {
+        background: var(--bg-tertiary);
+    }
+
+    .rop-radio.active {
+        background: rgba(59, 130, 246, 0.1);
+        color: #3b82f6;
+        border-color: #3b82f6;
+    }
+
+    .rop-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 5px 0;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .rop-toggle-label {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+
+    .rop-switch {
+        width: 32px;
+        height: 18px;
+        background: #cbd5e1;
+        border-radius: 10px;
+        position: relative;
+        transition: background 0.25s ease;
+        flex-shrink: 0;
+    }
+
+    .rop-switch::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 14px;
+        height: 14px;
+        background: #fff;
+        border-radius: 50%;
+        transition: transform 0.25s ease;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    }
+
+    .rop-switch.on {
+        background: #3b82f6;
+    }
+
+    .rop-switch.on::after {
+        transform: translateX(14px);
+    }
+
+    .rop-divider {
+        height: 1px;
+        background: var(--border);
+        margin: 8px 0;
+    }
+
+    /* ===== PLAYBACK BAR ===== */
+    .route-playback-bar {
+        position: absolute;
+        bottom: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 800;
+        background: rgba(15, 23, 42, 0.92);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border-radius: 16px;
+        padding: 8px 16px;
+        display: none;
+        align-items: center;
+        gap: 10px;
+        font-family: var(--font-family);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+        color: #fff;
+        min-width: 340px;
+    }
+
+    .route-playback-bar.visible {
+        display: flex;
+    }
+
+    .rpb-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(255, 255, 255, 0.12);
+        color: #fff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s;
+        padding: 0;
+    }
+
+    .rpb-btn:hover {
+        background: rgba(255, 255, 255, 0.22);
+    }
+
+    .rpb-btn.rpb-play {
+        width: 38px;
+        height: 38px;
+        background: #3b82f6;
+    }
+
+    .rpb-btn.rpb-play:hover {
+        background: #2563eb;
+    }
+
+    .rpb-btn .material-symbols-outlined {
+        font-size: 18px;
+    }
+
+    .rpb-btn.rpb-play .material-symbols-outlined {
+        font-size: 22px;
+    }
+
+    .rpb-progress {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .rpb-track {
+        flex: 1;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 2px;
+        overflow: hidden;
+    }
+
+    .rpb-fill {
+        height: 100%;
+        background: #3b82f6;
+        border-radius: 2px;
+        transition: width 0.3s linear;
+        width: 0%;
+    }
+
+    .rpb-label {
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .rpb-speed {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 8px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.12);
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.15s;
+        white-space: nowrap;
+    }
+
+    .rpb-speed:hover {
+        background: rgba(255, 255, 255, 0.22);
+    }
+
+    /* ===== DISTANCE LABELS ===== */
+    .route-dist-label {
+        background: rgba(255, 255, 255, 0.92);
+        padding: 2px 6px;
+        border-radius: 6px;
+        font-size: 10px;
+        font-weight: 700;
+        color: #475569;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+        white-space: nowrap;
+        pointer-events: none;
+        font-family: var(--font-family);
+    }
+
+    /* ===== DWELL BUBBLE ===== */
+    .route-dwell-tooltip {
+        font-family: var(--font-family);
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    /* ===== DAY LEGEND ===== */
+    .route-day-legend {
+        position: absolute;
+        bottom: 16px;
+        right: 12px;
+        z-index: 800;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+        border-radius: 12px;
+        padding: 10px 14px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        font-family: var(--font-family);
+        display: none;
+    }
+
+    .route-day-legend.visible {
+        display: block;
+    }
+
+    .rdl-title {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+    }
+
+    .rdl-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 3px 0;
+        cursor: pointer;
+        user-select: none;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .rdl-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .rdl-item.muted {
+        opacity: 0.35;
+    }
+
+    /* ===== Timeline Status Badge ===== */
+    .ri-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .ri-status-badge.planned {
+        background: rgba(16, 185, 129, 0.1);
+        color: #059669;
+    }
+
+    .ri-status-badge.unplanned {
+        background: rgba(59, 130, 246, 0.1);
+        color: #2563eb;
+    }
+
+    .ri-status-badge.missed {
+        background: rgba(239, 68, 68, 0.1);
+        color: #dc2626;
+    }
+
+    /* ===== MULTI-INSPECTOR MODE ===== */
+    .route-multi-legend {
+        position: absolute;
+        bottom: 16px;
+        right: 16px;
+        background: rgba(15, 23, 42, 0.92);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 10px 14px;
+        z-index: 800;
+        display: none;
+        min-width: 140px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .route-multi-legend.visible {
+        display: block;
+    }
+
+    .route-multi-legend-title {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #94a3b8;
+        margin-bottom: 8px;
+    }
+
+    .route-multi-legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 3px 0;
+        font-size: 12px;
+        color: #e2e8f0;
+    }
+
+    .route-multi-legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .route-multi-legend-count {
+        font-size: 10px;
+        color: #64748b;
+        margin-left: auto;
+    }
+</style>
+
+<script>
+    // ===== INSPECTOR ROUTES STATE =====
+    var routeMapObj = null;
+    var routePolyline = null;
+    var routeArrows = [];
+    var routeMarkers = [];
+    var routeSiteCoords = {};
+    var isRouteMapFullscreen = false;
+    var routeFlatpickr = null;
+    var routeOsrmDistance = null; // captured from OSRM response
+
+    // GPS Verification state
+    var gpsVerifyEnabled = false;
+    var routeGpsMarkers = [];
+    var routeGpsLines = [];
+    var routeWaypointsCache = [];
+
+    // Shift filter state
+    var _selectedShift = 'all';          // 'all' | 'morning' | 'evening' | 'night'
+    var _rawComplianceData = null;       // Cache raw backend response for instant re-filter
+    var _rawInspectorName = '';          // Cache selected inspector name
+
+    // ===== ENHANCEMENT STATE =====
+    var routeRoadGeometry = [];       // Full OSRM decoded points for playback/labels
+    var _currentRouteMode = 'standard'; // 'standard' | 'time' | 'days'
+
+    // Overlay layers
+    var _timeHeatmapLayers = [];
+    var _dwellBubbleLayers = [];
+    var _distLabelLayers = [];
+    var _coverageHeatLayer = null;
+    var _dayRouteLayers = [];
+    var _dayMarkerLayers = [];
+
+    // Overlay toggle states
+    var _dwellEnabled = false;
+    var _distLabelsEnabled = false;
+    var _heatmapEnabled = false;
+
+    // Playback state
+    var _playbackActive = false;
+    var _playbackPaused = false;
+    var _playbackAnimId = null;
+    var _playbackMarker = null;
+    var _playbackIndex = 0;         // Current waypoint target index
+    var _playbackProgress = 0;      // 0-1 within current segment
+    var _playbackSpeed = 1;         // 1, 2, 4
+    var _playbackPauseTimeout = null;
+
+    // Day palette (also used for multi-inspector colors)
+    var DAY_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
+
+    // Multi-inspector state
+    var _multiMode = false;
+    var _multiComplianceCache = {};   // {inspectorName: complianceData}
+    var _multiInspectorNames = [];    // Names loaded in current multi-view
+
+    var _routesInitialized = false;  // Smart reload guard
+
+    // ===== INIT =====
+    function init_inspector_routes() {
+        console.log('[InspectorRoutes] init');
+
+        // === SMART REVISIT: skip full re-init if already loaded ===
+        if (_routesInitialized) {
+            // Fix map rendering on revisit
+            setTimeout(function () {
+                if (routeMapObj) routeMapObj.invalidateSize();
+            }, 300);
+
+            // Handle deep-link from Inspection Logs or Calendar
+            if (window._pendingRouteView) {
+                var p = window._pendingRouteView;
+                window._pendingRouteView = null;
+                // Set inspector if provided (Inspection Logs deep-link)
+                if (p.inspector) {
+                    document.getElementById('route-inspector').value = p.inspector;
+                    var display = document.querySelector('#route-inspector-dropdown .vks-select-display');
+                    if (display) display.textContent = p.inspector;
+                }
+                // Set date
+                if (p.date) {
+                    document.getElementById('route-start-date').value = p.date;
+                    document.getElementById('route-end-date').value = p.date;
+                    _updateRouteDateLabel(p.date, p.date);
+                    if (routeFlatpickr) routeFlatpickr.setDate([p.date, p.date], false);
+                    document.querySelectorAll('.route-preset-btn').forEach(function (b) {
+                        b.classList.remove('active');
+                    });
+                }
+                // Set shift filter silently (no selectOption to avoid side effects)
+                if (p.shift) {
+                    var shiftLabels = { morning: '🌅 AM', evening: '🌆 PM', night: '🌙 Night' };
+                    document.getElementById('route-shift').value = p.shift;
+                    var sd = document.querySelector('[data-select-id="route-shift"] .custom-select-value');
+                    if (sd) sd.textContent = shiftLabels[p.shift] || 'All Shifts';
+                    _selectedShift = p.shift;
+                }
+                // Load: if inspector provided → single mode, else → all inspectors
+                if (p.inspector) {
+                    loadRouteData();
+                } else {
+                    document.getElementById('route-inspector').value = '__all__';
+                    var allDisplay = document.querySelector('#route-inspector-dropdown .vks-select-display');
+                    if (allDisplay) allDisplay.textContent = '👥 ' + (t('routes.all_inspectors') || 'All Inspectors');
+                    loadRouteData();
+                }
+            }
+            return;
+        }
+        _routesInitialized = true;
+
+        initRouteMap();
+        loadRouteInspectors();
+        initRouteDatePicker();
+
+        // Fix map rendering after DOM settles
+        setTimeout(function () {
+            if (routeMapObj) routeMapObj.invalidateSize();
+        }, 300);
+    }
+
+    // ===== LEAFLET MAP =====
+    var routeStandardLayer = null;
+    var routeSatelliteLayer = null;
+
+    function initRouteMap() {
+        if (routeMapObj) return;
+
+        routeStandardLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: ''
+        });
+
+        routeSatelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: ''
+        });
+
+        routeMapObj = L.map('route-map-leaflet', {
+            center: [17.9757, 102.6331],
+            zoom: 13,
+            zoomControl: false,
+            attributionControl: false,
+            layers: [routeStandardLayer]
+        });
+
+        L.control.zoom({ position: 'topright' }).addTo(routeMapObj);
+
+        // Satellite Toggle
+        document.getElementById('route-btn-sat').addEventListener('click', function () {
+            routeMapObj.addLayer(routeSatelliteLayer);
+            routeMapObj.removeLayer(routeStandardLayer);
+            document.getElementById('route-btn-sat').classList.add('active');
+            document.getElementById('route-btn-map').classList.remove('active');
+        });
+        document.getElementById('route-btn-map').addEventListener('click', function () {
+            routeMapObj.addLayer(routeStandardLayer);
+            routeMapObj.removeLayer(routeSatelliteLayer);
+            document.getElementById('route-btn-map').classList.add('active');
+            document.getElementById('route-btn-sat').classList.remove('active');
+        });
+    }
+
+    // ===== LOCAL DATE HELPER (avoids UTC timezone shift) =====
+    function _localDateStr(d) {
+        var y = d.getFullYear();
+        var m = ('0' + (d.getMonth() + 1)).slice(-2);
+        var day = ('0' + d.getDate()).slice(-2);
+        return y + '-' + m + '-' + day;
+    }
+
+    // ===== UPDATE DATE LABEL =====
+    function _updateRouteDateLabel(startDate, endDate) {
+        var label = document.getElementById('route-date-label');
+        if (!label) return;
+        if (!startDate || !endDate) {
+            label.textContent = t('filter.date_pick') || 'Pick a date';
+            return;
+        }
+        if (startDate === endDate) {
+            label.textContent = startDate;
+        } else {
+            label.textContent = startDate + ' → ' + endDate;
+        }
+    }
+
+    // ===== PREMIUM FLATPICKR DATE PICKER =====
+    function initRouteDatePicker() {
+        if (routeFlatpickr) return; // Don't re-init
+
+        var today = new Date();
+        var weekAgo = new Date();
+        weekAgo.setDate(today.getDate() - 7);
+
+        // Set initial hidden values (LOCAL timezone, not UTC)
+        var startStr = _localDateStr(weekAgo);
+        var endStr = _localDateStr(today);
+        document.getElementById('route-start-date').value = startStr;
+        document.getElementById('route-end-date').value = endStr;
+        _updateRouteDateLabel(startStr, endStr);
+
+        if (typeof flatpickr !== 'undefined') {
+            routeFlatpickr = flatpickr('#route-date-trigger', {
+                mode: 'range',
+                dateFormat: 'Y-m-d',
+                defaultDate: [weekAgo, today],
+                locale: typeof getFlatpickrLocale === 'function' ? getFlatpickrLocale() : 'en',
+                onClose: function (selectedDates) {
+                    if (selectedDates.length === 2) {
+                        var start = _localDateStr(selectedDates[0]);
+                        var end = _localDateStr(selectedDates[1]);
+                        document.getElementById('route-start-date').value = start;
+                        document.getElementById('route-end-date').value = end;
+                        _updateRouteDateLabel(start, end);
+                        loadRouteData();
+                    } else if (selectedDates.length === 1) {
+                        var single = _localDateStr(selectedDates[0]);
+                        document.getElementById('route-start-date').value = single;
+                        document.getElementById('route-end-date').value = single;
+                        _updateRouteDateLabel(single, single);
+                        loadRouteData();
+                    } else if (selectedDates.length === 0) {
+                        document.getElementById('route-start-date').value = '';
+                        document.getElementById('route-end-date').value = '';
+                        _updateRouteDateLabel('', '');
+                    }
+                }
+            });
+        }
+    }
+
+    // ===== DATE QUICK PRESETS =====
+    function setRoutePreset(preset, btnEl) {
+        // Highlight active preset button
+        document.querySelectorAll('.route-preset-btn').forEach(function (b) { b.classList.remove('active'); });
+        if (btnEl) btnEl.classList.add('active');
+
+        var today = new Date();
+        var start, end;
+        switch (preset) {
+            case 'today':
+                start = end = _localDateStr(today);
+                break;
+            case 'yesterday':
+                var yd = new Date(); yd.setDate(today.getDate() - 1);
+                start = end = _localDateStr(yd);
+                break;
+            case 'week':
+                var wk = new Date(); wk.setDate(today.getDate() - 7);
+                start = _localDateStr(wk);
+                end = _localDateStr(today);
+                break;
+            case '30days':
+                var m = new Date(); m.setDate(today.getDate() - 30);
+                start = _localDateStr(m);
+                end = _localDateStr(today);
+                break;
+            default: return;
+        }
+        document.getElementById('route-start-date').value = start;
+        document.getElementById('route-end-date').value = end;
+        _updateRouteDateLabel(start, end);
+        // Sync flatpickr display
+        if (routeFlatpickr) {
+            routeFlatpickr.setDate([start, end], false);
+        }
+        loadRouteData();
+    }
+
+    // ===== SHIFT FILTER (instant re-filter, no backend call) =====
+    function setShiftFilter(shift) {
+        // Multi-mode: re-process all cached inspector data
+        if (_multiMode && Object.keys(_multiComplianceCache).length > 0) {
+            if (!shift || shift === '') {
+                shift = (document.getElementById('route-shift') || {}).value || 'all';
+            }
+            _selectedShift = shift;
+            processMultiRouteData(_multiComplianceCache, routeSiteCoords);
+            return;
+        }
+        // When called from dropdown onchange, read the dropdown value
+        if (!shift || shift === '') {
+            shift = (document.getElementById('route-shift') || {}).value || 'all';
+        }
+        _selectedShift = shift;
+
+        // Re-process cached data if available (instant, no reload)
+        if (_rawComplianceData && _rawInspectorName) {
+            processRouteData(_rawInspectorName, _rawComplianceData, routeSiteCoords);
+        }
+    }
+
+    // ===== LOAD INSPECTOR OPTIONS (VKS Dropdown) =====
+    function loadRouteInspectors() {
+        // Init with empty placeholder first
+        initVKSDropdown({
+            containerId: 'route-inspector-dropdown',
+            hiddenInputId: 'route-inspector',
+            placeholder: t('routes.select_inspector') || 'Select Inspector',
+            searchable: true,
+            items: [],
+            onSelect: function (value, label) {
+                loadRouteData();
+            }
+        });
+
+        // Then fetch options
+        google.script.run
+            .withSuccessHandler(function (options) {
+                var items = [{ value: '', label: t('routes.select_inspector') || 'Select Inspector' }];
+                items.push({ value: '__all__', label: '👥 ' + (t('routes.all_inspectors') || 'All Inspectors') });
+                (options || []).forEach(function (opt) {
+                    items.push({ value: opt.value, label: opt.label });
+                });
+                // Cache inspector names for multi-mode
+                var _loadedInspectorNames = items.filter(function (i) { return i.value && i.value !== '__all__'; }).map(function (i) { return i.value; });
+                initVKSDropdown({
+                    containerId: 'route-inspector-dropdown',
+                    hiddenInputId: 'route-inspector',
+                    placeholder: t('routes.select_inspector') || 'Select Inspector',
+                    searchable: true,
+                    items: items,
+                    onSelect: function (value, label) {
+                        loadRouteData();
+                    }
+                });
+
+                // Check for pending route view from Inspection Logs or Calendar
+                if (window._pendingRouteView) {
+                    var p = window._pendingRouteView;
+                    window._pendingRouteView = null;
+                    // Set inspector if provided (Inspection Logs deep-link)
+                    if (p.inspector) {
+                        document.getElementById('route-inspector').value = p.inspector;
+                        var display = document.querySelector('#route-inspector-dropdown .vks-select-display');
+                        if (display) display.textContent = p.inspector;
+                    }
+                    // Set date
+                    if (p.date) {
+                        document.getElementById('route-start-date').value = p.date;
+                        document.getElementById('route-end-date').value = p.date;
+                        _updateRouteDateLabel(p.date, p.date);
+                        if (routeFlatpickr) routeFlatpickr.setDate([p.date, p.date], false);
+                        document.querySelectorAll('.route-preset-btn').forEach(function (b) { b.classList.remove('active'); });
+                    }
+                    // Set shift filter silently (no selectOption to avoid side effects)
+                    if (p.shift) {
+                        var shiftLabels = { morning: '🌅 AM', evening: '🌆 PM', night: '🌙 Night' };
+                        document.getElementById('route-shift').value = p.shift;
+                        var sd = document.querySelector('[data-select-id="route-shift"] .custom-select-value');
+                        if (sd) sd.textContent = shiftLabels[p.shift] || 'All Shifts';
+                        _selectedShift = p.shift;
+                    }
+                    // Load: if inspector provided → single mode, else → all inspectors
+                    if (p.inspector) {
+                        loadRouteData();
+                    } else {
+                        document.getElementById('route-inspector').value = '__all__';
+                        var allDisplay = document.querySelector('#route-inspector-dropdown .vks-select-display');
+                        if (allDisplay) allDisplay.textContent = '👥 ' + (t('routes.all_inspectors') || 'All Inspectors');
+                        loadAllRouteData(_loadedInspectorNames);
+                    }
+                }
+            })
+            .withFailureHandler(function (err) {
+                console.error('[InspectorRoutes] Failed to load inspector options:', err);
+                showToast(t('routes.error_inspectors') || 'Failed to load inspectors', 'error');
+            })
+            .getPatrolNameOptions();
+    }
+
+    // ===== LOAD ROUTE DATA =====
+    var _routeComplianceSummary = null; // Store compliance summary for KPI display
+
+    function loadRouteData() {
+        var inspector = document.getElementById('route-inspector').value;
+        var startDate = document.getElementById('route-start-date').value;
+        var endDate = document.getElementById('route-end-date').value;
+
+        // Multi-inspector mode: delegate to loadAllRouteData
+        if (inspector === '__all__') {
+            loadAllRouteData();
+            return;
+        }
+
+        // Exit multi-mode when single inspector selected
+        _multiMode = false;
+        _multiComplianceCache = {};
+        _multiInspectorNames = [];
+        var legend = document.getElementById('route-multi-legend');
+        if (legend) legend.classList.remove('visible');
+
+        if (!inspector) {
+            showRouteEmptyState(true);
+            clearRouteMap();
+            var sidebar = document.getElementById('ri-sidebar');
+            if (sidebar) sidebar.style.display = 'none';
+            document.getElementById('route-info').textContent = '';
+            return;
+        }
+
+        if (!startDate || !endDate) {
+            showToast(t('routes.select_date_range') || 'Please select a date range', 'warning');
+            return;
+        }
+
+        showRouteLoading(true);
+        showRouteEmptyState(false);
+        document.getElementById('route-info').textContent = '';
+        routeOsrmDistance = null;
+        _routeComplianceSummary = null;
+
+        var loaded = { sites: null, compliance: null };
+
+        function checkBothLoaded() {
+            if (loaded.sites !== null && loaded.compliance !== null) {
+                showRouteLoading(false);
+                // Cache for instant shift re-filtering
+                _rawComplianceData = loaded.compliance;
+                _rawInspectorName = inspector;
+                processRouteData(inspector, loaded.compliance, loaded.sites);
+            }
+        }
+
+        google.script.run
+            .withSuccessHandler(function (sitesData) {
+                routeSiteCoords = {};
+                (sitesData || []).forEach(function (site) {
+                    if (site.name && site.lat && site.lng) {
+                        routeSiteCoords[site.name] = { lat: site.lat, lng: site.lng, address: site.address || '' };
+                    }
+                });
+                loaded.sites = routeSiteCoords;
+                checkBothLoaded();
+            })
+            .withFailureHandler(function (err) {
+                showRouteLoading(false);
+                showToast(t('routes.error_sites') || 'Failed to load site data', 'error');
+                loaded.sites = {};
+                checkBothLoaded();
+            })
+            .getSiteCoordinates();
+
+        google.script.run
+            .withSuccessHandler(function (response) {
+                var data = {};
+                try {
+                    data = (typeof response === 'string') ? JSON.parse(response) : (response || {});
+                } catch (e) { data = { logs: [], missedPlans: [], summary: {} }; }
+                _routeComplianceSummary = data.summary || {};
+                loaded.compliance = data;
+                checkBothLoaded();
+            })
+            .withFailureHandler(function (err) {
+                showRouteLoading(false);
+                showToast(t('routes.error_logs') || 'Failed to load route data', 'error');
+                loaded.compliance = { logs: [], missedPlans: [], summary: {} };
+                checkBothLoaded();
+            })
+            .getInspectorRouteCompliance(inspector, startDate, endDate);
+    }
+
+    // ===== MULTI-INSPECTOR: LOAD ALL =====
+    function loadAllRouteData(inspectorNamesOverride) {
+        var startDate = document.getElementById('route-start-date').value;
+        var endDate = document.getElementById('route-end-date').value;
+
+        // Get inspector names: from argument, or from dropdown DOM
+        var inspectorNames = inspectorNamesOverride || [];
+        if (!inspectorNames.length) {
+            var dropdownItems = document.querySelectorAll('#route-inspector-dropdown .vks-select-item');
+            dropdownItems.forEach(function (el) {
+                var v = el.getAttribute('data-value');
+                if (v && v !== '' && v !== '__all__') inspectorNames.push(v);
+            });
+        }
+
+        if (!inspectorNames.length) {
+            showToast(t('routes.no_inspectors') || 'No inspectors available', 'warning');
+            return;
+        }
+        if (!startDate || !endDate) {
+            showToast(t('routes.select_date_range') || 'Please select a date range', 'warning');
+            return;
+        }
+
+        _multiMode = true;
+        _multiComplianceCache = {};
+        _multiInspectorNames = inspectorNames.slice().sort();
+        showRouteLoading(true);
+        showRouteEmptyState(false);
+        document.getElementById('route-info').textContent = '';
+        var sidebar = document.getElementById('ri-sidebar');
+        if (sidebar) sidebar.style.display = 'none';
+
+        // Load sites once (shared)
+        var sitesLoaded = false;
+        var remaining = inspectorNames.length;
+        var siteCoords = routeSiteCoords || {};
+
+        function checkAllDone() {
+            if (remaining <= 0 && sitesLoaded) {
+                showRouteLoading(false);
+                routeSiteCoords = siteCoords;
+                processMultiRouteData(_multiComplianceCache, siteCoords);
+            }
+        }
+
+        // Load site coordinates
+        google.script.run
+            .withSuccessHandler(function (sitesData) {
+                siteCoords = {};
+                (sitesData || []).forEach(function (site) {
+                    if (site.name && site.lat && site.lng) {
+                        siteCoords[site.name] = { lat: site.lat, lng: site.lng, address: site.address || '' };
+                    }
+                });
+                sitesLoaded = true;
+                checkAllDone();
+            })
+            .withFailureHandler(function () {
+                sitesLoaded = true;
+                checkAllDone();
+            })
+            .getSiteCoordinates();
+
+        // Load compliance for each inspector in parallel
+        inspectorNames.forEach(function (name) {
+            google.script.run
+                .withSuccessHandler(function (response) {
+                    var data = {};
+                    try {
+                        data = (typeof response === 'string') ? JSON.parse(response) : (response || {});
+                    } catch (e) { data = { logs: [], missedPlans: [], summary: {} }; }
+                    _multiComplianceCache[name] = data;
+                    remaining--;
+                    checkAllDone();
+                })
+                .withFailureHandler(function () {
+                    _multiComplianceCache[name] = { logs: [], missedPlans: [], summary: {} };
+                    remaining--;
+                    checkAllDone();
+                })
+                .getInspectorRouteCompliance(name, startDate, endDate);
+        });
+    }
+
+    // ===== MULTI-INSPECTOR: PROCESS & RENDER =====
+    function processMultiRouteData(complianceCache, siteCoordMap) {
+        var allNames = Object.keys(complianceCache).sort();
+        var allWaypoints = []; // { inspectorName, color, waypoints[] }
+        var totalStops = 0;
+
+        allNames.forEach(function (name, idx) {
+            var data = complianceCache[name];
+            var logs = data.logs || [];
+
+            // Apply shift filter
+            if (_selectedShift !== 'all') {
+                logs = logs.filter(function (log) {
+                    return (log.shift || '').toLowerCase() === _selectedShift;
+                });
+            }
+
+            if (logs.length === 0) return;
+
+            var color = DAY_COLORS[idx % DAY_COLORS.length];
+            var waypoints = [];
+
+            logs.forEach(function (log) {
+                var coords = siteCoordMap[log.siteName];
+                if (coords) {
+                    waypoints.push({
+                        lat: coords.lat, lng: coords.lng,
+                        siteName: log.siteName,
+                        time: log.timeDisplay || '',
+                        date: log.dateDisplay || '',
+                        score: log.score,
+                        shift: log.shift || '',
+                        inspector: name
+                    });
+                }
+            });
+
+            if (waypoints.length > 0) {
+                allWaypoints.push({ name: name, color: color, waypoints: waypoints });
+                totalStops += waypoints.length;
+            }
+        });
+
+        if (allWaypoints.length === 0) {
+            showRouteEmptyState(true, t('routes.no_data_desc') || 'No inspections found for the selected filters.');
+            clearRouteMap();
+            return;
+        }
+
+        showRouteEmptyState(false);
+        var infoLabel = allWaypoints.length + ' inspector' + (allWaypoints.length > 1 ? 's' : '') + ' • ' + totalStops + ' stops';
+        document.getElementById('route-info').textContent = infoLabel;
+
+        drawMultiRoute(allWaypoints);
+    }
+
+    // ===== MULTI-INSPECTOR: DRAW ON MAP =====
+    function drawMultiRoute(allWaypointSets) {
+        clearRouteMap();
+        if (!routeMapObj) return;
+
+        var allMarkers = [];
+
+        allWaypointSets.forEach(function (set) {
+            var latlngs = [];
+
+            set.waypoints.forEach(function (wp) {
+                var latlng = [wp.lat, wp.lng];
+                latlngs.push(latlng);
+
+                // Small colored dot marker
+                var icon = L.divIcon({
+                    html: '<div style="width:12px;height:12px;border-radius:50%;background:' + set.color +
+                        ';border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>',
+                    className: 'route-marker-icon',
+                    iconSize: [12, 12],
+                    iconAnchor: [6, 6]
+                });
+
+                var marker = L.marker(latlng, { icon: icon }).addTo(routeMapObj);
+
+                var scoreColor = wp.score >= 4 ? '#10b981' : wp.score >= 3 ? '#f59e0b' : '#ef4444';
+                var scoreHtml = wp.score ? '<span style="color:' + scoreColor + ';font-weight:700;">' + wp.score + '/5</span>' : '<span style="color:#94a3b8;">N/A</span>';
+
+                marker.bindPopup(
+                    '<div style="font-family:\'Noto Sans\',sans-serif;min-width:180px;">' +
+                    '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">' +
+                    '<span style="width:8px;height:8px;border-radius:50%;background:' + set.color + ';flex-shrink:0;"></span>' +
+                    '<strong style="font-size:13px;">' + escapeHtml(wp.inspector) + '</strong>' +
+                    '</div>' +
+                    '<div style="font-size:13px;font-weight:600;margin-bottom:4px;">' + escapeHtml(wp.siteName) + '</div>' +
+                    '<div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid #e2e8f0;">' +
+                    '<span style="font-size:12px;color:#64748b;">' + wp.date + ' ' + wp.time + '</span>' +
+                    scoreHtml +
+                    '</div>' +
+                    '</div>',
+                    { className: 'route-popup', maxWidth: 260 }
+                );
+
+                routeMarkers.push(marker);
+                allMarkers.push(marker);
+            });
+
+            // Straight-line polyline per inspector (no OSRM for performance)
+            if (latlngs.length > 1) {
+                var polyline = L.polyline(latlngs, {
+                    color: set.color,
+                    weight: 3,
+                    opacity: 0.7,
+                    dashArray: '6,4'
+                }).addTo(routeMapObj);
+                routeArrows.push(polyline); // Track for cleanup
+            }
+        });
+
+        // Fit bounds
+        if (allMarkers.length > 0) {
+            var group = L.featureGroup(allMarkers);
+            routeMapObj.fitBounds(group.getBounds().pad(0.15));
+        }
+
+        // Build legend
+        var legendEl = document.getElementById('route-multi-legend');
+        if (legendEl) {
+            var html = '<div class="route-multi-legend-title">Inspectors</div>';
+            allWaypointSets.forEach(function (set) {
+                html += '<div class="route-multi-legend-item">' +
+                    '<span class="route-multi-legend-dot" style="background:' + set.color + ';"></span>' +
+                    '<span>' + escapeHtml(set.name) + '</span>' +
+                    '<span class="route-multi-legend-count">' + set.waypoints.length + '</span>' +
+                    '</div>';
+            });
+            legendEl.innerHTML = html;
+            legendEl.classList.add('visible');
+        }
+
+        // Hide day legend in multi-mode
+        var dayLegend = document.getElementById('route-day-legend');
+        if (dayLegend) dayLegend.classList.remove('visible');
+    }
+
+    // ===== PROCESS & RENDER =====
+    function processRouteData(inspector, complianceData, siteCoordMap) {
+        // complianceData = { logs: [...], missedPlans: [...], summary: {...} }
+        var inspectorLogs = complianceData.logs || [];
+
+        // Apply shift filter (frontend-only, uses backend's pre-computed shift field)
+        if (_selectedShift !== 'all') {
+            inspectorLogs = inspectorLogs.filter(function (log) {
+                return (log.shift || '').toLowerCase() === _selectedShift;
+            });
+        }
+
+        // Logs are already filtered by inspector on backend, already sorted by timestamp
+
+        if (inspectorLogs.length === 0) {
+            document.getElementById('route-info').textContent = t('routes.no_data') || 'No inspections found';
+            showRouteEmptyState(true, t('routes.no_data_desc') || 'No inspections found for this inspector in the selected date range.');
+            var sidebar = document.getElementById('ri-sidebar');
+            if (sidebar) sidebar.style.display = 'none';
+            clearRouteMap();
+            return;
+        }
+
+        // Data exists — explicitly hide the empty state overlay
+        showRouteEmptyState(false);
+
+        var waypoints = [];
+        var visitedSiteNames = new Set();
+        var totalScore = 0;
+        var scoreCount = 0;
+
+        inspectorLogs.forEach(function (log) {
+            var coords = siteCoordMap[log.siteName];
+            if (coords) {
+                var inspectorGps = parseGpsFromLink(log.gps);
+                var gpsDistance = null;
+                if (inspectorGps) {
+                    gpsDistance = haversineDistance(
+                        inspectorGps.lat, inspectorGps.lng,
+                        coords.lat, coords.lng
+                    );
+                }
+
+                waypoints.push({
+                    lat: coords.lat, lng: coords.lng,
+                    siteName: log.siteName,
+                    time: log.timeDisplay || '',
+                    date: log.dateDisplay || '',
+                    score: log.score,
+                    timestamp: log.timestamp,
+                    address: coords.address,
+                    inspectorGps: inspectorGps,
+                    gpsDistance: gpsDistance,
+                    shift: log.shift || '',
+                    route: log.route || ''
+                });
+                visitedSiteNames.add(log.siteName);
+            }
+            if (log.score && log.score > 0) {
+                totalScore += log.score;
+                scoreCount++;
+            }
+        });
+
+        var avgScore = scoreCount > 0 ? (totalScore / scoreCount).toFixed(1) : '-';
+
+        // Cache waypoints for GPS toggle
+        routeWaypointsCache = waypoints;
+
+        // Compute patrol duration
+        var patrolDurationMs = 0;
+        if (waypoints.length >= 2) {
+            var firstTs = new Date(waypoints[0].timestamp).getTime();
+            var lastTs = new Date(waypoints[waypoints.length - 1].timestamp).getTime();
+            patrolDurationMs = lastTs - firstTs;
+        }
+
+        var stopsLabel = (t('routes.stops_info') || '{0} stops • {1} inspections')
+            .replace('{0}', waypoints.length)
+            .replace('{1}', inspectorLogs.length);
+        document.getElementById('route-info').textContent = stopsLabel;
+
+        drawRoute(waypoints);
+        if (gpsVerifyEnabled) drawGpsVerification(waypoints);
+        updateRouteDetails(inspector, inspectorLogs, waypoints, visitedSiteNames.size, avgScore);
+    }
+
+    // ===== DRAW ANIMATED ROUTE ON MAP =====
+    function drawRoute(waypoints) {
+        clearRouteMap();
+        if (waypoints.length === 0) return;
+
+        var latlngs = [];
+
+        waypoints.forEach(function (wp, idx) {
+            var latlng = [wp.lat, wp.lng];
+            latlngs.push(latlng);
+
+            // Determine marker class
+            var extraClass = '';
+            if (idx === 0) extraClass = ' route-marker-start';
+            else if (idx === waypoints.length - 1) extraClass = ' route-marker-end';
+
+            var markerLabel = '';
+            if (idx === 0) markerLabel = 'START';
+            else if (idx === waypoints.length - 1) markerLabel = 'END';
+            else markerLabel = '' + (idx + 1);
+
+            var iconSize = (idx === 0 || idx === waypoints.length - 1) ? [34, 34] : [30, 30];
+            var iconAnchor = (idx === 0 || idx === waypoints.length - 1) ? [17, 17] : [15, 15];
+
+            var icon = L.divIcon({
+                html: '<div class="route-number-marker' + extraClass + '">' + markerLabel + '</div>',
+                className: 'route-marker-icon',
+                iconSize: iconSize,
+                iconAnchor: iconAnchor
+            });
+
+            var marker = L.marker(latlng, { icon: icon }).addTo(routeMapObj);
+
+            // Popup
+            var scoreColor = wp.score >= 4 ? '#10b981' : wp.score >= 3 ? '#f59e0b' : '#ef4444';
+            var scoreHtml = wp.score ? '<span style="color:' + scoreColor + '; font-weight: 700; font-size: 15px;">' + wp.score + '/5</span>' : '<span style="color:#94a3b8;">N/A</span>';
+
+            var labelHtml = '';
+            if (idx === 0) labelHtml = '<span style="font-size:10px;font-weight:700;background:#dcfce7;color:#059669;padding:2px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:0.05em;">' + (t('routes.marker_start') || 'Start') + '</span>';
+            else if (idx === waypoints.length - 1) labelHtml = '<span style="font-size:10px;font-weight:700;background:#ffedd5;color:#ea580c;padding:2px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:0.05em;">' + (t('routes.marker_end') || 'End') + '</span>';
+
+            marker.bindPopup(
+                '<div style="font-family: \'Noto Sans\', \'Noto Sans Lao\', sans-serif; min-width: 200px;">' +
+                '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">' +
+                '<strong style="font-size:14px;">' + escapeHtml(wp.siteName) + '</strong>' +
+                labelHtml +
+                '</div>' +
+                (wp.address ? '<div style="font-size:12px;color:#64748b;margin-bottom:8px;display:flex;align-items:center;gap:4px;"><span class="material-symbols-outlined" style="font-size:14px;">location_on</span>' + escapeHtml(wp.address) + '</div>' : '') +
+                '<div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid #e2e8f0;">' +
+                '<span style="font-size:12px;color:#64748b;display:flex;align-items:center;gap:4px;"><span class="material-symbols-outlined" style="font-size:14px;">schedule</span>' + wp.date + ' ' + wp.time + '</span>' +
+                scoreHtml +
+                '</div>' +
+                '</div>',
+                { className: 'route-popup', maxWidth: 280 }
+            );
+
+            routeMarkers.push(marker);
+        });
+
+        // Fit bounds immediately (markers are already placed)
+        var group = L.featureGroup(routeMarkers);
+        routeMapObj.fitBounds(group.getBounds().pad(0.15));
+
+        // Fetch road-following route from OSRM
+        if (latlngs.length > 1) {
+            fetchOsrmRoute(latlngs);
+        }
+    }
+
+    // ===== OSRM ROAD-FOLLOWING ROUTE =====
+    // Route all waypoints in a single OSRM request (or batched if >80 waypoints)
+    function fetchOsrmRoute(latlngs) {
+        if (latlngs.length < 2) return;
+
+        var BATCH_SIZE = 80; // OSRM handles ~100 waypoints per request; use 80 for safety
+
+        if (latlngs.length <= BATCH_SIZE) {
+            // Single request with all waypoints
+            _fetchOsrmBatch(latlngs)
+                .then(function (result) {
+                    if (result.points.length >= 2) {
+                        routeRoadGeometry = result.points;
+                        drawRoadRoute(result.points);
+                        routeOsrmDistance = result.distance;
+                        _updateDistKpi(result.distance);
+                    } else {
+                        drawStraightRoute(latlngs);
+                        _updateDistKpiFallback();
+                    }
+                })
+                .catch(function (err) {
+                    console.warn('[InspectorRoutes] OSRM fetch failed:', err.message);
+                    drawStraightRoute(latlngs);
+                    _updateDistKpiFallback();
+                });
+        } else {
+            // Batch into overlapping chunks of BATCH_SIZE
+            var batches = [];
+            for (var i = 0; i < latlngs.length; i += BATCH_SIZE - 1) {
+                batches.push(latlngs.slice(i, Math.min(i + BATCH_SIZE, latlngs.length)));
+            }
+            // Remove any batch with < 2 points
+            batches = batches.filter(function (b) { return b.length >= 2; });
+
+            Promise.all(batches.map(function (batch) { return _fetchOsrmBatch(batch); }))
+                .then(function (results) {
+                    var allPoints = [];
+                    var totalDist = 0;
+                    results.forEach(function (seg, idx) {
+                        if (idx === 0) {
+                            allPoints = allPoints.concat(seg.points);
+                        } else {
+                            allPoints = allPoints.concat(seg.points.slice(1)); // skip overlap point
+                        }
+                        totalDist += seg.distance;
+                    });
+
+                    if (allPoints.length >= 2) {
+                        routeRoadGeometry = allPoints;
+                        drawRoadRoute(allPoints);
+                        routeOsrmDistance = totalDist;
+                        _updateDistKpi(totalDist);
+                    } else {
+                        drawStraightRoute(latlngs);
+                        _updateDistKpiFallback();
+                    }
+                })
+                .catch(function (err) {
+                    console.warn('[InspectorRoutes] OSRM batch fetch failed:', err.message);
+                    drawStraightRoute(latlngs);
+                    _updateDistKpiFallback();
+                });
+        }
+    }
+
+    // Fetch a single OSRM route for a batch of waypoints
+    function _fetchOsrmBatch(points) {
+        var coords = points.map(function (p) {
+            return p[1].toFixed(6) + ',' + p[0].toFixed(6);
+        }).join(';');
+
+        var url = 'https://router.project-osrm.org/route/v1/driving/' + coords +
+            '?overview=full&geometries=polyline&steps=false&continue_straight=true';
+
+        return fetch(url)
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+                    return {
+                        points: decodePolyline(data.routes[0].geometry),
+                        distance: data.routes[0].distance || 0
+                    };
+                }
+                // Fallback: return straight line points
+                return { points: points, distance: 0 };
+            });
+    }
+
+    function _updateDistKpi(distance) {
+        var distEl = document.getElementById('route-kpi-distance');
+        if (distEl) {
+            if (distance >= 1000) {
+                distEl.textContent = (distance / 1000).toFixed(1) + ' km';
+            } else {
+                distEl.textContent = Math.round(distance) + ' m';
+            }
+        }
+    }
+
+    function _updateDistKpiFallback() {
+        var distEl = document.getElementById('route-kpi-distance');
+        if (distEl) distEl.textContent = '—';
+    }
+
+    // ===== DRAW ROAD-FOLLOWING ROUTE =====
+    function drawRoadRoute(roadPoints) {
+        if (!routeMapObj || roadPoints.length < 2) return;
+
+        // Draw the main animated line along roads
+        routePolyline = L.polyline(roadPoints, {
+            color: '#3b82f6',
+            weight: 5,
+            opacity: 0.85,
+            dashArray: '12, 8',
+            lineJoin: 'round',
+            lineCap: 'round',
+            className: 'route-animated-line'
+        }).addTo(routeMapObj);
+
+        // Place direction arrows along the road path
+        addArrowsAlongPath(roadPoints);
+    }
+
+    // ===== DRAW STRAIGHT ROUTE (FALLBACK) =====
+    function drawStraightRoute(latlngs) {
+        if (!routeMapObj || latlngs.length < 2) return;
+
+        routePolyline = L.polyline(latlngs, {
+            color: '#3b82f6',
+            weight: 4,
+            opacity: 0.85,
+            dashArray: '12, 8',
+            lineJoin: 'round',
+            lineCap: 'round',
+            className: 'route-animated-line'
+        }).addTo(routeMapObj);
+
+        addArrowsAlongPath(latlngs);
+    }
+
+    // ===== PLACE ARROWS ALONG PATH =====
+    function addArrowsAlongPath(points) {
+        if (!points || points.length < 2) return;
+
+        // Calculate total path length for even arrow spacing
+        var totalDist = 0;
+        var segDists = [];
+        for (var i = 1; i < points.length; i++) {
+            var d = haversineDistance(points[i - 1][0], points[i - 1][1], points[i][0], points[i][1]);
+            segDists.push(d);
+            totalDist += d;
+        }
+
+        // Place an arrow every ~300m (but at least between each waypoint pair, max ~15 arrows)
+        var arrowInterval = Math.max(totalDist / 15, 300);
+        var accumulated = 0;
+
+        for (var j = 1; j < points.length; j++) {
+            accumulated += segDists[j - 1];
+
+            if (accumulated >= arrowInterval) {
+                accumulated = 0;
+
+                // Calculate angle from previous to current point
+                var dy = points[j][0] - points[j - 1][0];
+                var dx = points[j][1] - points[j - 1][1];
+                var angle = Math.atan2(dx, dy) * (180 / Math.PI);
+
+                var arrowIcon = L.divIcon({
+                    html: '<svg class="route-direction-arrow" viewBox="0 0 24 24" style="transform: rotate(' + angle + 'deg);">' +
+                        '<path d="M12 2 L20 18 L12 14 L4 18 Z" fill="#2563eb" stroke="#fff" stroke-width="1.5"/>' +
+                        '</svg>',
+                    className: 'route-arrow-icon',
+                    iconSize: [14, 14],
+                    iconAnchor: [7, 7]
+                });
+
+                var arrowMarker = L.marker(points[j], {
+                    icon: arrowIcon,
+                    interactive: false
+                }).addTo(routeMapObj);
+
+                routeArrows.push(arrowMarker);
+            }
+        }
+    }
+
+    // ===== DECODE GOOGLE POLYLINE FORMAT =====
+    // OSRM returns routes in Google's polyline encoding format
+    function decodePolyline(encoded) {
+        var points = [];
+        var index = 0, len = encoded.length;
+        var lat = 0, lng = 0;
+
+        while (index < len) {
+            var b, shift = 0, result = 0;
+            do {
+                b = encoded.charCodeAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            var dlat = ((result & 1) ? ~(result >> 1) : (result >> 1));
+            lat += dlat;
+
+            shift = 0;
+            result = 0;
+            do {
+                b = encoded.charCodeAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            var dlng = ((result & 1) ? ~(result >> 1) : (result >> 1));
+            lng += dlng;
+
+            points.push([lat / 1e5, lng / 1e5]);
+        }
+
+        return points;
+    }
+
+    // ===== SIDEBAR DETAILS =====
+    function updateRouteDetails(inspectorName, logs, waypoints, uniqueSites, avgScore) {
+        var sidebar = document.getElementById('ri-sidebar');
+        if (sidebar) sidebar.style.display = '';
+
+        // Avatar
+        var avatarEl = document.getElementById('route-avatar');
+        if (avatarEl) {
+            avatarEl.textContent = getInitials(inspectorName);
+            avatarEl.style.background = 'linear-gradient(135deg, ' + getAvatarColor(inspectorName) + ', ' + getAvatarColor(inspectorName + '2') + ')';
+        }
+
+        document.getElementById('route-inspector-name').textContent = inspectorName;
+
+        var startDate = document.getElementById('route-start-date').value;
+        var endDate = document.getElementById('route-end-date').value;
+        document.getElementById('route-date-range').textContent = startDate + ' → ' + endDate;
+
+        document.getElementById('route-total-sites').textContent = uniqueSites;
+        document.getElementById('route-avg-score').textContent = avgScore;
+
+        // Render timeline cards in sidebar
+        renderTimelineCards(waypoints);
+    }
+
+    // ===== RENDER COMPACT TIMELINE CARDS (44px) =====
+    function renderTimelineCards(waypoints) {
+        var timelineEl = document.getElementById('route-timeline');
+        if (!timelineEl) return;
+
+        var html = '';
+
+        if (waypoints.length > 0) {
+            waypoints.forEach(function (wp, idx) {
+                var scoreColor = '#94a3b8';
+                if (wp.score >= 4) scoreColor = '#10b981';
+                else if (wp.score >= 3) scoreColor = '#f59e0b';
+                else if (wp.score > 0) scoreColor = '#ef4444';
+
+                // Travel time connector
+                if (idx > 0) {
+                    var prevWp = waypoints[idx - 1];
+                    var travelLabel = '';
+                    if (prevWp.timestamp && wp.timestamp) {
+                        var diffMs = new Date(wp.timestamp).getTime() - new Date(prevWp.timestamp).getTime();
+                        if (diffMs > 0 && diffMs < 86400000) {
+                            var diffMins = Math.round(diffMs / 60000);
+                            travelLabel = diffMins >= 60 ? Math.floor(diffMins / 60) + 'h ' + (diffMins % 60) + 'm' : diffMins + ' min';
+                        }
+                    }
+                    html += '<div class="ri-travel-connector">' +
+                        '<div class="ri-travel-line"></div>' +
+                        (travelLabel ? '<span class="ri-travel-time">' + travelLabel + '</span>' : '') +
+                        '</div>';
+                }
+
+                html += '<div class="ri-timeline-card" onclick="focusRouteMarker(' + idx + ')">' +
+                    '<div class="ri-tc-number">' + (idx + 1) + '</div>' +
+                    '<div class="ri-tc-info">' +
+                    '<div class="ri-tc-name">' + escapeHtml(wp.siteName) + '</div>' +
+                    '<div class="ri-tc-meta">' + (wp.time || '') + '</div>' +
+                    '</div>' +
+                    (wp.score ? '<div class="ri-tc-score" style="color:' + scoreColor + ';">' + wp.score + '/5</div>' : '') +
+                    '</div>';
+            });
+        }
+
+        if (waypoints.length === 0) {
+            html = '<div style="text-align:center;padding:24px;color:var(--text-muted);">' +
+                '<span class="material-symbols-outlined" style="font-size:32px;opacity:0.3;">location_off</span>' +
+                '<p style="margin-top:8px;">' + (t('routes.no_patrol_data') || 'No patrol data') + '</p></div>';
+        }
+
+        timelineEl.innerHTML = html;
+    }
+
+    // ===== FOCUS MARKER =====
+    function focusRouteMarker(idx) {
+        if (!routeMarkers[idx]) return;
+        // Scroll the map container into view first (so user sees the map)
+        var mapContainer = document.getElementById('route-map-container');
+        if (mapContainer) {
+            mapContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        // After scroll settles, zoom into the marker
+        setTimeout(function () {
+            routeMapObj.setView(routeMarkers[idx].getLatLng(), 16, { animate: true, duration: 0.5 });
+            setTimeout(function () {
+                routeMarkers[idx].openPopup();
+            }, 400);
+        }, 350);
+    }
+
+    // ===== CLEAR MAP =====
+    function clearRouteMap() {
+        if (!routeMapObj) return;
+
+        // Stop playback
+        stopPlayback();
+
+        routeMarkers.forEach(function (m) { routeMapObj.removeLayer(m); });
+        routeMarkers = [];
+
+        routeArrows.forEach(function (a) { routeMapObj.removeLayer(a); });
+        routeArrows = [];
+
+        if (routePolyline) {
+            routeMapObj.removeLayer(routePolyline);
+            routePolyline = null;
+        }
+
+        // Clear enhancement layers
+        _clearTimeHeatmap();
+        _clearDwellBubbles();
+        _clearDistLabels();
+        _clearCoverageHeatmap();
+        _clearDayLayers();
+
+        routeRoadGeometry = [];
+
+        clearGpsLayers();
+
+        // Hide day legend
+        var legend = document.getElementById('route-day-legend');
+        if (legend) legend.classList.remove('visible');
+
+        // Hide multi-inspector legend
+        var multiLegend = document.getElementById('route-multi-legend');
+        if (multiLegend) multiLegend.classList.remove('visible');
+    }
+
+    function clearGpsLayers() {
+        if (!routeMapObj) return;
+        routeGpsMarkers.forEach(function (m) { routeMapObj.removeLayer(m); });
+        routeGpsMarkers = [];
+        routeGpsLines.forEach(function (l) { routeMapObj.removeLayer(l); });
+        routeGpsLines = [];
+    }
+
+    // =============================================================
+    //  ENHANCEMENT FEATURES — OVERLAY PANEL CONTROLS
+    // =============================================================
+
+    function toggleOverlayPanel() {
+        var panel = document.getElementById('route-overlay-panel');
+        if (panel) panel.classList.toggle('collapsed');
+    }
+
+    function setRouteMode(mode, el) {
+        if (_currentRouteMode === mode) return;
+        _currentRouteMode = mode;
+        // Update radio UI
+        document.querySelectorAll('.rop-radio').forEach(function (r) { r.classList.remove('active'); });
+        if (el) el.classList.add('active');
+        // Re-render current route with new mode
+        _applyRouteMode();
+    }
+
+    function toggleOverlay(kind) {
+        var sw;
+        switch (kind) {
+            case 'dwell':
+                _dwellEnabled = !_dwellEnabled;
+                sw = document.getElementById('rop-sw-dwell');
+                if (sw) sw.classList.toggle('on', _dwellEnabled);
+                _dwellEnabled ? _drawDwellBubbles() : _clearDwellBubbles();
+                break;
+            case 'distance':
+                _distLabelsEnabled = !_distLabelsEnabled;
+                sw = document.getElementById('rop-sw-distance');
+                if (sw) sw.classList.toggle('on', _distLabelsEnabled);
+                _distLabelsEnabled ? _drawDistLabels() : _clearDistLabels();
+                break;
+            case 'heatmap':
+                _heatmapEnabled = !_heatmapEnabled;
+                sw = document.getElementById('rop-sw-heatmap');
+                if (sw) sw.classList.toggle('on', _heatmapEnabled);
+                _heatmapEnabled ? _drawCoverageHeatmap() : _clearCoverageHeatmap();
+                break;
+        }
+    }
+
+    function _applyRouteMode() {
+        // Remove existing route line & arrows (keep markers)
+        if (routePolyline) { routeMapObj.removeLayer(routePolyline); routePolyline = null; }
+        routeArrows.forEach(function (a) { routeMapObj.removeLayer(a); });
+        routeArrows = [];
+        _clearTimeHeatmap();
+        _clearDayLayers();
+
+        var wps = routeWaypointsCache;
+        if (!wps || wps.length < 2) return;
+
+        switch (_currentRouteMode) {
+            case 'time':
+                _drawTimeHeatmap(wps);
+                break;
+            case 'days':
+                _drawDayByDay(wps);
+                break;
+            default: // standard
+                if (routeRoadGeometry.length > 1) {
+                    drawRoadRoute(routeRoadGeometry);
+                } else {
+                    var ll = wps.map(function (w) { return [w.lat, w.lng]; });
+                    drawStraightRoute(ll);
+                }
+        }
+    }
+
+    // =============================================================
+    //  FEATURE 6: DISTANCE LABELS
+    // =============================================================
+
+    function _drawDistLabels() {
+        _clearDistLabels();
+        var wps = routeWaypointsCache;
+        if (!routeMapObj || !wps || wps.length < 2) return;
+
+        for (var i = 1; i < wps.length; i++) {
+            var dist = haversineDistance(wps[i - 1].lat, wps[i - 1].lng, wps[i].lat, wps[i].lng);
+            if (dist < 50) continue; // Skip very short segments
+
+            var midLat = (wps[i - 1].lat + wps[i].lat) / 2;
+            var midLng = (wps[i - 1].lng + wps[i].lng) / 2;
+            var label = dist >= 1000 ? (dist / 1000).toFixed(1) + ' km' : Math.round(dist) + ' m';
+
+            var icon = L.divIcon({
+                html: '<div class="route-dist-label">' + label + '</div>',
+                className: '',
+                iconSize: [60, 20],
+                iconAnchor: [30, 10]
+            });
+
+            var marker = L.marker([midLat, midLng], { icon: icon, interactive: false }).addTo(routeMapObj);
+            _distLabelLayers.push(marker);
+        }
+
+        // Zoom-based visibility
+        _updateDistLabelVisibility();
+        routeMapObj.off('zoomend', _updateDistLabelVisibility);
+        routeMapObj.on('zoomend', _updateDistLabelVisibility);
+    }
+
+    function _updateDistLabelVisibility() {
+        if (!routeMapObj) return;
+        var zoom = routeMapObj.getZoom();
+        var visible = zoom >= 12;
+        _distLabelLayers.forEach(function (m) {
+            var el = m.getElement();
+            if (el) el.style.display = visible ? '' : 'none';
+        });
+    }
+
+    function _clearDistLabels() {
+        _distLabelLayers.forEach(function (m) { if (routeMapObj) routeMapObj.removeLayer(m); });
+        _distLabelLayers = [];
+        if (routeMapObj) routeMapObj.off('zoomend', _updateDistLabelVisibility);
+    }
+
+    // =============================================================
+    //  FEATURE 2: TIME HEATMAP (Segment Speed Coloring)
+    // =============================================================
+
+    function _drawTimeHeatmap(wps) {
+        _clearTimeHeatmap();
+        if (!routeMapObj || !wps || wps.length < 2) return;
+
+        for (var i = 1; i < wps.length; i++) {
+            var prevTs = new Date(wps[i - 1].timestamp).getTime();
+            var curTs = new Date(wps[i].timestamp).getTime();
+            var gapMs = curTs - prevTs;
+            var gapMin = gapMs / 60000;
+
+            // Color based on gap duration
+            var color, weight;
+            if (gapMin > 480) { // >8h = overnight
+                color = '#94a3b8'; weight = 3;
+            } else if (gapMin > 45) {
+                color = '#ef4444'; weight = 5; // Red — slow
+            } else if (gapMin > 15) {
+                color = '#f59e0b'; weight = 5; // Amber — moderate
+            } else {
+                color = '#10b981'; weight = 5; // Green — fast
+            }
+
+            var segPoints = [[wps[i - 1].lat, wps[i - 1].lng], [wps[i].lat, wps[i].lng]];
+
+            var line = L.polyline(segPoints, {
+                color: color, weight: weight, opacity: 0.85,
+                lineJoin: 'round', lineCap: 'round'
+            }).addTo(routeMapObj);
+
+            // Tooltip with gap info
+            var gapLabel = gapMin > 480 ? (t('routes.overnight') || 'Overnight') :
+                gapMin >= 60 ? Math.floor(gapMin / 60) + 'h ' + Math.round(gapMin % 60) + 'm' :
+                    Math.round(gapMin) + ' min';
+            line.bindTooltip(gapLabel, { sticky: true, className: 'route-dwell-tooltip' });
+
+            _timeHeatmapLayers.push(line);
+        }
+    }
+
+    function _clearTimeHeatmap() {
+        _timeHeatmapLayers.forEach(function (l) { if (routeMapObj) routeMapObj.removeLayer(l); });
+        _timeHeatmapLayers = [];
+    }
+
+    // =============================================================
+    //  FEATURE 3: DWELL TIME BUBBLES
+    // =============================================================
+
+    function _drawDwellBubbles() {
+        _clearDwellBubbles();
+        var wps = routeWaypointsCache;
+        if (!routeMapObj || !wps || wps.length < 2) return;
+
+        // Calculate dwell times (time until next stop)
+        var dwellTimes = [];
+        for (var i = 0; i < wps.length; i++) {
+            if (i < wps.length - 1) {
+                var gap = new Date(wps[i + 1].timestamp).getTime() - new Date(wps[i].timestamp).getTime();
+                dwellTimes.push(gap > 0 ? gap : 0);
+            } else {
+                // Last stop: use average of previous
+                var sum = 0;
+                for (var j = 0; j < dwellTimes.length; j++) sum += dwellTimes[j];
+                dwellTimes.push(dwellTimes.length > 0 ? sum / dwellTimes.length : 0);
+            }
+        }
+
+        var maxDwell = Math.max.apply(null, dwellTimes);
+        if (maxDwell <= 0) return;
+
+        for (var k = 0; k < wps.length; k++) {
+            var dwell = dwellTimes[k];
+            if (dwell > 28800000) continue; // Skip > 8h (overnight)
+
+            var ratio = dwell / maxDwell;
+            var radius = 15 + ratio * 35; // 15px to 50px
+
+            var circle = L.circleMarker([wps[k].lat, wps[k].lng], {
+                radius: radius,
+                fillColor: '#3b82f6',
+                fillOpacity: 0.12 + ratio * 0.18,
+                color: '#3b82f6',
+                weight: 1.5,
+                opacity: 0.3,
+                interactive: true
+            }).addTo(routeMapObj);
+
+            // Format dwell label
+            var dwellMin = Math.round(dwell / 60000);
+            var dwellLabel = dwellMin >= 60
+                ? Math.floor(dwellMin / 60) + 'h ' + (dwellMin % 60) + 'm'
+                : dwellMin + ' min';
+            circle.bindTooltip(dwellLabel, { className: 'route-dwell-tooltip' });
+
+            // Insert below markers
+            circle.setZIndexOffset(-1000);
+            _dwellBubbleLayers.push(circle);
+        }
+    }
+
+    function _clearDwellBubbles() {
+        _dwellBubbleLayers.forEach(function (l) { if (routeMapObj) routeMapObj.removeLayer(l); });
+        _dwellBubbleLayers = [];
+    }
+
+    // =============================================================
+    //  FEATURE 7: COVERAGE HEATMAP
+    // =============================================================
+
+    function _drawCoverageHeatmap() {
+        _clearCoverageHeatmap();
+        var wps = routeWaypointsCache;
+        if (!routeMapObj || !wps || wps.length === 0) return;
+
+        if (typeof L.heatLayer !== 'function') {
+            console.warn('[InspectorRoutes] leaflet.heat not loaded — coverage heatmap unavailable');
+            showToast && showToast('Heatmap plugin not available', 'warning');
+            _heatmapEnabled = false;
+            var sw = document.getElementById('rop-sw-heatmap');
+            if (sw) sw.classList.remove('on');
+            return;
+        }
+
+        var points = wps.map(function (wp) { return [wp.lat, wp.lng, 0.8]; });
+        _coverageHeatLayer = L.heatLayer(points, {
+            radius: 30, blur: 20, maxZoom: 17,
+            gradient: { 0.2: '#3b82f6', 0.5: '#10b981', 0.8: '#f59e0b', 1.0: '#ef4444' }
+        }).addTo(routeMapObj);
+    }
+
+    function _clearCoverageHeatmap() {
+        if (_coverageHeatLayer && routeMapObj) {
+            routeMapObj.removeLayer(_coverageHeatLayer);
+            _coverageHeatLayer = null;
+        }
+    }
+
+    // =============================================================
+    //  FEATURE 4: DAY-BY-DAY COMPARISON
+    // =============================================================
+
+    function _drawDayByDay(wps) {
+        _clearDayLayers();
+        if (!routeMapObj || !wps || wps.length < 2) return;
+
+        // Group waypoints by date
+        var dayGroups = {};
+        wps.forEach(function (wp) {
+            var key = wp.date || wp.displayDate || 'unknown';
+            if (!dayGroups[key]) dayGroups[key] = [];
+            dayGroups[key].push(wp);
+        });
+
+        var dayKeys = Object.keys(dayGroups);
+        if (dayKeys.length < 2) {
+            showToast && showToast(t('routes.select_multiday') || 'Select a multi-day range for comparison', 'info');
+            // Fall back to standard
+            _currentRouteMode = 'standard';
+            document.querySelectorAll('.rop-radio').forEach(function (r) {
+                r.classList.toggle('active', r.getAttribute('data-mode') === 'standard');
+            });
+            _applyRouteMode();
+            return;
+        }
+
+        // Draw each day as a separate colored route
+        dayKeys.forEach(function (day, idx) {
+            var color = DAY_COLORS[idx % DAY_COLORS.length];
+            var dayWps = dayGroups[day];
+
+            if (dayWps.length >= 2) {
+                var ll = dayWps.map(function (w) { return [w.lat, w.lng]; });
+                var line = L.polyline(ll, {
+                    color: color, weight: 4, opacity: 0.8,
+                    dashArray: '8, 6', lineJoin: 'round', lineCap: 'round'
+                }).addTo(routeMapObj);
+                _dayRouteLayers.push(line);
+            }
+
+            // Color markers for this day
+            dayWps.forEach(function (wp, wpIdx) {
+                var dotIcon = L.divIcon({
+                    html: '<div style="width:10px;height:10px;border-radius:50%;background:' + color +
+                        ';border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>',
+                    className: '', iconSize: [14, 14], iconAnchor: [7, 7]
+                });
+                var m = L.marker([wp.lat, wp.lng], { icon: dotIcon, interactive: false }).addTo(routeMapObj);
+                _dayMarkerLayers.push(m);
+            });
+        });
+
+        // Build legend
+        var legendEl = document.getElementById('route-day-legend');
+        if (legendEl) {
+            var html = '<div class="rdl-title">' + (t('routes.mode_days') || 'Days') + '</div>';
+            dayKeys.forEach(function (day, idx) {
+                var color = DAY_COLORS[idx % DAY_COLORS.length];
+                html += '<div class="rdl-item" data-day-idx="' + idx + '" onclick="_toggleDayLayer(' + idx + ')">' +
+                    '<div class="rdl-dot" style="background:' + color + ';"></div>' +
+                    '<span>' + escapeHtml(day) + '</span></div>';
+            });
+            legendEl.innerHTML = html;
+            legendEl.classList.add('visible');
+        }
+    }
+
+    function _toggleDayLayer(idx) {
+        var item = document.querySelector('.rdl-item[data-day-idx="' + idx + '"]');
+        if (!item) return;
+        var muted = item.classList.toggle('muted');
+        if (_dayRouteLayers[idx]) {
+            muted ? routeMapObj.removeLayer(_dayRouteLayers[idx]) : routeMapObj.addLayer(_dayRouteLayers[idx]);
+        }
+    }
+
+    function _clearDayLayers() {
+        _dayRouteLayers.forEach(function (l) { if (routeMapObj) routeMapObj.removeLayer(l); });
+        _dayRouteLayers = [];
+        _dayMarkerLayers.forEach(function (m) { if (routeMapObj) routeMapObj.removeLayer(m); });
+        _dayMarkerLayers = [];
+        var legend = document.getElementById('route-day-legend');
+        if (legend) { legend.innerHTML = ''; legend.classList.remove('visible'); }
+    }
+
+    // =============================================================
+    //  FEATURE 1: ROUTE PLAYBACK / SIMULATION
+    // =============================================================
+
+    function playbackToggle() {
+        if (_playbackActive && !_playbackPaused) {
+            _pausePlayback();
+        } else if (_playbackActive && _playbackPaused) {
+            _resumePlayback();
+        } else {
+            _startPlayback();
+        }
+    }
+
+    function _startPlayback() {
+        var wps = routeWaypointsCache;
+        if (!routeMapObj || !wps || wps.length < 2) return;
+
+        stopPlayback(); // Clean any previous
+
+        _playbackActive = true;
+        _playbackPaused = false;
+        _playbackIndex = 0;
+        _playbackProgress = 0;
+
+        // Build road-following sub-paths between waypoints
+        _buildPlaybackSegments();
+
+        // Scroll map into view first
+        var mapContainer = document.getElementById('route-map-container');
+        if (mapContainer) mapContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // Show playback bar
+        var bar = document.getElementById('route-playback-bar');
+        if (bar) bar.classList.add('visible');
+
+        // Create moving marker (pulsing blue dot)
+        var icon = L.divIcon({
+            html: '<div style="width:18px;height:18px;border-radius:50%;background:#3b82f6;border:3px solid #fff;' +
+                'box-shadow:0 0 16px rgba(59,130,246,0.7), 0 0 32px rgba(59,130,246,0.3);"></div>',
+            className: '', iconSize: [24, 24], iconAnchor: [12, 12]
+        });
+        _playbackMarker = L.marker([wps[0].lat, wps[0].lng], { icon: icon, zIndexOffset: 2000 }).addTo(routeMapObj);
+
+        // Zoom to first waypoint
+        routeMapObj.setView([wps[0].lat, wps[0].lng], 15, { animate: true, duration: 0.8 });
+
+        _updatePlaybackUI();
+
+        // Open first popup
+        if (routeMarkers[0]) routeMarkers[0].openPopup();
+        _highlightTimelineCard(0);
+
+        // Start animation after brief pause at start
+        _playbackPauseTimeout = setTimeout(function () {
+            _playbackPauseTimeout = null;
+            _playbackIndex = 1;
+            _playbackProgress = 0;
+            _lastFrameTime = 0;
+            _animatePlayback();
+        }, 1200);
+
+        // Update play icon
+        var playIcon = document.getElementById('rpb-play-icon');
+        if (playIcon) playIcon.textContent = 'pause';
+    }
+
+    // Build sub-paths from road geometry for each waypoint-to-waypoint segment
+    var _playbackSegments = []; // Array of arrays of [lat,lng] for each segment
+    function _buildPlaybackSegments() {
+        _playbackSegments = [];
+        var wps = routeWaypointsCache;
+        if (!wps || wps.length < 2) return;
+
+        // If we have OSRM road geometry, map each waypoint to nearest road point
+        if (routeRoadGeometry && routeRoadGeometry.length > 2) {
+            var geoIndices = []; // Index into routeRoadGeometry for each waypoint
+            for (var w = 0; w < wps.length; w++) {
+                var bestIdx = 0, bestDist = Infinity;
+                for (var g = 0; g < routeRoadGeometry.length; g++) {
+                    var d = _quickDist(wps[w].lat, wps[w].lng, routeRoadGeometry[g][0], routeRoadGeometry[g][1]);
+                    if (d < bestDist) { bestDist = d; bestIdx = g; }
+                }
+                geoIndices.push(bestIdx);
+            }
+
+            // Ensure indices are monotonically increasing
+            for (var m = 1; m < geoIndices.length; m++) {
+                if (geoIndices[m] <= geoIndices[m - 1]) {
+                    geoIndices[m] = Math.min(geoIndices[m - 1] + 1, routeRoadGeometry.length - 1);
+                }
+            }
+
+            // Extract sub-paths
+            for (var s = 1; s < wps.length; s++) {
+                var subPath = [];
+                for (var p = geoIndices[s - 1]; p <= geoIndices[s]; p++) {
+                    subPath.push(routeRoadGeometry[p]);
+                }
+                if (subPath.length < 2) {
+                    // Fallback: straight line
+                    subPath = [[wps[s - 1].lat, wps[s - 1].lng], [wps[s].lat, wps[s].lng]];
+                }
+                _playbackSegments.push(subPath);
+            }
+        } else {
+            // No road geometry — straight lines
+            for (var i = 1; i < wps.length; i++) {
+                _playbackSegments.push([
+                    [wps[i - 1].lat, wps[i - 1].lng],
+                    [wps[i].lat, wps[i].lng]
+                ]);
+            }
+        }
+    }
+
+    // Quick squared-distance (no need for haversine accuracy here)
+    function _quickDist(lat1, lng1, lat2, lng2) {
+        var dlat = lat1 - lat2, dlng = lng1 - lng2;
+        return dlat * dlat + dlng * dlng;
+    }
+
+    function _pausePlayback() {
+        _playbackPaused = true;
+        if (_playbackAnimId) { cancelAnimationFrame(_playbackAnimId); _playbackAnimId = null; }
+        if (_playbackPauseTimeout) { clearTimeout(_playbackPauseTimeout); _playbackPauseTimeout = null; }
+        var playIcon = document.getElementById('rpb-play-icon');
+        if (playIcon) playIcon.textContent = 'play_arrow';
+    }
+
+    function _resumePlayback() {
+        _playbackPaused = false;
+        _lastFrameTime = 0;
+        var playIcon = document.getElementById('rpb-play-icon');
+        if (playIcon) playIcon.textContent = 'pause';
+        _animatePlayback();
+    }
+
+    function stopPlayback() {
+        _playbackActive = false;
+        _playbackPaused = false;
+        if (_playbackAnimId) { cancelAnimationFrame(_playbackAnimId); _playbackAnimId = null; }
+        if (_playbackPauseTimeout) { clearTimeout(_playbackPauseTimeout); _playbackPauseTimeout = null; }
+        if (_playbackMarker && routeMapObj) { routeMapObj.removeLayer(_playbackMarker); _playbackMarker = null; }
+        _playbackSegments = [];
+        var bar = document.getElementById('route-playback-bar');
+        if (bar) bar.classList.remove('visible');
+        var playIcon = document.getElementById('rpb-play-icon');
+        if (playIcon) playIcon.textContent = 'play_arrow';
+        // Clear timeline highlights
+        document.querySelectorAll('.ri-location-card').forEach(function (c) {
+            c.style.outline = ''; c.style.outlineOffset = '';
+        });
+        // Close any open popups
+        routeMarkers.forEach(function (m) { m.closePopup(); });
+    }
+
+    var _lastFrameTime = 0;
+    function _animatePlayback() {
+        if (!_playbackActive || _playbackPaused) return;
+        if (currentPage !== 'inspector-routes') { stopPlayback(); return; }
+
+        var wps = routeWaypointsCache;
+        var segIdx = _playbackIndex - 1; // Segment index (0-based)
+        if (segIdx < 0 || segIdx >= _playbackSegments.length) {
+            stopPlayback();
+            return;
+        }
+
+        _playbackAnimId = requestAnimationFrame(function (timestamp) {
+            if (!_lastFrameTime) _lastFrameTime = timestamp;
+            var dt = timestamp - _lastFrameTime;
+            _lastFrameTime = timestamp;
+
+            var subPath = _playbackSegments[segIdx];
+            var totalSubPoints = subPath.length;
+
+            // Slower: 3500ms per segment at 1x speed
+            var segDuration = 3500 / _playbackSpeed;
+            _playbackProgress += dt / segDuration;
+
+            if (_playbackProgress >= 1) {
+                // Arrived at waypoint
+                _playbackProgress = 0;
+                var wp = wps[_playbackIndex];
+                var arrivePos = [wp.lat, wp.lng];
+                if (_playbackMarker) _playbackMarker.setLatLng(arrivePos);
+                routeMapObj.panTo(arrivePos, { animate: true, duration: 0.3 });
+
+                // Open popup, highlight timeline
+                routeMarkers.forEach(function (m) { m.closePopup(); });
+                if (routeMarkers[_playbackIndex]) routeMarkers[_playbackIndex].openPopup();
+                _highlightTimelineCard(_playbackIndex);
+                _updatePlaybackUI();
+
+                // Check if last waypoint
+                if (_playbackIndex >= wps.length - 1) {
+                    _playbackPauseTimeout = setTimeout(function () { stopPlayback(); }, 1500);
+                    return;
+                }
+
+                // Pause at waypoint then continue
+                _playbackPauseTimeout = setTimeout(function () {
+                    _playbackPauseTimeout = null;
+                    _playbackIndex++;
+                    _lastFrameTime = 0;
+                    _animatePlayback();
+                }, 1000 / _playbackSpeed);
+                return;
+            }
+
+            // Interpolate along road geometry sub-path
+            var floatIdx = _playbackProgress * (totalSubPoints - 1);
+            var baseIdx = Math.floor(floatIdx);
+            var frac = floatIdx - baseIdx;
+            if (baseIdx >= totalSubPoints - 1) { baseIdx = totalSubPoints - 2; frac = 1; }
+
+            var pA = subPath[baseIdx];
+            var pB = subPath[baseIdx + 1];
+            var lat = pA[0] + (pB[0] - pA[0]) * frac;
+            var lng = pA[1] + (pB[1] - pA[1]) * frac;
+
+            if (_playbackMarker) _playbackMarker.setLatLng([lat, lng]);
+
+            // Pan map to keep dot centered (smooth, low-frequency to avoid jitter)
+            routeMapObj.panTo([lat, lng], { animate: false });
+
+            _animatePlayback();
+        });
+    }
+
+    function playbackPrev() {
+        var wps = routeWaypointsCache;
+        if (!_playbackActive || !wps) return;
+        _playbackIndex = Math.max(0, _playbackIndex - 1);
+        _playbackProgress = 0;
+        _lastFrameTime = 0;
+        var wp = wps[_playbackIndex];
+        if (_playbackMarker) _playbackMarker.setLatLng([wp.lat, wp.lng]);
+        routeMapObj.setView([wp.lat, wp.lng], 15, { animate: true, duration: 0.5 });
+        routeMarkers.forEach(function (m) { m.closePopup(); });
+        if (routeMarkers[_playbackIndex]) routeMarkers[_playbackIndex].openPopup();
+        _highlightTimelineCard(_playbackIndex);
+        _updatePlaybackUI();
+    }
+
+    function playbackNext() {
+        var wps = routeWaypointsCache;
+        if (!_playbackActive || !wps) return;
+        _playbackIndex = Math.min(wps.length - 1, _playbackIndex + 1);
+        _playbackProgress = 0;
+        _lastFrameTime = 0;
+        var wp = wps[_playbackIndex];
+        if (_playbackMarker) _playbackMarker.setLatLng([wp.lat, wp.lng]);
+        routeMapObj.setView([wp.lat, wp.lng], 15, { animate: true, duration: 0.5 });
+        routeMarkers.forEach(function (m) { m.closePopup(); });
+        if (routeMarkers[_playbackIndex]) routeMarkers[_playbackIndex].openPopup();
+        _highlightTimelineCard(_playbackIndex);
+        _updatePlaybackUI();
+    }
+
+    function cyclePlaybackSpeed() {
+        var speeds = [1, 2, 4];
+        var idx = speeds.indexOf(_playbackSpeed);
+        _playbackSpeed = speeds[(idx + 1) % speeds.length];
+        var el = document.getElementById('rpb-speed');
+        if (el) el.textContent = _playbackSpeed + 'x';
+    }
+
+    function _updatePlaybackUI() {
+        var wps = routeWaypointsCache;
+        if (!wps) return;
+        var total = wps.length;
+        var current = Math.min(_playbackIndex + 1, total);
+        var fill = document.getElementById('rpb-fill');
+        if (fill) fill.style.width = (current / total * 100) + '%';
+        var label = document.getElementById('rpb-label');
+        if (label) label.textContent = current + ' / ' + total;
+    }
+
+    function _highlightTimelineCard(idx) {
+        var cards = document.querySelectorAll('.ri-location-card');
+        cards.forEach(function (c, i) {
+            c.style.outline = i === idx ? '2px solid #3b82f6' : '';
+            c.style.outlineOffset = i === idx ? '-2px' : '';
+        });
+        // Do NOT scrollIntoView during playback — it moves the page away from the map
+    }
+
+    // ===== GPS PARSER =====
+    function parseGpsFromLink(gpsStr) {
+        if (!gpsStr || typeof gpsStr !== 'string') return null;
+        gpsStr = gpsStr.trim();
+        if (!gpsStr) return null;
+
+        // Format 1: https://www.google.com/maps?q=17.9667,102.6000
+        var match = gpsStr.match(/[?&]q=([-\d.]+),([-\d.]+)/);
+        if (match) {
+            var lat = parseFloat(match[1]);
+            var lng = parseFloat(match[2]);
+            if (!isNaN(lat) && !isNaN(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+                return { lat: lat, lng: lng };
+            }
+        }
+
+        // Format 2: https://maps.google.com/.../@17.9667,102.6000,...
+        match = gpsStr.match(/@([-\d.]+),([-\d.]+)/);
+        if (match) {
+            var lat2 = parseFloat(match[1]);
+            var lng2 = parseFloat(match[2]);
+            if (!isNaN(lat2) && !isNaN(lng2) && Math.abs(lat2) <= 90 && Math.abs(lng2) <= 180) {
+                return { lat: lat2, lng: lng2 };
+            }
+        }
+
+        // Format 3: Raw "17.9667,102.6000"
+        var parts = gpsStr.split(',');
+        if (parts.length === 2) {
+            var lat3 = parseFloat(parts[0].trim());
+            var lng3 = parseFloat(parts[1].trim());
+            if (!isNaN(lat3) && !isNaN(lng3) && Math.abs(lat3) <= 90 && Math.abs(lng3) <= 180) {
+                return { lat: lat3, lng: lng3 };
+            }
+        }
+
+        return null; // Shortened URLs / unparseable
+    }
+
+    // ===== HAVERSINE DISTANCE (client-side) =====
+    function haversineDistance(lat1, lon1, lat2, lon2) {
+        var R = 6371000; // meters
+        var dLat = (lat2 - lat1) * Math.PI / 180;
+        var dLon = (lon2 - lon1) * Math.PI / 180;
+        var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
+
+    // ===== GPS TIER HELPER =====
+    function getGpsTier(distance) {
+        if (distance === null || distance === undefined) return { tier: 'none', color: '#94a3b8', bg: '#f1f5f9', icon: 'gps_off', label: 'No GPS' };
+        if (distance <= 50) return { tier: 'match', color: '#15803d', bg: '#f0fdf4', icon: 'check_circle', label: formatDistance(distance) };
+        if (distance <= 200) return { tier: 'near', color: '#b45309', bg: '#fffbeb', icon: 'warning', label: formatDistance(distance) };
+        return { tier: 'far', color: '#dc2626', bg: '#fef2f2', icon: 'error', label: formatDistance(distance) };
+    }
+
+    function formatDistance(meters) {
+        if (meters >= 1000) return (meters / 1000).toFixed(1) + 'km';
+        return Math.round(meters) + 'm';
+    }
+
+    // ===== DRAW GPS VERIFICATION ON MAP =====
+    function drawGpsVerification(waypoints) {
+        clearGpsLayers();
+        if (!routeMapObj || !waypoints || waypoints.length === 0) return;
+
+        var matchCount = 0;
+        var gpsTotal = 0;
+
+        waypoints.forEach(function (wp, idx) {
+            if (!wp.inspectorGps) return;
+            gpsTotal++;
+
+            var tier = getGpsTier(wp.gpsDistance);
+            if (tier.tier === 'match') matchCount++;
+
+            // Draw dashed line from inspector GPS to site
+            var lineColor = tier.tier === 'match' ? '#10b981' : tier.tier === 'near' ? '#f59e0b' : '#ef4444';
+            var gpsDashLine = L.polyline(
+                [[wp.inspectorGps.lat, wp.inspectorGps.lng], [wp.lat, wp.lng]],
+                {
+                    color: lineColor,
+                    weight: 2,
+                    opacity: 0.7,
+                    dashArray: '6, 4',
+                    className: 'gps-distance-line'
+                }
+            ).addTo(routeMapObj);
+            routeGpsLines.push(gpsDashLine);
+
+            // Draw inspector actual position dot
+            var gpsDotIcon = L.divIcon({
+                html: '<div class="gps-actual-marker gps-' + tier.tier + '" style="position:relative;"></div>',
+                className: 'gps-marker-icon',
+                iconSize: [12, 12],
+                iconAnchor: [6, 6]
+            });
+
+            var gpsMarker = L.marker([wp.inspectorGps.lat, wp.inspectorGps.lng], {
+                icon: gpsDotIcon,
+                zIndexOffset: -100
+            }).addTo(routeMapObj);
+
+            // Popup for GPS dot
+            gpsMarker.bindPopup(
+                '<div style="font-family: \'Noto Sans\', sans-serif; min-width: 180px;">' +
+                '<div style="font-size:12px;font-weight:700;color:' + tier.color + ';margin-bottom:6px;display:flex;align-items:center;gap:4px;">' +
+                '<span class="material-symbols-outlined" style="font-size:16px;">' + tier.icon + '</span>' +
+                (tier.tier === 'match' ? (t('routes.gps_verified') || 'GPS Verified') : tier.tier === 'near' ? (t('routes.gps_near') || 'GPS Near') : (t('routes.gps_mismatch') || 'GPS Mismatch')) +
+                '</div>' +
+                '<div style="font-size:12px;color:#64748b;">' + (t('routes.gps_distance_desc') || 'Inspector was {0} from site').replace('{0}', '<strong>' + tier.label + '</strong>') + '</div>' +
+                '<div style="font-size:11px;color:#94a3b8;margin-top:4px;">' + escapeHtml(wp.siteName) + '</div>' +
+                '</div>',
+                { className: 'route-popup', maxWidth: 240 }
+            );
+
+            routeGpsMarkers.push(gpsMarker);
+        });
+
+        // Update GPS accuracy stat
+        updateGpsAccuracyStat(matchCount, gpsTotal);
+    }
+
+    // ===== GPS ACCURACY STAT =====
+    function updateGpsAccuracyStat(matches, total) {
+        var divider = document.getElementById('gps-stat-divider');
+        var stat = document.getElementById('gps-accuracy-stat');
+        var valueEl = document.getElementById('route-gps-accuracy');
+        var iconEl = document.getElementById('gps-accuracy-icon');
+
+        if (!stat || !gpsVerifyEnabled) {
+            if (divider) divider.style.display = 'none';
+            if (stat) stat.style.display = 'none';
+            return;
+        }
+
+        divider.style.display = '';
+        stat.style.display = '';
+
+        if (total === 0) {
+            valueEl.textContent = 'N/A';
+            iconEl.style.background = 'rgba(148, 163, 184, 0.1)';
+            iconEl.style.color = '#94a3b8';
+            return;
+        }
+
+        var pct = Math.round((matches / total) * 100);
+        valueEl.textContent = pct + '%';
+
+        if (pct >= 80) {
+            iconEl.style.background = 'rgba(34, 197, 94, 0.1)';
+            iconEl.style.color = '#10b981';
+        } else if (pct >= 50) {
+            iconEl.style.background = 'rgba(245, 158, 11, 0.1)';
+            iconEl.style.color = '#f59e0b';
+        } else {
+            iconEl.style.background = 'rgba(239, 68, 68, 0.1)';
+            iconEl.style.color = '#ef4444';
+        }
+    }
+
+    // ===== COMPLIANCE LAYER TOGGLE =====
+    var _complianceLayerState = { visited: true, unplanned: true, missed: true };
+
+    function toggleComplianceLayer(type) {
+        _complianceLayerState[type] = !_complianceLayerState[type];
+        var show = _complianceLayerState[type];
+
+        // Toggle switch UI
+        var sw = document.getElementById('rop-sw-' + type);
+        if (sw) {
+            if (show) sw.classList.add('active');
+            else sw.classList.remove('active');
+        }
+
+        // Toggle markers on map
+        var markers = [];
+        if (type === 'visited') markers = _routeVisitedMarkers;
+        else if (type === 'unplanned') markers = _routeUnplannedMarkers;
+        else if (type === 'missed') markers = _routeMissedMarkers;
+
+        markers.forEach(function (m) {
+            if (show) {
+                if (!routeMapObj.hasLayer(m)) routeMapObj.addLayer(m);
+            } else {
+                routeMapObj.removeLayer(m);
+            }
+        });
+    }
+
+    // ===== GPS TOGGLE =====
+    function toggleGpsVerification() {
+        gpsVerifyEnabled = !gpsVerifyEnabled;
+
+        // Toggle switch UI
+        var sw = document.getElementById('rop-sw-gps');
+        if (sw) {
+            if (gpsVerifyEnabled) sw.classList.add('on');
+            else sw.classList.remove('on');
+        }
+
+        if (gpsVerifyEnabled) {
+            drawGpsVerification(routeWaypointsCache);
+        } else {
+            clearGpsLayers();
+            // Hide GPS stat in panel
+            var divider = document.getElementById('gps-stat-divider');
+            var stat = document.getElementById('gps-accuracy-stat');
+            if (divider) divider.style.display = 'none';
+            if (stat) stat.style.display = 'none';
+        }
+
+        // Re-render timeline cards with/without GPS badges
+        var timelineEl = document.getElementById('route-timeline');
+        if (timelineEl && routeWaypointsCache.length > 0) {
+            renderTimelineCards(routeWaypointsCache, _routeMissedWaypoints);
+        }
+    }
+
+    // ===== EMPTY STATE =====
+    function showRouteEmptyState(show, message) {
+        var el = document.getElementById('route-empty-state');
+        if (!el) return;
+        el.style.display = show ? 'flex' : 'none';
+        if (message) {
+            var p = el.querySelector('p');
+            if (p) p.textContent = message;
+        }
+    }
+
+    // ===== LOADING STATE =====
+    function showRouteLoading(show) {
+        var el = document.getElementById('route-loading-state');
+        if (el) el.style.display = show ? 'flex' : 'none';
+    }
+
+    // ===== FULLSCREEN =====
+    function toggleRouteMapFullscreen() {
+        var mapCard = document.getElementById('route-map-container');
+        var btn = document.getElementById('route-fullscreen-btn');
+        var icon = btn ? btn.querySelector('.material-symbols-outlined') : null;
+
+        if (!isRouteMapFullscreen) {
+            mapCard.style.position = 'fixed';
+            mapCard.style.top = '0';
+            mapCard.style.left = '0';
+            mapCard.style.right = '0';
+            mapCard.style.bottom = '0';
+            mapCard.style.width = '100vw';
+            mapCard.style.height = '100vh';
+            mapCard.style.zIndex = '10002';
+            mapCard.style.margin = '0';
+            mapCard.style.borderRadius = '0';
+            mapCard.style.minHeight = '100vh';
+            if (icon) icon.textContent = 'fullscreen_exit';
+            isRouteMapFullscreen = true;
+        } else {
+            mapCard.style.position = '';
+            mapCard.style.top = '';
+            mapCard.style.left = '';
+            mapCard.style.right = '';
+            mapCard.style.bottom = '';
+            mapCard.style.width = '';
+            mapCard.style.height = 'calc(100vh - 280px)';
+            mapCard.style.zIndex = '';
+            mapCard.style.margin = '';
+            mapCard.style.borderRadius = '';
+            mapCard.style.minHeight = '450px';
+            if (icon) icon.textContent = 'fullscreen';
+            isRouteMapFullscreen = false;
+        }
+
+        setTimeout(function () {
+            if (routeMapObj) routeMapObj.invalidateSize();
+        }, 200);
+    }
+
+    // ESC handler (scoped to this page)
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && isRouteMapFullscreen && currentPage === 'inspector-routes') {
+            toggleRouteMapFullscreen();
+        }
+    });
+</script>

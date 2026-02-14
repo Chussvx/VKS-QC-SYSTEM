@@ -1,0 +1,134 @@
+<!-- Modal_Overtime.html - Overtime management modals -->
+
+<!-- OT Detail Modal Template -->
+<template id="modal-ot-detail">
+    <div class="modal-header-refined">
+        <div class="modal-title-group">
+            <div class="modal-icon-box success">
+                <span class="material-symbols-outlined">more_time</span>
+            </div>
+            <div>
+                <h3 class="modal-title" data-i18n="ot.modal.title">OVERTIME DETAIL</h3>
+                <div class="modal-subtitle-flex">
+                    <span class="text-xs text-muted" id="ot-det-id">#OT-4402</span>
+                    <span class="badge badge-warning-solid badge-xs">PENDING</span>
+                </div>
+            </div>
+        </div>
+        <button class="btn-close" onclick="closeModal()">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+    </div>
+
+    <div class="modal-body p-0">
+        <!-- Metadata Bar -->
+        <div class="modal-meta-bar">
+            <div class="meta-item">
+                <span class="meta-label" data-i18n="ot.modal.guard">GUARD</span>
+                <span class="meta-value" id="ot-det-guard">Somchai K.</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label" data-i18n="ot.modal.site">SITE</span>
+                <span class="meta-value" id="ot-det-site">BCEL HQ</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label" data-i18n="ot.modal.hours">HOURS</span>
+                <span class="meta-value" id="ot-det-hours">4.5 hrs</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label" data-i18n="ot.modal.est_pay">EST. PAY</span>
+                <span class="meta-value" id="ot-det-pay">$12.50</span>
+            </div>
+        </div>
+
+        <div class="p-6">
+            <div class="section-title" data-i18n="ot.modal.reason">REASON FOR OVERTIME</div>
+            <p class="text-sm text-secondary leading-relaxed mb-6" id="ot-det-reason">
+                Shift handover delayed due to late arrival of relief guard (LP-1204).
+                Remained on duty to ensure post coverage.
+            </p>
+
+            <div class="section-title" data-i18n="ot.modal.approval_log">APPROVAL LOG</div>
+            <div id="ot-det-log" class="text-xs text-muted italic">
+                No approval actions taken yet.
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-footer-refined">
+        <button class="btn btn-ghost" onclick="closeModal()" data-i18n="ot.modal.btn.cancel">CANCEL</button>
+        <div class="flex gap-2">
+            <button class="btn btn-danger-solid" onclick="openOTReject()"
+                data-i18n="ot.modal.btn.reject">REJECT</button>
+            <button class="btn btn-primary" onclick="openOTApprove()" data-i18n="ot.modal.btn.approve">APPROVE</button>
+        </div>
+    </div>
+</template>
+
+<!-- Approve OT Modal Template -->
+<template id="modal-ot-approve">
+    <div class="modal-header-refined">
+        <div class="modal-title-group">
+            <div class="modal-icon-box success">
+                <span class="material-symbols-outlined">check_circle</span>
+            </div>
+            <div>
+                <h3 class="modal-title" data-i18n="ot.approve.title">APPROVE OVERTIME</h3>
+                <div class="modal-subtitle-flex">
+                    <span class="text-xs text-muted" data-i18n="ot.approve.subtitle">CONFIRM ASSIGNMENT HOURS</span>
+                </div>
+            </div>
+        </div>
+        <button class="btn-close" onclick="closeModal()">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+    </div>
+
+    <div class="modal-body p-6">
+        <div class="section-title" data-i18n="ot.approve.notes">APPROVAL NOTES</div>
+        <textarea id="ot-approve-notes" class="form-textarea w-full" rows="3"
+            placeholder="Add comments for the payroll team..."></textarea>
+    </div>
+
+    <div class="modal-footer-refined">
+        <button class="btn btn-ghost" onclick="closeModal()" data-i18n="common.cancel">CANCEL</button>
+        <button class="btn btn-primary" onclick="submitOTApproval()">
+            <span class="material-symbols-outlined">verified</span>
+            <span data-i18n="ot.approve.btn">CONFIRM APPROVAL</span>
+        </button>
+    </div>
+</template>
+
+<!-- Reject OT Modal Template -->
+<template id="modal-ot-reject">
+    <div class="modal-header-refined">
+        <div class="modal-title-group">
+            <div class="modal-icon-box critical">
+                <span class="material-symbols-outlined">error</span>
+            </div>
+            <div>
+                <h3 class="modal-title" data-i18n="ot.reject.title">REJECT OVERTIME</h3>
+                <div class="modal-subtitle-flex">
+                    <span class="text-xs text-muted" data-i18n="ot.reject.subtitle">PROVIDE REJECTION REASON</span>
+                </div>
+            </div>
+        </div>
+        <button class="btn-close" onclick="closeModal()">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+    </div>
+
+    <div class="modal-body p-6">
+        <div class="section-title" data-i18n="ot.reject.reason">REJECTION REASON</div>
+        <textarea id="ot-reject-reason" class="form-textarea w-full border-red-200 focus:border-red-500" rows="3"
+            placeholder="Reason for rejection (Required)..." required></textarea>
+    </div>
+
+    <div class="modal-footer-refined">
+        <button class="btn btn-ghost" onclick="closeModal()" data-i18n="common.cancel">CANCEL</button>
+        <button class="btn btn-danger-solid" onclick="submitOTRejection()">
+            <span class="material-symbols-outlined">block</span>
+            <span data-i18n="ot.reject.btn">CONFIRM REJECTION</span>
+        </button>
+    </div>
+</template>

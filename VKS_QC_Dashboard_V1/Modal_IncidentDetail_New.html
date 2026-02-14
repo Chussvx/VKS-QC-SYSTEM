@@ -1,0 +1,298 @@
+<!-- Premium Incident Detail Modal - Stitch Generated -->
+<div id="modal-incident-detail-new" class="hidden">
+    <!-- Modal Container -->
+    <div
+        class="relative w-full h-full bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden ring-1 ring-white/10">
+
+        <!-- Sticky Header -->
+        <header class="sticky top-0 z-20 bg-white border-b border-gray-200 px-6 py-5 md:px-8">
+            <div class="flex flex-col gap-3">
+                <!-- Top Row: Badges & Meta -->
+                <div class="flex items-center flex-wrap gap-3">
+                    <span id="view-inc-severity"
+                        class="inline-flex items-center rounded-md bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700 ring-1 ring-inset ring-red-600/10 uppercase tracking-wide">
+                        Critical
+                    </span>
+                    <span id="view-inc-id" class="text-sm font-medium text-gray-500 font-mono tracking-tight">
+                        INC-00000000-XXXX
+                    </span>
+                    <span id="view-inc-status"
+                        class="inline-flex items-center rounded-md bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700 ring-1 ring-inset ring-blue-700/10 uppercase tracking-wide">
+                        Waiting
+                    </span>
+                </div>
+                <!-- Bottom Row: Title & Actions -->
+                <div class="flex items-center justify-between">
+                    <h1 id="view-inc-title" class="text-2xl md:text-3xl font-bold text-gray-900 leading-tight">Incident
+                        Title</h1>
+                    <div class="flex gap-2 text-gray-400">
+                        <button class="p-2 hover:bg-gray-100 rounded-full transition-colors" title="Share">
+                            <span class="material-symbols-outlined text-[20px]">share</span>
+                        </button>
+                        <button class="p-2 hover:bg-gray-100 rounded-full transition-colors" title="Print">
+                            <span class="material-symbols-outlined text-[20px]">print</span>
+                        </button>
+                        <button onclick="closeModal()" class="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                            title="Close">
+                            <span class="material-symbols-outlined text-[20px]">close</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Scrollable Content Area -->
+        <main class="flex-1 overflow-y-auto custom-scrollbar bg-[#f3f4f6] p-6 md:p-8">
+            <div class="max-w-[1100px] mx-auto space-y-6">
+
+                <!-- Key Info Bar (4 Columns) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Site -->
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200/60">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1"
+                            data-i18n="incident.detail.site">Site</p>
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-gray-400 text-[20px]">warehouse</span>
+                            <p id="view-inc-site" class="text-sm font-semibold text-gray-900">Site Name</p>
+                        </div>
+                    </div>
+                    <!-- Category -->
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200/60">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1"
+                            data-i18n="incident.detail.category">Category</p>
+                        <div class="flex items-center gap-2">
+                            <span id="view-inc-category-icon"
+                                class="material-symbols-outlined text-orange-500 text-[20px]">security</span>
+                            <p id="view-inc-category" class="text-sm font-semibold text-gray-900">Category</p>
+                        </div>
+                    </div>
+                    <!-- Occurred At -->
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200/60">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1"
+                            data-i18n="incident.detail.occurred_at">Occurred At</p>
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-gray-400 text-[20px]">schedule</span>
+                            <p id="view-inc-time" class="text-sm font-semibold text-gray-900">Date & Time</p>
+                        </div>
+                    </div>
+                    <!-- Reported At -->
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200/60">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1"
+                            data-i18n="incident.detail.reported_at">Reported At</p>
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-gray-400 text-[20px]">flag</span>
+                            <p id="view-inc-reported-time" class="text-sm font-semibold text-gray-900">Date & Time</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Split Layout -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Left Column (2/3) -->
+                    <div class="lg:col-span-8 flex flex-col gap-6">
+
+                        <!-- Description & Location Card -->
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                            <div class="px-5 py-4 border-b border-gray-100 flex items-center gap-2 bg-gray-50/50">
+                                <span class="material-symbols-outlined text-gray-500 text-[18px]">info</span>
+                                <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wide"
+                                    data-i18n="incident.detail.desc_location">Description &
+                                    Location</h3>
+                            </div>
+                            <div class="p-5 flex flex-col gap-5">
+                                <div>
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2"
+                                        data-i18n="incident.detail.exact_location">Exact
+                                        Location</p>
+                                    <p id="view-inc-location" class="text-sm text-gray-900">Location details...</p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2"
+                                        data-i18n="incident.detail.narrative">
+                                        Narrative</p>
+                                    <p id="view-inc-description"
+                                        class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                                        Incident description...
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions Taken Card -->
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                            <div class="px-5 py-4 border-b border-gray-100 flex items-center gap-2 bg-gray-50/50">
+                                <span
+                                    class="material-symbols-outlined text-gray-500 text-[18px]">playlist_add_check</span>
+                                <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wide"
+                                    data-i18n="incident.detail.actions_taken">Actions Taken</h3>
+                            </div>
+                            <div class="p-5">
+                                <div class="space-y-4">
+                                    <div>
+                                        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2"
+                                            data-i18n="incident.detail.immediate_actions">
+                                            Immediate Actions</p>
+                                        <p id="view-inc-actions" class="text-sm text-gray-700 whitespace-pre-wrap">No
+                                            immediate actions recorded.</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2"
+                                            data-i18n="incident.detail.additional_notes">
+                                            Additional Notes</p>
+                                        <p id="view-inc-notes" class="text-sm text-gray-500 italic whitespace-pre-wrap">
+                                            No notes.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column (1/3) -->
+                    <div class="lg:col-span-4 flex flex-col gap-6">
+
+                        <!-- People Card -->
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                            <div class="px-5 py-4 border-b border-gray-100 flex items-center gap-2 bg-gray-50/50">
+                                <span class="material-symbols-outlined text-gray-500 text-[18px]">group</span>
+                                <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wide"
+                                    data-i18n="incident.detail.people_involved">People Involved</h3>
+                            </div>
+                            <div class="p-0">
+                                <ul class="divide-y divide-gray-100">
+                                    <li class="p-4 flex items-center gap-3">
+                                        <div
+                                            class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">
+                                            <span class="material-symbols-outlined text-[16px]">person</span>
+                                        </div>
+                                        <div>
+                                            <p id="view-inc-reported-by" class="text-sm font-semibold text-gray-900">
+                                                Reporter Name</p>
+                                            <p class="text-xs text-gray-500" data-i18n="incident.detail.reported_by">
+                                                Reported By</p>
+                                        </div>
+                                    </li>
+                                    <li class="p-4 flex items-center gap-3">
+                                        <div
+                                            class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-bold text-xs">
+                                            <span
+                                                class="material-symbols-outlined text-[16px]">supervisor_account</span>
+                                        </div>
+                                        <div>
+                                            <p id="view-inc-reported-to" class="text-sm font-semibold text-gray-900">-
+                                            </p>
+                                            <p class="text-xs text-gray-500" data-i18n="incident.detail.reported_to">
+                                                Reported To</p>
+                                        </div>
+                                    </li>
+                                    <li class="p-4 flex items-center gap-3">
+                                        <div
+                                            class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-bold text-xs">
+                                            <span class="material-symbols-outlined text-[16px]">visibility</span>
+                                        </div>
+                                        <div>
+                                            <p id="view-inc-witnesses" class="text-sm font-semibold text-gray-900">-</p>
+                                            <p class="text-xs text-gray-500" data-i18n="incident.detail.witnesses">
+                                                Witnesses</p>
+                                        </div>
+                                    </li>
+                                    <li class="p-4 flex items-center gap-3">
+                                        <div
+                                            class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-xs">
+                                            <span class="material-symbols-outlined text-[16px]">support_agent</span>
+                                        </div>
+                                        <div>
+                                            <p id="view-inc-responded-by" class="text-sm font-semibold text-gray-900">-
+                                            </p>
+                                            <p class="text-xs text-gray-500" data-i18n="incident.detail.responded_by">
+                                                Responded By</p>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Impact Grid Card -->
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                            <div class="px-5 py-4 border-b border-gray-100 flex items-center gap-2 bg-gray-50/50">
+                                <span class="material-symbols-outlined text-gray-500 text-[18px]">analytics</span>
+                                <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wide"
+                                    data-i18n="incident.detail.impact_assessment">Impact Assessment
+                                </h3>
+                            </div>
+                            <div class="p-5">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <!-- Injuries -->
+                                    <div id="view-inc-injuries"
+                                        class="aspect-square rounded-lg border border-gray-100 bg-gray-50 flex flex-col items-center justify-center gap-2 opacity-60">
+                                        <span
+                                            class="material-symbols-outlined text-gray-400 text-[32px]">personal_injury</span>
+                                        <span class="text-[10px] font-bold uppercase text-gray-400"
+                                            data-i18n="incident.detail.injuries">Injuries</span>
+                                    </div>
+                                    <!-- Damage -->
+                                    <div id="view-inc-damage"
+                                        class="aspect-square rounded-lg border border-gray-100 bg-gray-50 flex flex-col items-center justify-center gap-2 opacity-60">
+                                        <span
+                                            class="material-symbols-outlined text-gray-400 text-[32px]">broken_image</span>
+                                        <span class="text-[10px] font-bold uppercase text-gray-400"
+                                            data-i18n="incident.detail.damage">Damage</span>
+                                    </div>
+                                    <!-- Police -->
+                                    <div id="view-inc-authorities"
+                                        class="aspect-square rounded-lg border border-gray-100 bg-gray-50 flex flex-col items-center justify-center gap-2 opacity-60">
+                                        <span
+                                            class="material-symbols-outlined text-gray-400 text-[32px]">local_police</span>
+                                        <span class="text-[10px] font-bold uppercase text-gray-400"
+                                            data-i18n="incident.detail.police">Police</span>
+                                    </div>
+                                    <!-- CCTV -->
+                                    <div id="view-inc-cctv"
+                                        class="aspect-square rounded-lg border border-gray-100 bg-gray-50 flex flex-col items-center justify-center gap-2 opacity-60">
+                                        <span
+                                            class="material-symbols-outlined text-gray-400 text-[32px]">videocam</span>
+                                        <span class="text-[10px] font-bold uppercase text-gray-400"
+                                            data-i18n="incident.detail.cctv">CCTV</span>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4 pt-4 border-t border-gray-100 space-y-3">
+                                    <div>
+                                        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1"
+                                            data-i18n="incident.detail.est_loss">
+                                            Est. Loss</p>
+                                        <p id="view-inc-loss" class="text-sm font-mono text-gray-900">-</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1"
+                                            data-i18n="incident.detail.police_report">
+                                            Police Report #</p>
+                                        <p id="view-inc-police-report" class="text-sm font-mono text-gray-900">-</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Sticky Footer -->
+        <footer class="sticky bottom-0 z-20 bg-white border-t border-gray-200 px-6 py-4 md:px-8">
+            <div class="flex items-center justify-between">
+                <p id="view-inc-updated" class="text-xs text-gray-400 hidden sm:block">Last updated -</p>
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                    <button onclick="closeModal()"
+                        class="px-5 py-2.5 rounded-lg border border-gray-300 text-sm font-bold text-gray-600 hover:bg-gray-50 hover:text-gray-800 transition-all uppercase tracking-wide"
+                        data-i18n="incident.detail.btn.close">
+                        Close
+                    </button>
+                    <button id="btn-inc-edit" onclick="openIncidentForm(window.currentIncidentId)"
+                        class="px-5 py-2.5 rounded-lg bg-green-500 hover:bg-green-600 text-white text-sm font-bold shadow-sm flex items-center gap-2 transition-all uppercase tracking-wide">
+                        <span class="material-symbols-outlined text-[18px]">edit</span>
+                        <span data-i18n="incident.detail.btn.edit">Edit</span>
+                    </button>
+                </div>
+            </div>
+        </footer>
+    </div>
+</div>

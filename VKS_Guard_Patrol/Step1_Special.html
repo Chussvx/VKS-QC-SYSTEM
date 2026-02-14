@@ -1,0 +1,99 @@
+<!-- 2. SPECIAL DUTY FORM (Extracted) -->
+<div id="special-mode-form" class="hidden pt-4">
+    <div class="card border-purple shadow-sm">
+        <div class="card-header">
+            <div class="flex justify-between items-center mb-4 gap-2">
+                <h2 class="card-title flex-1 min-w-0"><span class="material-symbols-outlined">shield_person</span>
+                    ບັນທຶກການປະຈຳຈຸດ ຫຼື ການຝຶກອົບຮົມ</h2>
+            </div>
+        </div>
+
+        <div class="card-content">
+            <!-- Duty Type -->
+            <div class="input-group">
+                <label class="mb-2 block font-medium">ປະເພດວຽກ</label>
+                <div class="grid-cols-2">
+                    <label class="radio-card">
+                        <input type="radio" id="typeStationary" name="specialType" value="Stationary"
+                            onchange="toggleSpecialTargetInput()" checked>
+                        <div class="radio-card-content hover:bg-purple-50 transition-colors">
+                            <span class="text-2xl mb-1">🛑</span>
+                            <span class="font-medium text-sm">Stationary</span>
+                            <span class="text-xs text-gray-500">ປະຈຳຈຸດ</span>
+                        </div>
+                    </label>
+                    <label class="radio-card">
+                        <input type="radio" id="typeOnboarding" name="specialType" value="Onboarding"
+                            onchange="toggleSpecialTargetInput()">
+                        <div class="radio-card-content hover:bg-purple-50 transition-colors">
+                            <span class="text-2xl mb-1">🎓</span>
+                            <span class="font-medium text-sm">Onboarding</span>
+                            <span class="text-xs text-gray-500">ຝຶກອົບຮົມ</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Special Patrol Name -->
+            <div class="input-group">
+                <label>
+                    <span class="material-symbols-outlined">person</span> ຜູ້ປະຕິບັດງານ
+                </label>
+                <div class="custom-select" id="sp-patrolName-select">
+                    <input type="hidden" id="sp-patrolName" name="sp-patrolName">
+                    <div class="custom-select-trigger" onclick="toggleCustomSelect('sp-patrolName-select')">
+                        <span class="custom-select-value">ເລືອກຜູ້ປະຕິບັດງານ...</span>
+                        <i class="fa fa-chevron-down">▼</i>
+                    </div>
+                    <div class="custom-select-dropdown" id="sp-patrolName-options"></div>
+                </div>
+            </div>
+
+            <!-- Special Route -->
+            <div class="input-group">
+                <label class="mb-2 block font-medium">ເສັ້ນທາງ</label>
+                <div class="grid-cols-2">
+                    <label class="radio-card">
+                        <input type="radio" id="sp-routeA" name="sp-route" value="A" onchange="updateSpecialSiteList()"
+                            hidden>
+                        <div class="radio-card-content hover:bg-purple-50 transition-colors">
+                            <span class="text-xl font-bold text-purple-600 mb-1">A</span>
+                        </div>
+                    </label>
+                    <label class="radio-card">
+                        <input type="radio" id="sp-routeB" name="sp-route" value="B" onchange="updateSpecialSiteList()"
+                            hidden>
+                        <div class="radio-card-content hover:bg-purple-50 transition-colors">
+                            <span class="text-xl font-bold text-purple-600 mb-1">B</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Special Site -->
+            <div class="input-group">
+                <label>
+                    <span class="material-symbols-outlined">location_on</span> ຈຸດປະຈຳ
+                </label>
+                <div class="custom-select" id="sp-siteName-select">
+                    <input type="hidden" id="sp-siteName" name="sp-siteName">
+                    <div class="custom-select-trigger" onclick="toggleCustomSelect('sp-siteName-select')">
+                        <span class="custom-select-value">ເລືອກຈຸດປະຈຳ...</span>
+                        <i class="fa fa-chevron-down">▼</i>
+                    </div>
+                    <div class="custom-select-dropdown" id="sp-siteName-options"></div>
+                </div>
+            </div>
+
+            <!-- Target Input -->
+            <div class="input-group" id="targetGuardContainer">
+                <label id="targetGuardLabel"><span class="material-symbols-outlined">person_off</span>
+                    ປ່ຽນແທນ</label>
+                <input type="text" id="targetGuardName"
+                    class="w-full p-4 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:bg-white focus:ring-4 focus:ring-purple-50 outline-none transition-all"
+                    placeholder="ປ້ອນຊື່...">
+            </div>
+        </div>
+    </div>
+</div>
+<!-- End Special Form -->

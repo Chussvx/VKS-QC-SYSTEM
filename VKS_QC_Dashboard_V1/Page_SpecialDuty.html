@@ -1,0 +1,706 @@
+<!-- Page_SpecialDuty.html - Special Duty Monitoring Page -->
+<div id="page-special-duty" class="page-content">
+
+    <!-- Header -->
+    <div class="page-header mb-4">
+        <div>
+            <h1 class="page-title" data-i18n="special.title">Special Duties</h1>
+            <p class="text-muted" data-i18n="special.subtitle">Monitor stationary guards, training, and risk assessment
+            </p>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid mb-4">
+        <div class="kpi-card kpi-blue">
+            <div class="kpi-header">
+                <span class="kpi-label" data-i18n="special.stat.active">Active Duties</span>
+                <span class="kpi-icon bg-blue"><span class="material-symbols-outlined">visibility</span></span>
+            </div>
+            <div class="kpi-value" id="special-stat-active">--</div>
+            <span class="kpi-sublabel" data-i18n="special.stat.active.sub">Real-time monitoring</span>
+        </div>
+        <div class="kpi-card kpi-green">
+            <div class="kpi-header">
+                <span class="kpi-label" data-i18n="special.stat.training">Training Sessions</span>
+                <span class="kpi-icon bg-green"><span class="material-symbols-outlined">school</span></span>
+            </div>
+            <div class="kpi-value" id="special-stat-training">--</div>
+            <span class="kpi-sublabel" data-i18n="special.stat.training.sub">Total training completed</span>
+        </div>
+        <div class="kpi-card kpi-orange">
+            <div class="kpi-header">
+                <span class="kpi-label" data-i18n="special.stat.risk">High-Risk Areas</span>
+                <span class="kpi-icon bg-orange"><span class="material-symbols-outlined">warning</span></span>
+            </div>
+            <div class="kpi-value" id="special-stat-risk">--</div>
+            <span class="kpi-sublabel" data-i18n="special.stat.risk.sub">Require immediate attention</span>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="filter-group">
+            <div class="search-input mr-4">
+                <span class="material-symbols-outlined search-icon">search</span>
+                <input type="text" id="special-search" data-i18n-placeholder="special.search"
+                    placeholder="Search patrol, site, or trainee..." onkeyup="filterSpecialList()">
+            </div>
+            <div class="custom-select w-44" data-select-id="special-type" data-onchange="filterSpecialList">
+                <button class="custom-select-trigger" onclick="toggleSelect('special-type')">
+                    <span class="custom-select-value" data-i18n="special.filter.all">All Types</span>
+                    <span class="material-symbols-outlined">expand_more</span>
+                </button>
+                <div class="custom-select-menu">
+                    <div class="custom-select-item selected" data-value="" data-i18n="special.filter.all"
+                        onclick="selectOption('special-type', '', t('special.filter.all'))">All Types</div>
+                    <div class="custom-select-item" data-value="Stationary" data-i18n="special.filter.stationary"
+                        onclick="selectOption('special-type', 'Stationary', t('special.filter.stationary'))">Stationary
+                    </div>
+                    <div class="custom-select-item" data-value="Onboarding" data-i18n="special.filter.onboarding"
+                        onclick="selectOption('special-type', 'Onboarding', t('special.filter.onboarding'))">Onboarding
+                    </div>
+                </div>
+                <input type="hidden" name="special-type" value="">
+            </div>
+        </div>
+        <div class="flex items-center gap-3 ml-auto">
+            <span class="text-muted"><strong id="special-count">0</strong> <span
+                    data-i18n="special.entries">Entries</span></span>
+            <button class="btn-icon" onclick="loadSpecialData()" title="Refresh">
+                <span class="material-symbols-outlined">refresh</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="card p-0 overflow-hidden">
+        <div class="table-container">
+            <table class="data-table" id="special-table">
+                <thead>
+                    <tr>
+                        <th data-i18n="special.col.time">Time</th>
+                        <th data-i18n="special.col.type">Type</th>
+                        <th data-i18n="special.col.patrol">Patrol / Site</th>
+                        <th data-i18n="special.col.target">Target</th>
+                        <th data-i18n="special.col.assessment">Assessment</th>
+                        <th data-i18n="special.col.duration">Duration</th>
+                        <th data-i18n="special.col.status">Status</th>
+                        <th class="text-right" data-i18n="special.col.actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="special-tbody">
+                    <tr class="skeleton-row">
+                        <td>
+                            <div class="skeleton-text" style="width:85%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:60%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:70%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:50%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:45%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:90%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:55%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:40%"></div>
+                        </td>
+                    </tr>
+                    <tr class="skeleton-row">
+                        <td>
+                            <div class="skeleton-text" style="width:60%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:70%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:50%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:45%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:90%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:55%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:40%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:65%"></div>
+                        </td>
+                    </tr>
+                    <tr class="skeleton-row">
+                        <td>
+                            <div class="skeleton-text" style="width:70%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:50%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:45%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:90%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:55%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:40%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:65%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:85%"></div>
+                        </td>
+                    </tr>
+                    <tr class="skeleton-row">
+                        <td>
+                            <div class="skeleton-text" style="width:50%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:45%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:90%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:55%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:40%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:65%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:85%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:60%"></div>
+                        </td>
+                    </tr>
+                    <tr class="skeleton-row">
+                        <td>
+                            <div class="skeleton-text" style="width:45%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:90%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:55%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:40%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:65%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:85%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:60%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:70%"></div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Special Duty Detail Modal Template -->
+<template id="modal-special-detail">
+    <!-- Modal Card Wrapper - matches Inspection Detail pattern -->
+    <div class="flex flex-col w-full bg-white rounded-xl shadow-2xl overflow-hidden relative"
+        style="max-height: 90vh; width: 100%; max-width: 700px;">
+
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white z-10 shrink-0">
+            <h2 class="text-xl font-bold text-gray-800" data-i18n="special.modal.title">Duty Details</h2>
+            <button onclick="closeModal()"
+                class="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded hover:bg-gray-100">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <!-- Scrollable Body with gray background for card contrast -->
+        <div class="p-6 bg-gray-50 overflow-y-auto flex-grow">
+            <!-- Info Grid -->
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                    <div class="text-xs text-gray-400 uppercase tracking-wide mb-1"
+                        data-i18n="special.modal.patrol_leader">Patrol Leader</div>
+                    <div class="font-semibold text-gray-800" id="modal-special-patrol">--</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                    <div class="text-xs text-gray-400 uppercase tracking-wide mb-1" data-i18n="special.modal.location">
+                        Location</div>
+                    <div class="font-semibold text-gray-800" id="modal-special-site">--</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                    <div class="text-xs text-gray-400 uppercase tracking-wide mb-1" data-i18n="special.modal.target">
+                        Target / Trainee</div>
+                    <div class="font-semibold text-gray-800" id="modal-special-target">--</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                    <div class="text-xs text-gray-400 uppercase tracking-wide mb-1" data-i18n="special.modal.duration">
+                        Duration</div>
+                    <div class="font-semibold text-gray-800" id="modal-special-duration">--</div>
+                </div>
+            </div>
+
+            <!-- Assessment/Ratings -->
+            <div class="mb-4">
+                <h4 class="text-sm font-bold text-gray-800 uppercase mb-2" data-i18n="special.modal.ratings">Assessment
+                </h4>
+                <div id="modal-special-ratings" class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                    <span class="text-gray-400">--</span>
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="mb-4">
+                <h4 class="text-sm font-bold text-gray-800 uppercase mb-2" data-i18n="special.modal.notes">Notes</h4>
+                <div id="modal-special-notes"
+                    class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm text-gray-600 italic">
+                    <span class="text-gray-400" data-i18n="special.modal.no_notes">No notes.</span>
+                </div>
+            </div>
+
+            <!-- Photos -->
+            <div>
+                <h4 class="text-sm font-bold text-gray-800 uppercase mb-2" data-i18n="special.modal.photos">Photos</h4>
+                <div id="modal-special-photos" class="grid grid-cols-3 gap-3">
+                    <span class="text-gray-400" data-i18n="special.modal.no_photos">No photos attached</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 bg-white border-t border-gray-100 flex justify-end items-center shrink-0 z-10">
+            <button
+                class="px-6 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-sm font-medium transition-colors"
+                onclick="closeModal()" data-i18n="special.modal.close">Close</button>
+        </div>
+    </div>
+</template>
+
+<script>
+    // ===========================================
+    // SPECIAL DUTY PAGE JAVASCRIPT
+    // ===========================================
+
+    let ALL_SPECIAL_LOGS = [];
+
+    /**
+     * Initialize Special Duty page (Layer 3: memory cache guard)
+     */
+    function init_special_duty() {
+        // If we already have data, render instantly from memory
+        if (ALL_SPECIAL_LOGS && ALL_SPECIAL_LOGS.length > 0) {
+            console.log('[SpecialDuty] Memory cache hit — instant render');
+            updateSpecialStats();
+            renderSpecialList();
+            return;
+        }
+        console.log('Initializing Special Duty page');
+        loadSpecialData();
+    }
+
+    /**
+     * Load special duty data from backend
+     */
+    function loadSpecialData() {
+        console.log('[Special Duty] Starting data load...');
+        showTableLoading('special-tbody', 8);
+
+        // Check if google.script.run is available
+        if (typeof google === 'undefined' || !google.script || !google.script.run) {
+            console.error('[Special Duty] google.script.run not available');
+            showTableError('special-tbody', 8, 'Backend not available');
+            return;
+        }
+
+        console.log('[Special Duty] Calling getSpecialActivityLogs...');
+        google.script.run
+            .withSuccessHandler(function (jsonData) {
+                console.log('[Special Duty] Success handler called, data length:', jsonData ? jsonData.length : 0);
+                try {
+                    ALL_SPECIAL_LOGS = JSON.parse(jsonData || '[]');
+                    console.log('[Special Duty] Parsed', ALL_SPECIAL_LOGS.length, 'records');
+                    updateSpecialStats();
+                    renderSpecialList();
+                } catch (e) {
+                    console.error('[Special Duty] Error parsing data:', e);
+                    showTableError('special-tbody', 8, 'Failed to parse data: ' + e.message);
+                }
+            })
+            .withFailureHandler(function (error) {
+                console.error('[Special Duty] Failure handler called:', error);
+                showTableError('special-tbody', 8, error.message || 'Failed to load data');
+            })
+            .getSpecialActivityLogs();
+    }
+
+    /**
+     * Update KPI stats
+     */
+    function updateSpecialStats() {
+        const active = ALL_SPECIAL_LOGS.filter(l => l.status === 'Active').length;
+        const training = ALL_SPECIAL_LOGS.filter(l => l.type === 'Onboarding').length;
+        const risk = ALL_SPECIAL_LOGS.filter(l => l.type === 'Stationary' && l.status === 'Active').length;
+
+        document.getElementById('special-stat-active').textContent = active;
+        document.getElementById('special-stat-training').textContent = training;
+        document.getElementById('special-stat-risk').textContent = risk;
+    }
+
+    /**
+     * Filter and render the special duty list
+     */
+    function filterSpecialList() {
+        renderSpecialList();
+    }
+
+    /**
+     * Render special duty list with current filters
+     */
+    function renderSpecialList() {
+        var tbody = document.getElementById('special-tbody');
+        var searchInput = document.getElementById('special-search');
+        var typeInput = document.querySelector('input[name="special-type"]');
+
+        var searchTerm = (searchInput && searchInput.value) ? searchInput.value.toLowerCase() : '';
+        var typeFilter = (typeInput && typeInput.value) ? typeInput.value : '';
+
+        // Filter data
+        var filtered = [];
+        for (var i = 0; i < ALL_SPECIAL_LOGS.length; i++) {
+            var item = ALL_SPECIAL_LOGS[i];
+
+            // Search filter
+            var patrolMatch = (item.patrol || '').toLowerCase().indexOf(searchTerm) !== -1;
+            var siteMatch = (item.site || '').toLowerCase().indexOf(searchTerm) !== -1;
+            var targetMatch = (item.target || '').toLowerCase().indexOf(searchTerm) !== -1;
+            var matchesSearch = !searchTerm || patrolMatch || siteMatch || targetMatch;
+
+            // Type filter
+            var matchesType = !typeFilter || item.type === typeFilter;
+
+            if (matchesSearch && matchesType) {
+                filtered.push(item);
+            }
+        }
+
+        // Update count
+        var countEl = document.getElementById('special-count');
+        if (countEl) {
+            countEl.textContent = filtered.length;
+        }
+
+        // Render table
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-muted">' +
+                '<span class="material-symbols-outlined text-4xl mb-2 opacity-50">inbox</span>' +
+                '<p data-i18n="special.empty">' + t('special.empty') + '</p>' +
+                '</td></tr>';
+            return;
+        }
+
+        var html = '';
+        for (var j = 0; j < filtered.length; j++) {
+            var item = filtered[j];
+            var timestamp = item.timestamp ? new Date(item.timestamp) : null;
+            var timeStr = timestamp ? formatTimeAgo(timestamp) : '--';
+            var dateStr = timestamp ? timestamp.toLocaleDateString() : '--';
+
+            // Status badge
+            var statusClass = 'badge-default';
+            var statusKey = 'special.status.active';
+            if (item.status === 'Completed') {
+                statusClass = 'badge-success';
+                statusKey = 'special.status.completed';
+            } else if (item.status === 'Failed') {
+                statusClass = 'badge-danger';
+                statusKey = 'special.status.failed';
+            } else if (item.status === 'Active') {
+                statusClass = 'badge-info';
+                statusKey = 'special.status.active';
+            }
+
+            // Type badge
+            var typeClass = item.type === 'Onboarding' ? 'badge-warning' : 'badge-primary';
+
+            // Ratings display
+            var ratingsText = '--';
+            if (item.ratings) {
+                try {
+                    var ratings = typeof item.ratings === 'string' ? JSON.parse(item.ratings) : item.ratings;
+                    if (ratings.score !== undefined) {
+                        ratingsText = ratings.score + '/5';
+                    } else if (typeof ratings === 'number') {
+                        ratingsText = ratings + '/5';
+                    }
+                } catch (e) {
+                    ratingsText = item.ratings;
+                }
+            }
+
+            var itemId = escapeHtml(item.id);
+            html += '<tr onclick="openSpecialDetail(\'' + itemId + '\')" class="cursor-pointer hover:bg-hover">';
+            html += '<td><div class="flex flex-col">';
+            html += '<span class="text-sm font-medium">' + timeStr + '</span>';
+            html += '<span class="text-xs text-muted">' + dateStr + '</span>';
+            html += '</div></td>';
+            html += '<td><span class="badge ' + typeClass + '">' + escapeHtml(item.type || '--') + '</span></td>';
+            html += '<td><div class="flex flex-col">';
+            html += '<span class="font-medium">' + escapeHtml(item.patrol || '--') + '</span>';
+            html += '<span class="text-xs text-muted">' + escapeHtml(item.site || '--') + '</span>';
+            html += '</div></td>';
+            html += '<td>' + escapeHtml(item.target || '--') + '</td>';
+            html += '<td>' + escapeHtml(ratingsText) + '</td>';
+            html += '<td>' + escapeHtml(item.duration || '--') + '</td>';
+            html += '<td><span class="badge ' + statusClass + '">' + t(statusKey) + '</span></td>';
+            html += '<td class="text-right">';
+            html += '<button class="btn-icon btn-sm" onclick="event.stopPropagation(); openSpecialDetail(\'' + itemId + '\')">';
+            html += '<span class="material-symbols-outlined">visibility</span>';
+            html += '</button></td>';
+            html += '</tr>';
+        }
+
+        tbody.innerHTML = html;
+
+        // Apply translations to newly rendered content
+        TranslationManager.applyTranslations();
+    }
+
+    /**
+     * Open special duty detail modal
+     */
+    function openSpecialDetail(id) {
+        var item = null;
+        for (var i = 0; i < ALL_SPECIAL_LOGS.length; i++) {
+            if (ALL_SPECIAL_LOGS[i].id === id) {
+                item = ALL_SPECIAL_LOGS[i];
+                break;
+            }
+        }
+
+        if (!item) {
+            showToast('Record not found', 'error');
+            return;
+        }
+
+        openModal('special-detail');
+
+        // Small delay to ensure modal is rendered
+        setTimeout(function () {
+            // Populate modal - use querySelector to find in active modal
+            var container = document.getElementById('modal-container');
+
+            var patrolEl = container.querySelector('#modal-special-patrol');
+            var siteEl = container.querySelector('#modal-special-site');
+            var targetEl = container.querySelector('#modal-special-target');
+            var durationEl = container.querySelector('#modal-special-duration');
+            var ratingsEl = container.querySelector('#modal-special-ratings');
+            var notesEl = container.querySelector('#modal-special-notes');
+            var photosEl = container.querySelector('#modal-special-photos');
+
+            if (patrolEl) patrolEl.textContent = item.patrol || '--';
+            if (siteEl) siteEl.textContent = item.site || '--';
+            if (targetEl) targetEl.textContent = item.target || '--';
+            if (durationEl) durationEl.textContent = item.duration || '--';
+
+            // Ratings - better display
+            if (ratingsEl) {
+                if (item.ratings) {
+                    try {
+                        var ratings = typeof item.ratings === 'string' ? JSON.parse(item.ratings) : item.ratings;
+                        if (typeof ratings === 'object' && ratings !== null) {
+                            var ratingsHtml = '';
+                            var keys = Object.keys(ratings);
+                            for (var j = 0; j < keys.length; j++) {
+                                var key = keys[j];
+                                var val = ratings[key];
+                                ratingsHtml += '<div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid var(--border);">';
+                                ratingsHtml += '<span class="text-muted">' + escapeHtml(key) + '</span>';
+                                ratingsHtml += '<span class="font-medium">' + escapeHtml(String(val)) + '</span>';
+                                ratingsHtml += '</div>';
+                            }
+                            ratingsEl.innerHTML = ratingsHtml;
+                        } else {
+                            ratingsEl.innerHTML = '<span class="font-medium">' + escapeHtml(String(ratings)) + '</span>';
+                        }
+                    } catch (e) {
+                        ratingsEl.innerHTML = '<span class="font-medium">' + escapeHtml(String(item.ratings)) + '</span>';
+                    }
+                } else {
+                    ratingsEl.innerHTML = '<span class="text-muted">--</span>';
+                }
+            }
+
+            // Notes
+            if (notesEl) {
+                notesEl.textContent = item.notes || t('special.modal.no_notes');
+            }
+
+            // Photos - render with photo-thumb class for lightbox
+            if (photosEl) {
+                if (item.photoUrl && item.photoUrl.trim()) {
+                    var urls = item.photoUrl.split(',').filter(function (u) { return u.trim(); });
+                    if (urls.length > 0) {
+                        var html = '';
+                        for (var k = 0; k < urls.length; k++) {
+                            var rawUrl = urls[k].trim();
+                            var thumbUrl = getThumbnailUrl(rawUrl, 400);
+                            // Use special-photo-thumb class and data-photo-url for lightbox event delegation
+                            html += '<div class="special-photo-thumb aspect-video bg-gray-100 rounded-lg bg-cover bg-center cursor-pointer hover:opacity-90 transition-opacity border border-gray-200 relative group" ';
+                            html += 'data-photo-url="' + encodeURIComponent(rawUrl) + '" ';
+                            html += 'style="background-image: url(\'' + thumbUrl + '\')">';
+                            html += '<div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center">';
+                            html += '<span class="material-symbols-outlined text-white opacity-0 group-hover:opacity-100 text-sm">visibility</span>';
+                            html += '</div></div>';
+                        }
+                        photosEl.innerHTML = html;
+                    } else {
+                        photosEl.innerHTML = '<span class="text-gray-400">' + t('special.modal.no_photos') + '</span>';
+                    }
+                } else {
+                    photosEl.innerHTML = '<span class="text-gray-400">' + t('special.modal.no_photos') + '</span>';
+                }
+            }
+
+            // Apply translations
+            TranslationManager.applyTranslations();
+        }, 100);
+    }
+
+    /**
+     * Convert various URL formats to displayable image URLs
+     */
+    function convertToImageUrl(url) {
+        if (!url) return '';
+
+        // Google Drive file link
+        var fileMatch = url.indexOf('drive.google.com/file/d/');
+        if (fileMatch !== -1) {
+            var startIdx = fileMatch + 24;
+            var endIdx = url.indexOf('/', startIdx);
+            if (endIdx === -1) endIdx = url.length;
+            var fileId = url.substring(startIdx, endIdx);
+            return 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w400';
+        }
+
+        // Google Drive open link
+        var openMatch = url.indexOf('drive.google.com/open?id=');
+        if (openMatch !== -1) {
+            var startIdx2 = openMatch + 25;
+            var endIdx2 = url.indexOf('&', startIdx2);
+            if (endIdx2 === -1) endIdx2 = url.length;
+            var fileId2 = url.substring(startIdx2, endIdx2);
+            return 'https://drive.google.com/thumbnail?id=' + fileId2 + '&sz=w400';
+        }
+
+        // Already a thumbnail or direct URL
+        return url;
+    }
+
+    /**
+     * Format time ago helper
+     */
+    function formatTimeAgo(date) {
+        if (!date) return '--';
+        var now = new Date();
+        var diffMs = now - date;
+        var diffMins = Math.floor(diffMs / 60000);
+        var diffHours = Math.floor(diffMins / 60);
+        var diffDays = Math.floor(diffHours / 24);
+
+        if (diffMins < 1) return t('time.just_now') || 'Just now';
+        if (diffMins < 60) return diffMins + 'm';
+        if (diffHours < 24) return diffHours + 'h';
+        if (diffDays < 7) return diffDays + 'd';
+        return date.toLocaleDateString();
+    }
+
+    /**
+     * Get Google Drive thumbnail URL
+     */
+    function getThumbnailUrl(url, size) {
+        size = size || 400;
+        if (!url) return '';
+        var match = url.match(/[-\w]{25,}/);
+        if (match) return 'https://lh3.googleusercontent.com/d/' + match[0] + '=s' + size;
+        return url;
+    }
+
+    /**
+     * Open photo lightbox
+     */
+    function openSpecialLightbox(url) {
+        // Transform Google Drive URLs to displayable image URLs
+        var displayUrl = url;
+        var driveMatch = url.match(/[-\w]{25,}/);
+        if (driveMatch) {
+            displayUrl = 'https://lh3.googleusercontent.com/d/' + driveMatch[0] + '=s1600';
+        }
+
+        var lightbox = document.createElement('div');
+        lightbox.id = 'vks-special-lightbox';
+        lightbox.className = 'fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center opacity-0 transition-opacity duration-300';
+        lightbox.innerHTML = '<div class="relative max-w-[90vw] max-h-[90vh]">' +
+            '<img src="' + displayUrl + '" class="max-w-full max-h-[90vh] rounded-lg shadow-2xl transform scale-95 transition-transform duration-300" ' +
+            'onload="this.classList.remove(\'scale-95\'); this.classList.add(\'scale-100\')" ' +
+            'onerror="this.src=\'https://placehold.co/600x400/1a1a1a/666?text=Image+Not+Available\'">' +
+            '<button onclick="closeSpecialLightbox()" class="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors">' +
+            '<span class="material-symbols-outlined text-4xl">close</span>' +
+            '</button></div>';
+        document.body.appendChild(lightbox);
+
+        // Trigger animation
+        requestAnimationFrame(function () { lightbox.classList.remove('opacity-0'); });
+
+        // Close on background click
+        lightbox.addEventListener('click', function (e) {
+            if (e.target === lightbox) closeSpecialLightbox();
+        });
+    }
+
+    /**
+     * Close photo lightbox
+     */
+    function closeSpecialLightbox() {
+        var lightbox = document.getElementById('vks-special-lightbox');
+        if (lightbox) {
+            lightbox.classList.add('opacity-0');
+            setTimeout(function () { lightbox.remove(); }, 300);
+        }
+    }
+
+    // Event delegation for photo thumbnail clicks (handles dynamically rendered photos)
+    document.addEventListener('click', function (e) {
+        var thumb = e.target.closest('.special-photo-thumb');
+        if (thumb && thumb.dataset.photoUrl) {
+            var url = decodeURIComponent(thumb.dataset.photoUrl);
+            openSpecialLightbox(url);
+        }
+    });
+</script>

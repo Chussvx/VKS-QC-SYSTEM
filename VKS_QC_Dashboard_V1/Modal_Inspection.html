@@ -1,0 +1,156 @@
+<!-- Modal_Inspection.html - Inspection detail modals (V2 Port) -->
+
+<!-- Scan Detail Modal Template (for Guard Activity) -->
+<template id="modal-scan-detail">
+    <div class="modal-header-refined">
+        <div class="modal-title-group">
+            <div class="modal-icon-box success">
+                <span class="material-symbols-outlined">qr_code_scanner</span>
+            </div>
+            <div>
+                <h3 class="modal-title" data-i18n="modal.scan.title">CHECKPOINT SCAN</h3>
+                <div class="modal-subtitle-flex">
+                    <span class="text-xs text-muted" id="scan-det-id">#SC-9905</span>
+                </div>
+            </div>
+        </div>
+        <button class="btn-close" onclick="closeModal()">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+    </div>
+
+    <div class="modal-body p-0">
+        <!-- Metadata Bar -->
+        <div class="modal-meta-bar">
+            <div class="meta-item">
+                <span class="meta-label" data-i18n="meta.site">SITE</span>
+                <span class="meta-value" id="scan-det-site" data-i18n="common.loading">Loading...</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label" data-i18n="meta.guard">GUARD</span>
+                <span class="meta-value" id="scan-det-guard" data-i18n="common.loading">Loading...</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label" data-i18n="meta.time">TIME</span>
+                <span class="meta-value" id="scan-det-time" data-i18n="common.loading">Loading...</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label" data-i18n="meta.accuracy">ACCURACY</span>
+                <span class="meta-value text-success">100% (GPS OK)</span>
+            </div>
+        </div>
+
+        <div class="p-6" id="scan-detail-content">
+            <div class="text-center py-8">
+                <span class="material-symbols-outlined spin text-primary">progress_activity</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-footer-refined">
+        <button class="btn btn-ghost" onclick="closeModal()" data-i18n="modal.close">CLOSE</button>
+    </div>
+</template>
+
+<!-- Inspection Detail Modal Template (Refined Tailwind-like Layout) -->
+<!-- Inspection Detail Modal Template (Tailwind VKS Design) -->
+<template id="modal-inspection-detail">
+    <!-- Main Modal Card Wrapper -->
+    <div class="flex flex-col w-full bg-white rounded-xl shadow-2xl overflow-hidden relative"
+        style="max-height: 90vh; width: 100%; max-width: 1000px;">
+
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-start bg-white z-10 shrink-0">
+            <div>
+                <div class="flex items-center gap-3 mb-1">
+                    <h2 class="text-xl font-bold text-gray-800" id="insp-header-site">Site Name</h2>
+                    <span class="px-2 py-0.5 bg-blue-50 text-blue-600 text-xs font-semibold rounded"
+                        id="insp-header-route">Route A</span>
+                    <span id="insp-header-badge"></span>
+                </div>
+                <div class="flex items-center gap-4 text-sm text-gray-500">
+                    <span class="flex items-center gap-1"><span
+                            class="material-symbols-outlined text-base">calendar_today</span> <span
+                            id="insp-header-date">Jan 13, 2026</span></span>
+                    <span class="text-gray-300">•</span>
+                    <span class="flex items-center gap-1"><span
+                            class="material-symbols-outlined text-base">person</span> <span
+                            data-i18n="inspection.inspector">Inspector:</span> <span class="font-medium text-gray-700"
+                            id="insp-header-inspector">Inspector Name</span></span>
+                </div>
+            </div>
+            <button onclick="closeModal()"
+                class="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded hover:bg-gray-100">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <!-- Scrollable Body -->
+        <div class="p-6 bg-gray-50/50 overflow-y-auto flex-grow">
+            <div id="inspection-detail-content">
+                <!-- Content will be injected here -->
+                <div class="flex justify-center py-12">
+                    <span
+                        class="material-symbols-outlined animate-spin text-vks-primary text-4xl">progress_activity</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 bg-white border-t border-gray-100 flex justify-between items-center shrink-0 z-10">
+            <button
+                class="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors border border-gray-200 text-sm font-medium"
+                onclick="printInspection()">
+                <span class="material-symbols-outlined text-lg">picture_as_pdf</span> <span
+                    data-i18n="inspection.export_pdf">Export PDF</span>
+            </button>
+            <button
+                class="px-6 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-sm font-medium transition-colors"
+                onclick="closeModal()">
+                <span data-i18n="common.close">Close</span>
+            </button>
+        </div>
+    </div>
+</template>
+
+<script>
+    // Print inspection report
+    function printInspection() {
+        const content = document.getElementById('inspection-detail-content').innerHTML;
+        const title = document.getElementById('insp-header-site')?.textContent || 'Inspection Report';
+
+        const printWindow = window.open('', '', 'height=600,width=800');
+        if (!printWindow) {
+            showUserMessage('Popup blocked. Please allow popups for printing.', 'warning');
+            return;
+        }
+
+        const html = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>${title}</title>
+                <style>
+                    body { font-family: sans-serif; padding: 20px; }
+                    .insp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+                    .badge { border:1px solid #ddd; padding:2px 6px; border-radius:4px; font-size:10px; }
+                </style>
+            </head>
+            <body>
+                <h1>${title}</h1>
+                <div>${content}</div>
+                <script>
+                    window.onload = () => {
+                        window.print();
+                        // window.close();
+                    };
+                <\/script>
+            </body>
+            </html>
+        `;
+
+        printWindow.document.open();
+        printWindow.document.write(html);
+        printWindow.document.close();
+    }
+</script>

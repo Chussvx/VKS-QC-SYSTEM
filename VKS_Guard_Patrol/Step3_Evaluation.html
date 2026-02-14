@@ -1,0 +1,247 @@
+<!-- Step 3: Evaluation -->
+<div id="step-3" class="step-content hidden">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title"><span class="material-symbols-outlined">verified_user</span> ກວດສອບຄວາມພ້ອມ & ບັນຫາ
+            </h2>
+            <div class="info-box mt-2">
+                <span class="material-symbols-outlined info-icon">lightbulb</span>
+                <p class="text-xs">ກວດສອບອຸປະກອນຂອງພະນັກງານຍາມ ແລະ ບັນທຶກຫາກພົບເຫັນການກະທຳທີ່ບໍ່ເໝາະສົມ.</p>
+            </div>
+        </div>
+        <div class="card-content">
+
+            <!-- 1. UNIFORM CHECK -->
+            <div class="section-divider">
+                <span class="section-header-text"><span class="material-symbols-outlined">checkroom</span>
+                    ເຄື່ອງແບບ</span>
+                <div class="accent-line"></div>
+            </div>
+            <div class="input-group">
+                <div class="grid-cols-2 mb-2">
+                    <label class="radio-card">
+                        <input type="radio" name="uniformStatus" value="Yes" checked
+                            onchange="toggleSubOptions('uniform', false)">
+                        <div class="radio-card-content">
+                            <span class="material-symbols-outlined text-xl text-success">check_circle</span>
+                            <span class="font-medium">ຄົບຖ້ວນ</span>
+                        </div>
+                    </label>
+                    <label class="radio-card danger">
+                        <input type="radio" name="uniformStatus" value="No"
+                            onchange="toggleSubOptions('uniform', true)">
+                        <div class="radio-card-content">
+                            <span class="material-symbols-outlined text-xl text-danger">cancel</span>
+                            <span class="font-medium">ບໍ່ຄົບຖ້ວນ</span>
+                        </div>
+                    </label>
+                </div>
+                <!-- Uniform Sub-options (hidden by default) -->
+                <div id="uniform-suboptions" class="hidden sub-options-grid mt-3">
+                    <p class="text-muted text-xs mb-2">ເລືອກສິ່ງທີ່ຂາດ:</p>
+                    <div class="checkbox-grid">
+                        <label class="checkbox-item"><input type="checkbox" name="uniformMissing" value="Hat"> 🎩
+                            ໝວກ</label>
+                        <label class="checkbox-item"><input type="checkbox" name="uniformMissing" value="Shirt"> 👕
+                            ເສື້ອ</label>
+                        <label class="checkbox-item"><input type="checkbox" name="uniformMissing" value="Pants"> 👖
+                            ໂສ້ງ</label>
+                        <label class="checkbox-item"><input type="checkbox" name="uniformMissing" value="Shoes"> 👞
+                            ເກີບ</label>
+                        <label class="checkbox-item"><input type="checkbox" name="uniformMissing" value="PowerBelt"> 🟡
+                            ສາຍອຳນາດ</label>
+                        <label class="checkbox-item"><input type="checkbox" name="uniformMissing" value="NameTag"> 📛
+                            ປ້າຍຊື່</label>
+                        <label class="checkbox-item"><input type="checkbox" name="uniformMissing" value="Whistle"> 📢
+                            ໝາກຫວິດ</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. SELF DEFENSE EQUIPMENT -->
+            <div class="section-divider mt-4">
+                <span class="section-header-text"><span class="material-symbols-outlined">shield</span>
+                    ອຸປະກອນປ້ອງກັນຕົວ</span>
+                <div class="accent-line"></div>
+            </div>
+            <div class="input-group">
+                <div class="grid-cols-2 mb-2">
+                    <label class="radio-card">
+                        <input type="radio" name="defenseStatus" value="Yes" checked
+                            onchange="toggleSubOptions('defense', false)">
+                        <div class="radio-card-content">
+                            <span class="text-xl">✅</span>
+                            <span class="font-medium">ຄົບຖ້ວນ</span>
+                        </div>
+                    </label>
+                    <label class="radio-card danger">
+                        <input type="radio" name="defenseStatus" value="No"
+                            onchange="toggleSubOptions('defense', true)">
+                        <div class="radio-card-content">
+                            <span class="text-xl">❌</span>
+                            <span class="font-medium">ບໍ່ຄົບຖ້ວນ</span>
+                        </div>
+                    </label>
+                </div>
+                <!-- Defense Sub-options (hidden by default) -->
+                <div id="defense-suboptions" class="hidden sub-options-grid mt-3">
+                    <p class="text-muted text-xs mb-2">ເລືອກສິ່ງທີ່ຂາດ:</p>
+                    <div class="checkbox-grid">
+                        <label class="checkbox-item"><input type="checkbox" name="defenseMissing" value="BigBelt"> ⬛
+                            ສາຍແອວໃຫຍ່</label>
+                        <label class="checkbox-item"><input type="checkbox" name="defenseMissing" value="HandLock"> 🔗
+                            ກຸນແຈມື</label>
+                        <label class="checkbox-item"><input type="checkbox" name="defenseMissing" value="ShortBaton"> 🪵
+                            ໄມ້ຄ້ອນສັ້ນ</label>
+                        <label class="checkbox-item"><input type="checkbox" name="defenseMissing" value="ElectricBaton">
+                            ⚡ ໄມ້ຊ໊ອກໄຟຟ້າ</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. FLASHLIGHT CHECK -->
+            <div class="section-divider mt-4">
+                <span class="section-header-text"><span class="material-symbols-outlined">flashlight_on</span>
+                    ໄຟສາຍ</span>
+                <div class="accent-line"></div>
+            </div>
+            <div class="input-group">
+                <div class="grid-cols-2 mb-2">
+                    <label class="radio-card">
+                        <input type="radio" name="flashlightStatus" value="Yes" checked>
+                        <div class="radio-card-content">
+                            <span class="text-xl">✅</span>
+                            <span class="font-medium">ມີໄຟສາຍ</span>
+                        </div>
+                    </label>
+                    <label class="radio-card danger">
+                        <input type="radio" name="flashlightStatus" value="No">
+                        <div class="radio-card-content">
+                            <span class="text-xl">❌</span>
+                            <span class="font-medium">ບໍ່ມີ</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 4. LOGBOOK CHECK -->
+            <div class="section-divider mt-4">
+                <span class="section-header-text"><span class="material-symbols-outlined">menu_book</span>
+                    ປື້ມບັນທຶກ</span>
+                <div class="accent-line"></div>
+            </div>
+            <div class="input-group">
+                <div class="grid-cols-2 mb-2">
+                    <label class="radio-card">
+                        <input type="radio" name="logbookStatus" value="Yes" checked>
+                        <div class="radio-card-content">
+                            <span class="text-xl">✅</span>
+                            <span class="font-medium">ມີ</span>
+                        </div>
+                    </label>
+                    <label class="radio-card danger">
+                        <input type="radio" name="logbookStatus" value="No">
+                        <div class="radio-card-content">
+                            <span class="text-xl">❌</span>
+                            <span class="font-medium">ບໍ່ມີ</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 5. SLEEPING ON DUTY -->
+            <div class="section-divider mt-4">
+                <span class="section-header-text text-destructive"><span
+                        class="material-symbols-outlined">bedtime</span> ນອນຫຼັບ</span>
+                <div class="accent-line"
+                    style="background: linear-gradient(90deg, hsl(var(--destructive) / 0.5), transparent);"></div>
+            </div>
+            <div class="input-group">
+                <div class="grid-cols-2 mb-2">
+                    <label class="radio-card">
+                        <input type="radio" name="sleepStatus" value="No" checked
+                            onchange="toggleSubOptions('sleep', false)">
+                        <div class="radio-card-content">
+                            <span class="text-xl">✅</span>
+                            <span class="font-medium">ບໍ່ນອນ</span>
+                        </div>
+                    </label>
+                    <label class="radio-card danger">
+                        <input type="radio" name="sleepStatus" value="Yes" onchange="toggleSubOptions('sleep', true)">
+                        <div class="radio-card-content">
+                            <span class="text-xl">😴</span>
+                            <span class="font-medium">ນອນຫຼັບ</span>
+                        </div>
+                    </label>
+                </div>
+                <!-- Sleep Reason (hidden by default) -->
+                <div id="sleep-suboptions" class="hidden mt-3">
+                    <label class="text-muted text-xs block mb-2">ເຫດຜົນ:</label>
+                    <div class="custom-select" id="sleepReason-select">
+                        <input type="hidden" id="sleepReason" name="sleepReason" value="">
+                        <div class="custom-select-trigger" onclick="toggleCustomSelect('sleepReason-select')">
+                            <span class="custom-select-value">ເລືອກເຫດຜົນ</span>
+                            <i>▼</i>
+                        </div>
+                        <div class="custom-select-dropdown">
+                            <div class="custom-select-option" data-value="😴 ເມື່ອຍ"
+                                onclick="selectCustomOption(this, 'sleepReason')">😴 ເມື່ອຍ</div>
+                            <div class="custom-select-option" data-value="🤒 ບໍ່ສະບາຍ"
+                                onclick="selectCustomOption(this, 'sleepReason')">🤒 ບໍ່ສະບາຍ</div>
+                            <div class="custom-select-option" data-value="🍺 ມຶນເມົາ"
+                                onclick="selectCustomOption(this, 'sleepReason')">🍺 ມຶນເມົາ</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. NOT ON POSITION -->
+            <div class="section-divider mt-4">
+                <span class="section-header-text text-destructive"><span
+                        class="material-symbols-outlined">wrong_location</span> ບໍ່ຢູ່ຈຸດ</span>
+                <div class="accent-line"
+                    style="background: linear-gradient(90deg, hsl(var(--destructive) / 0.5), transparent);"></div>
+            </div>
+            <div class="input-group">
+                <div class="grid-cols-2 mb-2">
+                    <label class="radio-card">
+                        <input type="radio" name="positionStatus" value="Yes" checked
+                            onchange="toggleSubOptions('position', false)">
+                        <div class="radio-card-content">
+                            <span class="text-xl">✅</span>
+                            <span class="font-medium">ຢູ່ປະຈຳຈຸດ</span>
+                        </div>
+                    </label>
+                    <label class="radio-card danger">
+                        <input type="radio" name="positionStatus" value="No"
+                            onchange="toggleSubOptions('position', true)">
+                        <div class="radio-card-content">
+                            <span class="text-xl">❌</span>
+                            <span class="font-medium">ບໍ່ຢູ່ຈຸດ</span>
+                        </div>
+                    </label>
+                </div>
+                <!-- Position Reason (hidden by default) -->
+                <div id="position-suboptions" class="hidden mt-3">
+                    <label class="text-muted text-xs block mb-2">ເຫດຜົນ:</label>
+                    <div class="custom-select" id="positionReason-select">
+                        <input type="hidden" id="positionReason" name="positionReason" value="">
+                        <div class="custom-select-trigger" onclick="toggleCustomSelect('positionReason-select')">
+                            <span class="custom-select-value">ເລືອກເຫດຜົນ</span>
+                            <i>▼</i>
+                        </div>
+                        <div class="custom-select-dropdown">
+                            <div class="custom-select-option" data-value="🚽 ໄປຫ້ອງນ້ຳ"
+                                onclick="selectCustomOption(this, 'positionReason')">🚽 ໄປຫ້ອງນ້ຳ</div>
+                            <div class="custom-select-option" data-value="🛒 ໄປຊື້ເຄື່ອງ"
+                                onclick="selectCustomOption(this, 'positionReason')">🛒 ໄປຊື້ເຄື່ອງ</div>
+                            <div class="custom-select-option" data-value="❓ ບໍ່ມີເຫດຜົນ"
+                                onclick="selectCustomOption(this, 'positionReason')">❓ ບໍ່ມີເຫດຜົນ</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

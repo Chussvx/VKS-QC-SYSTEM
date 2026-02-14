@@ -1,0 +1,261 @@
+<!-- Sidebar.html - Shared sidebar navigation for GAS -->
+<!-- Usage in GAS: <?!= include('Components/Sidebar'); ?> -->
+
+
+
+<aside class="sidebar" id="sidebar">
+    <!-- Header with Logo -->
+    <div class="sidebar-header">
+        <div class="sidebar-logo">
+            <img src="https://drive.google.com/thumbnail?id=1o7UGoZhLBG43hm-5eao8UYB4YjeQ_IhT&sz=w1000" alt="VKS Logo"
+                class="sidebar-logo-img">
+        </div>
+        <div class="logo-text">
+            <h1>VKS QC</h1>
+            <p>Ops Hub</p>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+        <!-- Overview Group -->
+        <div class="nav-group">
+            <p class="sidebar-group-label" data-i18n="dash.overview">Overview</p>
+            <a class="nav-item" data-page="dashboard" onclick="navigateTo('dashboard')">
+                <span class="material-symbols-outlined nav-icon">dashboard</span>
+                <span class="sidebar-text" data-i18n="nav.dashboard">Dashboard</span>
+            </a>
+            <a class="nav-item" data-page="site-map" onclick="navigateTo('site-map')">
+                <span class="material-symbols-outlined nav-icon">map</span>
+                <span class="sidebar-text" data-i18n="nav.sitemap">Site Map</span>
+            </a>
+        </div>
+
+        <!-- Live Status Group -->
+        <div class="nav-group">
+            <p class="sidebar-group-label" data-i18n="nav.live_status">Live Status</p>
+            <a class="nav-item" data-page="patrol-status" onclick="navigateTo('patrol-status')">
+                <span class="material-symbols-outlined nav-icon">table_chart</span>
+                <span class="sidebar-text" data-i18n="nav.patrol_status">Patrol Status</span>
+            </a>
+        </div>
+
+        <!-- QC Inspection Group -->
+        <div class="nav-group">
+            <p class="sidebar-group-label" data-i18n="nav.qc_inspection">QC Inspection</p>
+            <a class="nav-item" data-page="inspection-logs" onclick="navigateTo('inspection-logs')">
+                <span class="material-symbols-outlined nav-icon">fact_check</span>
+                <span class="sidebar-text" data-i18n="nav.inspection_logs">Inspection Logs</span>
+            </a>
+            <a class="nav-item" data-page="inspector-routes" onclick="navigateTo('inspector-routes')">
+                <span class="material-symbols-outlined nav-icon">route</span>
+                <span class="sidebar-text" data-i18n="nav.inspector_routes">Inspector Routes</span>
+            </a>
+            <a class="nav-item" data-page="handover-records" onclick="navigateTo('handover-records')">
+                <span class="material-symbols-outlined nav-icon">assignment_turned_in</span>
+                <span class="sidebar-text" data-i18n="nav.handover">Handover Records</span>
+            </a>
+            <a class="nav-item" data-page="special-duty" onclick="navigateTo('special-duty')">
+                <span class="material-symbols-outlined nav-icon">shield_person</span>
+                <span class="sidebar-text" data-i18n="nav.special_duty">Special Duty</span>
+            </a>
+        </div>
+
+        <!-- Guard Logs Group -->
+        <div class="nav-group">
+            <p class="sidebar-group-label" data-i18n="nav.guard_logs">Guard Logs</p>
+            <a class="nav-item" data-page="guard-activity" onclick="navigateTo('guard-activity')">
+                <span class="material-symbols-outlined nav-icon">history_edu</span>
+                <span class="sidebar-text" data-i18n="nav.guard_activity">Guard Activity</span>
+            </a>
+        </div>
+
+        <!-- Issues Group -->
+        <div class="nav-group">
+            <p class="sidebar-group-label" data-i18n="nav.issues">Issues</p>
+            <a class="nav-item" data-page="incidents" onclick="navigateTo('incidents')">
+                <span class="material-symbols-outlined nav-icon">local_fire_department</span>
+                <span class="sidebar-text" data-i18n="nav.incidents">Incidents</span>
+            </a>
+            <a class="nav-item" data-page="complaints" onclick="navigateTo('complaints')">
+                <span class="material-symbols-outlined nav-icon">report_problem</span>
+                <span class="sidebar-text" data-i18n="nav.complaints">Complaints</span>
+            </a>
+        </div>
+
+        <!-- Analytics Group -->
+        <div class="nav-group">
+            <p class="sidebar-group-label" data-i18n="nav.analytics">Analytics</p>
+            <a class="nav-item" data-page="performance" onclick="navigateTo('performance')">
+                <span class="material-symbols-outlined nav-icon">insights</span>
+                <span class="sidebar-text" data-i18n="nav.performance">Performance</span>
+            </a>
+            <a class="nav-item" data-page="reports" onclick="navigateTo('reports')">
+                <span class="material-symbols-outlined nav-icon">analytics</span>
+                <span class="sidebar-text" data-i18n="nav.reports">Reports</span>
+            </a>
+        </div>
+
+        <!-- Management Group -->
+        <div class="nav-group">
+            <p class="sidebar-group-label" data-i18n="nav.management">Management</p>
+            <a class="nav-item" data-page="guards" onclick="navigateTo('guards')">
+                <span class="material-symbols-outlined nav-icon">badge</span>
+                <span class="sidebar-text" data-i18n="nav.guards">Guards</span>
+            </a>
+            <a class="nav-item" data-page="sites" onclick="navigateTo('sites')">
+                <span class="material-symbols-outlined nav-icon">domain</span>
+                <span class="sidebar-text" data-i18n="nav.sites">Sites</span>
+            </a>
+            <a class="nav-item" data-page="calendar" onclick="navigateTo('calendar')">
+                <span class="material-symbols-outlined nav-icon">assignment</span>
+                <span class="sidebar-text" data-i18n="nav.calendar">Patrol Plans</span>
+            </a>
+            <a class="nav-item" data-page="overtime" onclick="navigateTo('overtime')">
+                <span class="material-symbols-outlined nav-icon">more_time</span>
+                <span class="sidebar-text" data-i18n="nav.overtime">Overtime</span>
+            </a>
+        </div>
+
+        <!-- Reference Group -->
+        <div class="nav-group">
+            <p class="sidebar-group-label" data-i18n="nav.reference">Reference</p>
+            <a class="nav-item" data-page="sop" onclick="navigateTo('sop')">
+                <span class="material-symbols-outlined nav-icon">policy</span>
+                <span class="sidebar-text" data-i18n="nav.sop">SOP</span>
+            </a>
+        </div>
+
+        <!-- Tools Group -->
+        <div class="nav-group">
+            <p class="sidebar-group-label" data-i18n="nav.tools">Tools</p>
+            <a class="nav-item" data-page="qr-generator" onclick="navigateTo('qr-generator')">
+                <span class="material-symbols-outlined nav-icon">qr_code</span>
+                <span class="sidebar-text" data-i18n="nav.qr_generator">QR Generator</span>
+            </a>
+        </div>
+
+        <!-- System Group -->
+        <div class="nav-group">
+            <p class="sidebar-group-label" data-i18n="nav.system">System</p>
+            <a class="nav-item" data-page="settings" onclick="navigateTo('settings')">
+                <span class="material-symbols-outlined nav-icon">settings</span>
+                <span class="sidebar-text" data-i18n="nav.settings">Settings</span>
+            </a>
+            <a class="nav-item" data-page="user-management" data-admin-only onclick="navigateTo('user-management')">
+                <span class="material-symbols-outlined nav-icon">manage_accounts</span>
+                <span class="sidebar-text" data-i18n="nav.user_management">User Management</span>
+            </a>
+            <a class="nav-item" data-page="activity-logs" data-admin-only onclick="navigateTo('activity-logs')">
+                <span class="material-symbols-outlined nav-icon">receipt_long</span>
+                <span class="sidebar-text" data-i18n="nav.activity_logs">Activity Logs</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Footer with Toggle -->
+    <div class="sidebar-footer">
+        <button class="toggle-btn" onclick="toggleSidebar()">
+            <span class="material-symbols-outlined toggle-icon">chevron_left</span>
+        </button>
+    </div>
+</aside>
+
+<script>
+    // Toggle sidebar collapse
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        sidebar.classList.toggle('collapsed');
+        // Save preference
+        localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+    }
+
+    // Restore sidebar state on load
+    document.addEventListener('DOMContentLoaded', function () {
+        if (localStorage.getItem('sidebarCollapsed') === 'true') {
+            document.getElementById('sidebar').classList.add('collapsed');
+        }
+    });
+
+    // Update active nav item
+    function updateSidebarActive(page) {
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.remove('active');
+            if (item.dataset.page === page) {
+                item.classList.add('active');
+            }
+        });
+    }
+
+    /**
+     * P2 Optimization: Hover-Preload for Navigation
+     * Preloads data when user hovers over nav items (clear intent signal)
+     * Only preloads if cache is empty - zero wasted bandwidth
+     */
+    (function initHoverPreload() {
+        // Map of pages to their preload functions
+        const preloadMap = {
+            'guards': function () {
+                if (typeof GuardCache !== 'undefined' && !GuardCache.getList()) {
+                    console.log('[Preload] Fetching Guards on hover...');
+                    google.script.run
+                        .withSuccessHandler(function (data) {
+                            if (typeof GuardCache !== 'undefined') {
+                                GuardCache.setList(data);
+                            }
+                            console.log('[Preload] Guards cached');
+                        })
+                        .getGuards({});
+                }
+            },
+            'sites': function () {
+                // Sites data is fetched by getSites, preload it
+                if (typeof sitesData !== 'undefined' && sitesData.length === 0) {
+                    console.log('[Preload] Fetching Sites on hover...');
+                    google.script.run
+                        .withSuccessHandler(function (data) {
+                            if (typeof window.sitesData !== 'undefined') {
+                                window.sitesData = data;
+                            }
+                            console.log('[Preload] Sites cached in memory');
+                        })
+                        .getSites({});
+                }
+            },
+            'dashboard': function () {
+                if (typeof DashboardCache !== 'undefined' && !DashboardCache.getKPIs()) {
+                    console.log('[Preload] Fetching Dashboard bundle on hover...');
+                    google.script.run
+                        .withSuccessHandler(function (bundle) {
+                            if (typeof DashboardCache !== 'undefined') {
+                                DashboardCache.setAll(bundle);
+                            }
+                            console.log('[Preload] Dashboard bundle cached');
+                        })
+                        .getDashboardBundle();
+                }
+            }
+        };
+
+        // Attach hover listeners with delay (200ms intent threshold)
+        document.querySelectorAll('.nav-item[data-page]').forEach(function (item) {
+            let hoverTimeout = null;
+            const page = item.dataset.page;
+
+            if (preloadMap[page]) {
+                item.addEventListener('mouseenter', function () {
+                    hoverTimeout = setTimeout(function () {
+                        preloadMap[page]();
+                    }, 200); // 200ms delay = clear intent
+                });
+
+                item.addEventListener('mouseleave', function () {
+                    if (hoverTimeout) {
+                        clearTimeout(hoverTimeout);
+                        hoverTimeout = null;
+                    }
+                });
+            }
+        });
+    })();
+</script>

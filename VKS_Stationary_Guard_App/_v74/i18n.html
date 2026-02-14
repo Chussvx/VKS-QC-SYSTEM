@@ -1,0 +1,35 @@
+<script>
+    const i18n = {
+        en: {
+            checkin: "Check-In",
+            patrol: "Patrol",
+            checkout: "Check-Out",
+            scan: "Scan QR",
+            cancel: "Cancel",
+            emergency: "EMERGENCY",
+            status: "Status",
+            notCheckedIn: "Not Checked In",
+            onDuty: "On Duty",
+            confirm: "Confirm",
+            success: "Success"
+        },
+        lo: {
+            checkin: "ເຂົ້າປະຕິບັດງານ",
+            patrol: "ລາດຕະເວນ",
+            checkout: "ສິ້ນສຸດງານ",
+            scan: "ສະແກນ QR",
+            cancel: "ຍົກເລີກ",
+            emergency: "ແຈ້ງເຫດດ່ວນ",
+            status: "ສະຖານະ",
+            notCheckedIn: "ບໍ່ໄດ້ເຂົ້າວຽກ",
+            onDuty: "ກຳລັງປະຕິບັດງານ",
+            confirm: "ຢືນຢັນ",
+            success: "ສຳເລັດ"
+        }
+    };
+
+    function t(key) {
+        const lang = localStorage.getItem('vks_guard_lang') || 'lo'; // Default to Lao for guards?
+        return i18n[lang][key] || key;
+    }
+</script>

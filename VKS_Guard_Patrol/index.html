@@ -1,0 +1,86 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <!-- OPTIMIZED FONT LOADING -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&family=Noto+Sans+Lao:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+        rel="stylesheet">
+
+    <?!= include('Styles'); ?>
+</head>
+
+<body>
+    <!-- Network Status Banner (Moved to top) -->
+    <div id="networkStatusBanner" class="network-banner hidden">
+        <span>📶 ເຄືອຂ່າຍອອບລາຍ - ບາງຟັງຊັນອາດບໍ່ເຮັດວຽກ</span>
+    </div>
+
+    <?!= include('Header'); ?>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p id="loadingText">
+                \u0e81\u0eb3\u0ea5\u0eb1\u0e87\u0ec2\u0eab\u0ebc\u0e94\u0e82\u0ecd\u0ec9\u0ea1\u0eb9\u0e99...</p>
+        </div>
+    </div>
+
+    <!-- Network Status Banner -->
+
+
+    <!-- Persistent Selection Indicator -->
+    <div id="selectionIndicator" class="selection-indicator hidden"></div>
+
+    <div class="container">
+        <form id="patrolForm">
+            <input type="hidden" id="startTime" name="startTime">
+            <input type="hidden" id="gpsLocation" name="gpsLocation">
+
+            <?!= include('Step1_Start'); ?>
+            <?!= include('Step2_GuardInfo'); ?>
+            <?!= include('Step3_Evaluation'); ?>
+            <?!= include('Step4_Security'); ?>
+            <?!= include('Step5_Handover'); ?>
+            <?!= include('Step6_Confirm'); ?>
+            <?!= include('Step7_Success'); ?>
+
+            <!-- Special Duty Steps -->
+            <?!= include('Step2_Special'); ?>
+            <?!= include('Step3_Special'); ?>
+
+        </form>
+    </div>
+
+    <div id="navigationBar" class="bottom-bar">
+        <button id="btnBack" type="button" class="btn btn-outline hidden" onclick="changeStep(-1)">⬅️ ກັບຄືນ</button>
+        <button id="btnNext" type="button" class="btn btn-primary w-full" onclick="changeStep(1)">ຕໍ່ໄປ ➡️</button>
+        <button id="btnSubmit" type="button" class="btn btn-primary w-full hidden" onclick="submitForm()">🚀
+            ສົ່ງບົດລາຍງານ
+            <span class="ml-2 inline-flex items-center justify-center bg-white/20 p-1 rounded-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="lucide lucide-arrow-up">
+                    <path d="m5 12 7-7 7 7" />
+                    <path d="M12 19V5" />
+                </svg>
+            </span>
+        </button>
+    </div>
+
+    <?!= include('Modal'); ?>
+    <?!= include('JavaScript'); ?>
+    <?!= include('JS_Patrol'); ?>
+    <?!= include('JS_Special'); ?>
+</body>
+
+</html>

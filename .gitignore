@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Agent / AI config
+.agent/
+.gemini/
+.bmad/
+.clasp*.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temp files
+*.tmp
+*.bak
+~$*

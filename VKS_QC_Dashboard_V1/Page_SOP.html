@@ -1,0 +1,1543 @@
+<!-- SOP Page: VKS Control Center Standard Operating Procedures -->
+<style>
+    /* ========== SOP PAGE STYLES ========== */
+    .sop-container {
+        padding: 24px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    /* Language-aware display — show only active language */
+    .sop-container.lang-en .sop-bilingual .la,
+    .sop-container.lang-en .sop-bilingual p.la,
+    .sop-container.lang-en .sop-rule-card .text-la,
+    .sop-container.lang-en .sop-la {
+        display: none;
+    }
+
+    .sop-container.lang-lo .sop-bilingual .en,
+    .sop-container.lang-lo .sop-bilingual p.en,
+    .sop-container.lang-lo .sop-rule-card .text,
+    .sop-container.lang-lo .sop-en {
+        display: none;
+    }
+
+    /* Tab Navigation — Premium Pill Design */
+    .sop-tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        padding: 8px;
+        background: var(--surface);
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        margin-bottom: 28px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        backdrop-filter: blur(16px);
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    }
+
+    .sop-tab {
+        padding: 12px 22px;
+        border-radius: 12px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.25s ease;
+        white-space: nowrap;
+        position: relative;
+    }
+
+    .sop-tab:hover {
+        background: var(--muted);
+        color: var(--text-primary);
+        transform: translateY(-1px);
+    }
+
+    .sop-tab.active {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        color: white;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+        transform: translateY(-1px);
+    }
+
+    .sop-tab .material-symbols-outlined {
+        font-size: 20px;
+    }
+
+    .sop-tab-content {
+        display: none;
+        animation: sopFadeIn 0.3s ease;
+    }
+
+    .sop-tab-content.active {
+        display: block;
+    }
+
+    @keyframes sopFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Section Cards */
+    .sop-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 16px;
+        transition: box-shadow 0.2s ease;
+    }
+
+    /* Fix 1: Urgency-tier card borders */
+    .sop-card.critical {
+        border-left: 4px solid #ef4444;
+        background: linear-gradient(135deg, var(--surface) 0%, #fef2f2 100%);
+    }
+
+    .sop-card.caution {
+        border-left: 4px solid #f59e0b;
+        background: linear-gradient(135deg, var(--surface) 0%, #fffbeb 100%);
+    }
+
+    .sop-card-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .sop-card-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+
+    .sop-card-icon.red {
+        background: #fef2f2;
+        color: #ef4444;
+    }
+
+    .sop-card-icon.amber {
+        background: #fffbeb;
+        color: #f59e0b;
+    }
+
+    .sop-card-icon.blue {
+        background: #eff6ff;
+        color: #3b82f6;
+    }
+
+    .sop-card-icon.green {
+        background: #f0fdf4;
+        color: #10b981;
+    }
+
+    .sop-card-icon.purple {
+        background: #faf5ff;
+        color: #a855f7;
+    }
+
+    .sop-card-icon.slate {
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    .sop-card-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .sop-card-subtitle {
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin-top: 2px;
+    }
+
+    /* Hero Mission Card */
+    .sop-hero {
+        background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+        color: white;
+        border-radius: 16px;
+        padding: 32px;
+        margin-bottom: 20px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .sop-hero::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 300px;
+        height: 300px;
+        border-radius: 50%;
+        background: rgba(59, 130, 246, 0.1);
+    }
+
+    .sop-hero h2 {
+        font-size: 26px;
+        font-weight: 800;
+        margin-bottom: 12px;
+        color: white;
+    }
+
+    .sop-hero p {
+        font-size: 16px;
+        line-height: 1.8;
+        opacity: 0.9;
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Force white text for all bilingual content inside the dark hero */
+    .sop-hero .sop-bilingual .en,
+    .sop-hero .sop-bilingual .la,
+    .sop-hero .sop-principle .en,
+    .sop-hero .sop-principle .la {
+        color: rgba(255, 255, 255, 0.92) !important;
+    }
+
+    .sop-principle {
+        margin-top: 16px;
+        padding: 12px 16px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border-left: 4px solid #3b82f6;
+        font-style: italic;
+        font-size: 14px;
+    }
+
+    /* Copyable Script Block */
+    .sop-script-block {
+        background: #0f172a;
+        color: #e2e8f0;
+        border-radius: 10px;
+        padding: 20px;
+        font-family: 'Noto Sans', monospace;
+        font-size: 15px;
+        line-height: 1.8;
+        position: relative;
+        margin: 12px 0;
+    }
+
+    .sop-copy-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: #94a3b8;
+        border-radius: 6px;
+        padding: 6px 10px;
+        cursor: pointer;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .sop-copy-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+    /* Classification Grid */
+    .sop-class-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+    }
+
+    .sop-class-card {
+        border-radius: 12px;
+        padding: 20px;
+        border-left: 4px solid;
+        position: relative;
+    }
+
+    .sop-class-card.emergency {
+        background: #fef2f2;
+        border-color: #ef4444;
+    }
+
+    .sop-class-card.operational {
+        background: #fffbeb;
+        border-color: #f59e0b;
+    }
+
+    .sop-class-card.admin {
+        background: #eff6ff;
+        border-color: #3b82f6;
+    }
+
+    .sop-class-card h4 {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .sop-class-card ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .sop-class-card li {
+        padding: 5px 0;
+        font-size: 15px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* Fix 6: Replace emoji bullets with clean dots */
+    .sop-class-card li::before {
+        content: '';
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        margin-top: 7px;
+    }
+
+    .sop-class-card.emergency li::before {
+        background: #ef4444;
+    }
+
+    .sop-class-card.operational li::before {
+        background: #f59e0b;
+    }
+
+    .sop-class-card.admin li::before {
+        background: #3b82f6;
+    }
+
+    /* Fix 5: Golden Rule Cards — bigger, bolder, more impact */
+    .sop-rules-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin: 16px 0;
+    }
+
+    .sop-rule-card {
+        background: linear-gradient(145deg, #fef2f2 0%, #fee2e2 100%);
+        border: 2px solid #fca5a5;
+        border-radius: 14px;
+        padding: 24px 16px;
+        text-align: center;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .sop-rule-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(239, 68, 68, 0.15);
+    }
+
+    .sop-rule-card .icon {
+        font-size: 42px;
+        margin-bottom: 12px;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    }
+
+    .sop-rule-card .text {
+        font-weight: 800;
+        font-size: 16px;
+        color: #991b1b;
+        letter-spacing: 0.5px;
+    }
+
+    .sop-rule-card .text-la {
+        font-size: 14px;
+        color: #b91c1c;
+        margin-top: 6px;
+        font-weight: 600;
+    }
+
+    /* Flowchart Steps */
+    .sop-flow {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        margin: 16px 0;
+    }
+
+    .sop-flow-step {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 16px 0;
+        position: relative;
+    }
+
+    /* Fix 3: Thicker, colored flow connectors */
+    .sop-flow-step:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        left: 18px;
+        top: 48px;
+        width: 3px;
+        height: calc(100% - 32px);
+        background: linear-gradient(to bottom, #ef4444 0%, #f59e0b 100%);
+        border-radius: 2px;
+        opacity: 0.5;
+    }
+
+    .sop-flow-num {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--primary);
+        color: white;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        flex-shrink: 0;
+        z-index: 1;
+    }
+
+    .sop-flow-num.urgent {
+        background: #ef4444;
+    }
+
+    .sop-flow-body {
+        flex: 1;
+    }
+
+    .sop-flow-title {
+        font-weight: 700;
+        font-size: 16px;
+        margin-bottom: 4px;
+    }
+
+    .sop-flow-desc {
+        font-size: 15px;
+        color: var(--text-secondary);
+        line-height: 1.6;
+    }
+
+    /* Fix 7: KPI Stat Cards — colored top borders, no uppercase */
+    .sop-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+    }
+
+    .sop-kpi-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 24px 20px;
+        text-align: center;
+        border-top: 3px solid var(--primary);
+        transition: transform 0.2s ease;
+    }
+
+    .sop-kpi-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .sop-kpi-card:nth-child(2) {
+        border-top-color: #f59e0b;
+    }
+
+    .sop-kpi-card:nth-child(3) {
+        border-top-color: #10b981;
+    }
+
+    .sop-kpi-card:nth-child(4) {
+        border-top-color: #ef4444;
+    }
+
+    .sop-kpi-value {
+        font-size: 38px;
+        font-weight: 800;
+        color: var(--primary);
+    }
+
+    .sop-kpi-label {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin-top: 6px;
+        font-weight: 600;
+    }
+
+    .sop-kpi-target {
+        font-size: 13px;
+        color: #10b981;
+        margin-top: 6px;
+        font-weight: 600;
+    }
+
+    /* Fix 8: Warning Callout — flex-start for multi-line */
+    .sop-warning {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-left: 4px solid #ef4444;
+        border-radius: 10px;
+        padding: 16px 18px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        font-size: 15px;
+        color: #991b1b;
+        margin: 16px 0;
+    }
+
+    .sop-warning .material-symbols-outlined {
+        color: #ef4444;
+        font-size: 22px;
+        margin-top: 1px;
+    }
+
+    /* Info Callout — also fix alignment */
+    .sop-info {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-left: 4px solid #3b82f6;
+        border-radius: 10px;
+        padding: 16px 18px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        font-size: 15px;
+        color: #1e3a8a;
+        margin: 16px 0;
+    }
+
+    .sop-info .material-symbols-outlined {
+        color: #3b82f6;
+        font-size: 22px;
+        margin-top: 1px;
+    }
+
+    /* Fix 4: Chain of Command — larger, more prominent */
+    .sop-chain {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin: 16px 0;
+    }
+
+    .sop-chain-item {
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 700;
+        background: var(--surface);
+        border: 2px solid var(--border);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        transition: transform 0.15s ease;
+    }
+
+    .sop-chain-item:hover {
+        transform: translateY(-1px);
+    }
+
+    .sop-chain-arrow {
+        color: var(--text-secondary);
+        font-size: 20px;
+    }
+
+    /* Bilingual Text Block */
+    .sop-bilingual {
+        margin: 8px 0;
+    }
+
+    .sop-bilingual .en {
+        font-size: 16px;
+        color: var(--text-primary);
+        line-height: 1.7;
+    }
+
+    .sop-bilingual .la {
+        font-size: 16px;
+        color: var(--text-primary);
+        line-height: 1.7;
+        font-family: 'Noto Sans Lao', 'Noto Sans', sans-serif;
+    }
+
+    /* Scope List */
+    .sop-scope-list {
+        list-style: none;
+        padding: 0;
+        margin: 8px 0;
+    }
+
+    .sop-scope-list li {
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--muted);
+        margin-bottom: 4px;
+    }
+
+    /* Checklist */
+    .sop-checklist {
+        list-style: none;
+        padding: 0;
+    }
+
+    .sop-checklist li {
+        padding: 10px 0;
+        font-size: 15px;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .sop-checklist li:last-child {
+        border-bottom: none;
+    }
+
+    .sop-checklist .material-symbols-outlined {
+        font-size: 18px;
+        color: #10b981;
+        margin-top: 1px;
+    }
+
+    /* Prohibited Actions */
+    .sop-prohibited-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 10px;
+    }
+
+    .sop-prohibited-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
+        border-radius: 8px;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        font-size: 15px;
+    }
+
+    .sop-prohibited-item .icon {
+        font-size: 18px;
+    }
+
+    /* Escalation Timeline */
+    .sop-escalation-list {
+        margin: 12px 0;
+    }
+
+    .sop-escalation-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .sop-escalation-item:last-child {
+        border-bottom: none;
+    }
+
+    .sop-escalation-num {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #f59e0b;
+        color: white;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        flex-shrink: 0;
+    }
+
+    /* Print styles */
+    @media print {
+
+        .sop-tabs,
+        .sidebar,
+        .app-header {
+            display: none !important;
+        }
+
+        .sop-tab-content {
+            display: block !important;
+            page-break-inside: avoid;
+        }
+
+        .sop-container {
+            max-width: 100%;
+            padding: 0;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .sop-tabs {
+            gap: 4px;
+        }
+
+        .sop-tab {
+            padding: 10px 14px;
+            font-size: 13px;
+        }
+
+        .sop-tab span.tab-text {
+            display: none;
+        }
+
+        .sop-class-grid,
+        .sop-rules-grid,
+        .sop-kpi-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Fix 10: Emergency tab red dot indicator */
+    .sop-tab.emergency-indicator {
+        position: relative;
+    }
+
+    .sop-tab.emergency-indicator::after {
+        content: '';
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #ef4444;
+        box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
+    }
+
+    .sop-tab.emergency-indicator.active::after {
+        background: white;
+        box-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
+    }
+</style>
+
+<div class="page-content" id="page-sop">
+    <div class="sop-container">
+
+        <!-- Tab Navigation -->
+        <div class="sop-tabs" role="tablist">
+            <button class="sop-tab active" onclick="switchSOPTab('mission')" role="tab">
+                <span class="material-symbols-outlined">shield</span>
+                <span class="tab-text" data-i18n="sop.tab_mission">Mission & Authority</span>
+            </button>
+            <button class="sop-tab" onclick="switchSOPTab('call')" role="tab">
+                <span class="material-symbols-outlined">call</span>
+                <span class="tab-text" data-i18n="sop.tab_call">Call Protocol</span>
+            </button>
+            <button class="sop-tab emergency-indicator" onclick="switchSOPTab('emergency')" role="tab">
+                <span class="material-symbols-outlined">emergency</span>
+                <span class="tab-text" data-i18n="sop.tab_emergency">Emergency Response</span>
+            </button>
+            <button class="sop-tab" onclick="switchSOPTab('docs')" role="tab">
+                <span class="material-symbols-outlined">description</span>
+                <span class="tab-text" data-i18n="sop.tab_docs">Documentation</span>
+            </button>
+            <button class="sop-tab" onclick="switchSOPTab('escalation')" role="tab">
+                <span class="material-symbols-outlined">trending_up</span>
+                <span class="tab-text" data-i18n="sop.tab_escalation">Escalation & Discipline</span>
+            </button>
+            <button class="sop-tab" onclick="switchSOPTab('shift')" role="tab">
+                <span class="material-symbols-outlined">analytics</span>
+                <span class="tab-text" data-i18n="sop.tab_shift">Shift & KPIs</span>
+            </button>
+        </div>
+
+        <!-- ==================== TAB 1: MISSION & AUTHORITY ==================== -->
+        <div class="sop-tab-content active" id="sop-mission">
+            <!-- Hero -->
+            <div class="sop-hero">
+                <h2>VKS Control Center — SOP</h2>
+                <div class="sop-bilingual">
+                    <p class="en">To ensure rapid response, clear command, and full accountability for all security
+                        incidents via centralized control.</p>
+                    <p class="la" style="color:rgba(255,255,255,0.8)">ເພື່ອຮັບປະກັນການຕອບສະໜອງທີ່ວ່ອງໄວ,
+                        ການບັນຊາທີ່ຊັດເຈນ, ແລະ ຄວາມຮັບຜິດຊອບຢ່າງເຕັມທີ່ຕໍ່ເຫດການ ດ້ານຄວາມປອດໄພທັງໝົດຜ່ານການຄວບຄຸມສູນກາງ.
+                    </p>
+                </div>
+                <div class="sop-principle">
+                    <div class="sop-bilingual">
+                        <span class="en"><strong>Principle:</strong> "If an incident isn't recorded, it didn't
+                            happen."</span>
+                        <span class="la"><strong>ຫຼັກການ:</strong> ຖ້າມັນບໍ່ໄດ້ຖືກບັນທຶກໄວ້ →
+                            ແມ່ນมັນບໍ່ໄດ້ເກີດຂຶ້ນ.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scope -->
+            <div class="sop-card">
+                <div class="sop-card-header">
+                    <div class="sop-card-icon blue"><span class="material-symbols-outlined">groups</span></div>
+                    <div>
+                        <div class="sop-card-title sop-bilingual"><span class="en">Scope</span><span
+                                class="la">ຂອບເຂດການເຮັດວຽກ</span></div>
+                        <div class="sop-card-subtitle sop-bilingual"><span class="en">Who this SOP applies
+                                to</span><span class="la">ຜູ້ທີ່ SOP ນີ້ນໍາໃຊ້</span></div>
+                    </div>
+                </div>
+                <ul class="sop-scope-list">
+                    <li><span class="material-symbols-outlined" style="font-size:18px;color:#3b82f6">headset_mic</span>
+                        <div class="sop-bilingual"><span class="en">Control Center Operators</span><span class="la"> —
+                                ຜູ້ປະຕິບັດງານຂອງສູນຄວບຄຸມ</span></div>
+                    </li>
+                    <li><span class="material-symbols-outlined"
+                            style="font-size:18px;color:#3b82f6">directions_car</span>
+                        <div class="sop-bilingual"><span class="en">Patrol Teams</span><span class="la"> —
+                                ທີມງານສາຍກວດ</span></div>
+                    </li>
+                    <li><span class="material-symbols-outlined"
+                            style="font-size:18px;color:#3b82f6">supervisor_account</span>
+                        <div class="sop-bilingual"><span class="en">Patrol Supervisors & Managers</span><span
+                                class="la"> — ຫົວຫນ້າສາຍກວດ ແລະ ຜູ້ຈັດການ</span></div>
+                    </li>
+                    <li><span class="material-symbols-outlined" style="font-size:18px;color:#3b82f6">security</span>
+                        <div class="sop-bilingual"><span class="en">All VKS Security Personnel</span><span class="la"> —
+                                ພະນັກງານ ຮັກສາຄວາມປອດໄພ VKS ທັງໝົດ</span></div>
+                    </li>
+                    <li><span class="material-symbols-outlined" style="font-size:18px;color:#3b82f6">person</span>
+                        <div class="sop-bilingual"><span class="en">Authorized Clients</span><span class="la"> —
+                                ລູກຄ້າທີ່ໄດ້ຮັບອະນຸຍາດ</span></div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Authority -->
+            <div class="sop-card">
+                <div class="sop-card-header">
+                    <div class="sop-card-icon purple"><span class="material-symbols-outlined">gavel</span></div>
+                    <div>
+                        <div class="sop-card-title sop-bilingual"><span class="en">Authority</span><span
+                                class="la">ສິດອໍານາດ</span></div>
+                        <div class="sop-card-subtitle sop-bilingual"><span class="en">Chain of command when a call is
+                                received</span><span class="la">ລໍາດັບການບັນຊາເມື່ອມີການໂທເຂົ້າ</span></div>
+                    </div>
+                </div>
+                <div class="sop-bilingual" style="margin-bottom:12px">
+                    <p class="en">When a call is received at the Control Center:</p>
+                    <p class="la">ເມື່ອມີການໂທເຂົ້າຫາສູນຄວບຄຸມແລ້ວ:</p>
+                </div>
+                <ul class="sop-checklist">
+                    <li><span class="material-symbols-outlined">check_circle</span>
+                        <div class="sop-bilingual"><span class="en">Controllers have full authority to dispatch and
+                                relay information to relevant teams</span><span class="la"> —
+                                ຜູ້ຄວບຄຸມຮັບສາຍມີສິດໃນການສົ່ງຕໍ່ຂ່າວສານອອກໄປຫາທິມງານກ່ຽວຂ້ອງ</span></div>
+                    </li>
+                    <li><span class="material-symbols-outlined">check_circle</span>
+                        <div class="sop-bilingual"><span class="en">Security personnel must follow
+                                instructions</span><span class="la"> —
+                                ພະນັກງານຮັກສາຄວາມປອດໄພຕ້ອງປະຕິບັດຕາມຄໍາແນະນໍາ</span></div>
+                    </li>
+                    <li><span class="material-symbols-outlined">check_circle</span>
+                        <div class="sop-bilingual"><span class="en">Patrol units must respond immediately</span><span
+                                class="la"> — ພະນັກງານລາດຕະເວນຕ້ອງຕອບສະໜອງທັນທີ</span></div>
+                    </li>
+                    <li><span class="material-symbols-outlined">check_circle</span>
+                        <div class="sop-bilingual"><span class="en">Controllers must respond to security escalations
+                                immediately</span><span class="la"> —
+                                ຜູ້ຄວບຄຸມຕ້ອງຕອບສະໜອງຕໍ່ການຍົກລະດັບການເອົາໃຈໃສ່ດ້ານຄວາມປອດໄພທັນທີ</span></div>
+                    </li>
+                </ul>
+                <div class="sop-warning">
+                    <span class="material-symbols-outlined">warning</span>
+                    <div class="sop-bilingual">
+                        <span class="en"><strong>Ignoring Control Center instructions is a disciplinary
+                                offense.</strong></span>
+                        <span class="la"> — ການເມີນເສີຍບໍ່ສົນໃຈຄໍາແນະນໍາຂອງສູນຄວບຄຸມ = ບັນຫາທາງວິໄນ.</span>
+                    </div>
+                </div>
+                <div style="margin-top:12px">
+                    <p class="sop-bilingual" style="font-size:14px;font-weight:600;margin-bottom:8px"><span
+                            class="en">Chain of Command:</span><span class="la">ລໍາດັບການບັນຊາ:</span></p>
+                    <div class="sop-chain">
+                        <span class="sop-chain-item" style="background:#eff6ff;border-color:#3b82f6"><span
+                                class="sop-en">🎧 Controller</span><span class="sop-la">🎧 ຜູ້ຄວບຄຸມ</span></span>
+                        <span class="sop-chain-arrow material-symbols-outlined">arrow_forward</span>
+                        <span class="sop-chain-item" style="background:#f0fdf4;border-color:#10b981"><span
+                                class="sop-en">🚔 Patrol</span><span class="sop-la">🚔 ສາຍກວດ</span></span>
+                        <span class="sop-chain-arrow material-symbols-outlined">arrow_forward</span>
+                        <span class="sop-chain-item" style="background:#faf5ff;border-color:#a855f7"><span
+                                class="sop-en">🛡️ Guard</span><span class="sop-la">🛡️ ຍາມ</span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 2: CALL PROTOCOL ==================== -->
+        <div class="sop-tab-content" id="sop-call">
+            <!-- Step 1: Greeting -->
+            <div class="sop-card">
+                <div class="sop-card-header">
+                    <div class="sop-card-icon green"><span class="material-symbols-outlined">call</span></div>
+                    <div>
+                        <div class="sop-card-title sop-bilingual"><span class="en">Step 1: The Greeting</span><span
+                                class="la">ຂັ້ນຕອນທີ 1: ຮັບສາຍ</span></div>
+                        <div class="sop-card-subtitle sop-bilingual"><span class="en">Answer within 3 rings</span><span
+                                class="la">ຕອບພາຍໃນ 3 ຄັ້ງ</span></div>
+                    </div>
+                </div>
+                <p class="sop-bilingual" style="font-size:14px;font-weight:600;margin-bottom:8px"><span
+                        class="en">Standard Script (English):</span><span class="la">ສະຄຣິບມາດຕະຖານ (ພາສາອັງກິດ):</span>
+                </p>
+                <div class="sop-script-block">
+                    <button class="sop-copy-btn" onclick="sopCopyText(this, 'script-en')">
+                        <span class="material-symbols-outlined" style="font-size:14px">content_copy</span> Copy
+                    </button>
+                    <span id="script-en">"VKS Control Center, [Name], how can I help you? This line is recorded. Please
+                        state your name, location, and the issue."</span>
+                </div>
+                <p class="sop-bilingual" style="font-size:14px;font-weight:600;margin-bottom:8px;margin-top:16px"><span
+                        class="en">Standard Script (Lao):</span><span class="la">ສະຄຣິບມາດຕະຖານ (ພາສາລາວ):</span></p>
+                <div class="sop-script-block">
+                    <button class="sop-copy-btn" onclick="sopCopyText(this, 'script-la')">
+                        <span class="material-symbols-outlined" style="font-size:14px">content_copy</span> Copy
+                    </button>
+                    <span id="script-la">"ສູນຄວບຄຸມ ວຽງຄໍາບໍລິການຄວາມປອດໄພ ມີຫຍັງໃຫ້ຊ່ວຍບໍ່ເຈົ້າ? ສາຍນີ້ຈະຖືກບັນທຶກໄວ້.
+                        ກະລຸນາລະບຸຊື້, ສະຖານທີ່, ແລະບັນຫາ."</span>
+                </div>
+            </div>
+
+            <!-- Step 2: Classification -->
+            <div class="sop-card">
+                <div class="sop-card-header">
+                    <div class="sop-card-icon amber"><span class="material-symbols-outlined">category</span></div>
+                    <div>
+                        <div class="sop-card-title sop-bilingual"><span class="en">Step 2: Classification</span><span
+                                class="la">ຂັ້ນຕອນທີ 2: ລະບຸປະເພດ</span></div>
+                        <div class="sop-card-subtitle sop-bilingual"><span class="en">Classify the call
+                                immediately</span><span class="la">ຈັດປະເພດທັນທີ</span></div>
+                    </div>
+                </div>
+                <div class="sop-class-grid">
+                    <!-- Type A: Emergency -->
+                    <div class="sop-class-card emergency">
+                        <h4 class="sop-bilingual">🔴 <span class="en">Type A: Emergency</span><span class="la">ປະເພດ A:
+                                ສຸກເສີນ</span></h4>
+                        <ul>
+                            <li>
+                                <div class="sop-bilingual"><span class="en">Life threat</span><span class="la"> —
+                                        ໄພຂົ່ມຂູ່ຕໍ່ຊີວິດ</span></div>
+                            </li>
+                            <li>
+                                <div class="sop-bilingual"><span class="en">Violence</span><span class="la"> —
+                                        ຄວາມຮຸນແຮງ</span></div>
+                            </li>
+                            <li>
+                                <div class="sop-bilingual"><span class="en">Fire</span><span class="la"> — ໄຟໄໝ້ ຫຼື
+                                        ອັກຄີໄພ</span></div>
+                            </li>
+                            <li>
+                                <div class="sop-bilingual"><span class="en">Intrusion</span><span class="la"> —
+                                        ການບຸກລຸກພື້ນທີ</span></div>
+                            </li>
+                            <li>
+                                <div class="sop-bilingual"><span class="en">Medical Emergency</span><span class="la"> —
+                                        ເຫດສຸກເສີນທາງການແພດ</span></div>
+                            </li>
+                        </ul>
+                    </div>
+                    <!-- Type B: Operational -->
+                    <div class="sop-class-card operational">
+                        <h4 class="sop-bilingual">🟡 <span class="en">Type B: Operational</span><span class="la">ປະເພດ
+                                B: ການດໍາເນີນງານ</span></h4>
+                        <ul>
+                            <li>
+                                <div class="sop-bilingual"><span class="en">Missing guard</span><span class="la"> —
+                                        ການຂາດຍາມ</span></div>
+                            </li>
+                            <li>
+                                <div class="sop-bilingual"><span class="en">Shift issues</span><span class="la"> —
+                                        ບັນຫາຂອງກະເຮັດວຽກ</span></div>
+                            </li>
+                            <li>
+                                <div class="sop-bilingual"><span class="en">Suspicious activity</span><span class="la">
+                                        — ກິດຈະກຳທີ່ໜ້າສົງໄສ</span></div>
+                            </li>
+                            <li>
+                                <div class="sop-bilingual"><span class="en">Equipment failure</span><span class="la"> —
+                                        ບັນຫາອຸປະກອນ</span></div>
+                            </li>
+                        </ul>
+                    </div>
+                    <!-- Type C: Client/Admin -->
+                    <div class="sop-class-card admin">
+                        <h4 class="sop-bilingual">🔵 <span class="en">Type C: Client/Admin</span><span class="la">ປະເພດ
+                                C: ລູກຄ້າ/ບໍລິຫານ</span></h4>
+                        <ul>
+                            <li>
+                                <div class="sop-bilingual"><span class="en">Complaints</span><span class="la"> —
+                                        ການຮ້ອງຮຽນຕໍ່ວ່າ</span></div>
+                            </li>
+                            <li>
+                                <div class="sop-bilingual"><span class="en">Requests</span><span class="la"> —
+                                        ຄໍາຮ້ອງຂໍ</span></div>
+                            </li>
+                            <li>
+                                <div class="sop-bilingual"><span class="en">Information inquiries</span><span
+                                        class="la"> — ຂໍ້ມູນທີ່ຕ້ອງການ</span></div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 3: EMERGENCY RESPONSE ==================== -->
+        <div class="sop-tab-content" id="sop-emergency">
+            <!-- Golden Rules -->
+            <div class="sop-card critical">
+                <div class="sop-card-header">
+                    <div class="sop-card-icon red"><span class="material-symbols-outlined">block</span></div>
+                    <div>
+                        <div class="sop-card-title sop-bilingual"><span class="en">Golden Rules</span><span
+                                class="la">ກົດລະບຽບ</span></div>
+                        <div class="sop-card-subtitle sop-bilingual"><span class="en">Critical rules during
+                                emergencies</span><span class="la">ກົດສໍາຄັນໃນເວລາສຸກເສີນ</span></div>
+                    </div>
+                </div>
+                <div class="sop-rules-grid">
+                    <div class="sop-rule-card">
+                        <div class="icon">🚫</div>
+                        <div class="text">DO NOT ARGUE</div>
+                        <div class="text-la">ຢ່າໂຕ້ຖຽງ</div>
+                    </div>
+                    <div class="sop-rule-card">
+                        <div class="icon">⏱️</div>
+                        <div class="text">DO NOT DELAY</div>
+                        <div class="text-la">ຢ່າຊັກຊ້າ</div>
+                    </div>
+                    <div class="sop-rule-card">
+                        <div class="icon">🤐</div>
+                        <div class="text">NO PERSONAL OPINIONS</div>
+                        <div class="text-la">ຫ້າມສະແດງຄວາມຄິດເຫັນ</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Emergency Flowchart -->
+            <div class="sop-card critical">
+                <div class="sop-card-header">
+                    <div class="sop-card-icon red"><span class="material-symbols-outlined">emergency</span></div>
+                    <div>
+                        <div class="sop-card-title sop-bilingual"><span class="en">Emergency Procedure</span><span
+                                class="la">ການຈັດການສຸກເສີນ</span></div>
+                        <div class="sop-card-subtitle sop-bilingual"><span class="en">Follow these steps in
+                                order</span><span class="la">ປະຕິບັດຕາມຂັ້ນຕອນເຫຼົານີ້</span></div>
+                    </div>
+                </div>
+                <div class="sop-flow">
+                    <div class="sop-flow-step">
+                        <div class="sop-flow-num urgent">1</div>
+                        <div class="sop-flow-body">
+                            <div class="sop-flow-title sop-bilingual"><span class="en">Stay Calm</span><span
+                                    class="la">ຈົ່ງໃຈເຢັນ</span></div>
+                            <div class="sop-flow-desc">
+                                <div class="sop-bilingual">
+                                    <span class="en">Keep the caller on the line if necessary.</span>
+                                    <span class="la"> — ໃຫ້ຜູ້ໂທຢູ່ໃນສາຍ ຫຼື ຖືສາຍລໍຖ້າ ຖ້າຈໍາເປັນ</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sop-flow-step">
+                        <div class="sop-flow-num urgent">2</div>
+                        <div class="sop-flow-body">
+                            <div class="sop-flow-title sop-bilingual"><span class="en">Dispatch Immediately — Target: ≤
+                                    2 Minutes</span><span class="la">ສົ່ງທັນທີ — ເປົ້າຫມາຍ: ≤ 2 ນາທີ</span></div>
+                            <div class="sop-flow-desc">
+                                <div class="sop-bilingual">
+                                    <span class="en">Contact the nearest patrol unit. Dispatch time target: ≤ 2
+                                        minutes.</span>
+                                    <span class="la"> — ສົ່ງໃຫ້ທິມສາຍກວດທີ່ໃກ້ທີ່ສຸດທັນທີ. ເວລາສົ່ງວຽກ: ≤ 2 ນາທີ</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sop-flow-step">
+                        <div class="sop-flow-num urgent">3</div>
+                        <div class="sop-flow-body">
+                            <div class="sop-flow-title sop-bilingual"><span class="en">Provide Clear Command</span><span
+                                    class="la">ໃຫ້ຄໍາແນະນໍາທີ່ຊັດເຈນ</span></div>
+                            <div class="sop-flow-desc">
+                                <ul class="sop-checklist">
+                                    <li><span class="material-symbols-outlined">check_circle</span>
+                                        <div class="sop-bilingual"><span class="en">Location</span><span class="la"> —
+                                                ສະຖານທີ່</span></div>
+                                    </li>
+                                    <li><span class="material-symbols-outlined">check_circle</span>
+                                        <div class="sop-bilingual"><span class="en">Nature of Issue</span><span
+                                                class="la"> — ລັກສະນະຂອງບັນຫາ</span></div>
+                                    </li>
+                                    <li><span class="material-symbols-outlined">check_circle</span>
+                                        <div class="sop-bilingual"><span class="en">Urgency</span><span class="la"> —
+                                                ຄວາມຮີບດ່ວນ</span></div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sop-flow-step">
+                        <div class="sop-flow-num urgent">4</div>
+                        <div class="sop-flow-body">
+                            <div class="sop-flow-title sop-bilingual"><span class="en">Confirm Acceptance</span><span
+                                    class="la">ຢືນຢັນ</span></div>
+                            <div class="sop-flow-desc">
+                                <div class="sop-bilingual">
+                                    <span class="en">Ensure the patrol unit explicitly accepts the task. Record dispatch
+                                        time and patrol ID.</span>
+                                    <span class="la"> — ໃຫ້ຢືນຢັນວ່າທິມສາຍກວດລາດຕະເວນຍອมฮັບໜ້าວຽກ. ບັນທຶກເວລາສົ່ງ ແລະ
+                                        ລະຫັດສາຍກວດ</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sop-flow-step">
+                        <div class="sop-flow-num urgent">5</div>
+                        <div class="sop-flow-body">
+                            <div class="sop-flow-title sop-bilingual"><span class="en">Follow Up</span><span
+                                    class="la">ຕິດຕາມ</span></div>
+                            <div class="sop-flow-desc">
+                                <div class="sop-bilingual">
+                                    <span class="en">Notify supervisor. If necessary, advise caller to contact emergency
+                                        services. Monitor until situation is resolved.</span>
+                                    <span class="la"> — ແຈ້ງໃຫ້ຜູ້ຄຸມຊາບ. ຖ້າຈໍາເປັນ,
+                                        ແນະນໍາໃຫ້ຜູ້ໂທຕິດຕໍ່ຫາບໍລິການສຸກເສີນ. ຕິດຕາມຈົນກວ່າສະຖານະການຈະແກ້ໄຂໄດ້</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="sop-warning">
+                    <span class="material-symbols-outlined">warning</span>
+                    <div class="sop-bilingual">
+                        <span class="en"><strong>If patrol does not answer:</strong> (A) Call backup unit immediately
+                            (B) Contact supervisor</span>
+                        <span class="la"> — ຖ້າສາຍກວດບໍ່ຮັບສາຍ: ກ: ໂທຫາໜ່ວຍລາດຕະເວນສໍາຮອງ ຂ: ຕິດຕໍ່ຜູ້ຄວບຄຸມ</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 4: DOCUMENTATION ==================== -->
+        <div class="sop-tab-content" id="sop-docs">
+            <!-- Required Logging Fields -->
+            <div class="sop-card">
+                <div class="sop-card-header">
+                    <div class="sop-card-icon blue"><span class="material-symbols-outlined">edit_note</span></div>
+                    <div>
+                        <div class="sop-card-title sop-bilingual"><span class="en">Logging Requirements</span><span
+                                class="la">ເງື່ອນໄຂໃນການບັນທຶກ</span></div>
+                        <div class="sop-card-subtitle sop-bilingual"><span class="en">All calls must be logged with
+                                these fields</span><span class="la">ທຸກສາຍຕ້ອງບັນທຶກດ້ວຍຂໍ້ມູນເຫຼົານີ້</span></div>
+                    </div>
+                </div>
+                <div class="sop-info">
+                    <span class="material-symbols-outlined">info</span>
+                    <div class="sop-bilingual">
+                        <span class="en"><strong>Every call must be logged — no exceptions.</strong></span>
+                        <span class="la"> — ທຸກໆການໂທ/ການລາຍງານຕ້ອງບັນທຶກໄວ້ — ໂດຍບໍ່ມີຂໍ້ຍົກເວັ້ນ.</span>
+                    </div>
+                </div>
+                <ul class="sop-checklist">
+                    <li><span class="material-symbols-outlined">check_circle</span>
+                        <div class="sop-bilingual"><span class="en">Date and Time</span><span class="la"> — ວັນທີ ແລະ
+                                ເວລາ</span></div>
+                    </li>
+                    <li><span class="material-symbols-outlined">check_circle</span>
+                        <div class="sop-bilingual"><span class="en">Caller's name and position</span><span class="la"> —
+                                ຊື່ ຂອງຜູ້ໂທ ແລະ ຕຳແໜ່ງ</span></div>
+                    </li>
+                    <li><span class="material-symbols-outlined">check_circle</span>
+                        <div class="sop-bilingual"><span class="en">Location / Site</span><span class="la"> — ສະຖານທີ /
+                                ໂຄງການ</span></div>
+                    </li>
+                    <li><span class="material-symbols-outlined">check_circle</span>
+                        <div class="sop-bilingual"><span class="en">Issue — what happened?</span><span class="la"> —
+                                ບັນຫາເກີດຫຍັງຂຶ້ນ?</span></div>
+                    </li>
+                    <li><span class="material-symbols-outlined">check_circle</span>
+                        <div class="sop-bilingual"><span class="en">Action taken</span><span class="la"> —
+                                ການກະທໍາ/ການດໍາເນີນການ</span></div>
+                    </li>
+                    <li><span class="material-symbols-outlined">check_circle</span>
+                        <div class="sop-bilingual"><span class="en">Dispatched to whom</span><span class="la"> — ແຈ້ງໃຫ້
+                                ສາຍກວດ/ທີມ</span></div>
+                    </li>
+                    <li><span class="material-symbols-outlined">check_circle</span>
+                        <div class="sop-bilingual"><span class="en">Arrival time</span><span class="la"> — ເວລາທີ່
+                                ສາຍກວດ ຮອດ/ເຖິງ</span></div>
+                    </li>
+                    <li><span class="material-symbols-outlined">check_circle</span>
+                        <div class="sop-bilingual"><span class="en">Resolution / Outcome</span><span class="la"> —
+                                ຜົນການດໍາເນີນການ/ການ ແກ້ໄຂ</span></div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- WhatsApp Format -->
+            <div class="sop-card">
+                <div class="sop-card-header">
+                    <div class="sop-card-icon green"><span class="material-symbols-outlined">chat</span></div>
+                    <div>
+                        <div class="sop-card-title sop-bilingual"><span class="en">WhatsApp Reporting Format</span><span
+                                class="la">ຮູບແບບລາຍງານ WhatsApp</span></div>
+                        <div class="sop-card-subtitle sop-bilingual"><span class="en">Use this exact format for all
+                                WhatsApp incident reports</span><span
+                                class="la">ໃຊ້ຮູບແບບນີ້ສໍາລັບທຸກລາຍງານເຫດການ</span></div>
+                    </div>
+                </div>
+                <div class="sop-script-block">
+                    <button class="sop-copy-btn" onclick="sopCopyText(this, 'whatsapp-template')">
+                        <span class="material-symbols-outlined" style="font-size:14px">content_copy</span> Copy
+                    </button>
+                    <pre id="whatsapp-template" class="sop-en"
+                        style="margin:0;white-space:pre-wrap;font-family:inherit">[Time] - [Location] - [Issue]
+Action: Assigned to [Patrol ID] / Supervisor
+Status: [Pending / In Progress / Resolved]</pre>
+                    <pre class="sop-la" style="margin:0;white-space:pre-wrap;font-family:inherit">[ເວລາ] - [ສະຖານທີ່] - [ບັນຫາ]
+ດໍາເນີນການ: ສົ່ງວຽກໃຫ້ [ລະຫັດສາຍກວດ] / ຜູ້ຈັດການ
+ສະຖານະ: [ລໍຖ້າ / ດໍາເນີນການ / ແກ້ໄຂແລ້ວ]</pre>
+                </div>
+                <p class="sop-bilingual" style="font-size:14px;font-weight:600;margin:12px 0 8px"><span
+                        class="en">Example:</span><span class="la">ຕົວຢ່າງ:</span></p>
+                </p>
+                <div class="sop-script-block" style="background:#1a2332;border-left:3px solid #10b981">
+                    <pre class="sop-en" style="margin:0;white-space:pre-wrap;font-family:inherit">22:30 - Landmark Hotel - Guard not at post
+Action: Assigned to Patrol Unit 3
+Status: In Progress</pre>
+                    <pre class="sop-la" style="margin:0;white-space:pre-wrap;font-family:inherit">22:30 - ໂຮງແຮມ Landmark - ຍາມບໍ່ຢູ່ຈຸດ
+ດໍາເນີນການ: ສົ່ງວຽກໃຫ້ ສາຍກວດ 3
+ສະຖານະ: ດໍາເນີນການ</pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 5: ESCALATION & DISCIPLINE ==================== -->
+        <div class="sop-tab-content" id="sop-escalation">
+            <!-- Escalation Triggers -->
+            <div class="sop-card caution">
+                <div class="sop-card-header">
+                    <div class="sop-card-icon amber"><span class="material-symbols-outlined">priority_high</span></div>
+                    <div>
+                        <div class="sop-card-title sop-bilingual"><span class="en">When to Escalate</span><span
+                                class="la">ເມື່ອໃດຕ້ອງສົ່ງຕໍ່ບັນຫາ</span></div>
+                        <div class="sop-card-subtitle sop-bilingual"><span class="en">Call supervisor or management in
+                                these situations</span><span class="la">ໂທຫາຜູ້ຄວບຄຸມ ຫຼື
+                                ຜູ້ຈັດການໃນສະຖານະການເຫຼົານີ້</span></div>
+                    </div>
+                </div>
+                <div class="sop-escalation-list">
+                    <div class="sop-escalation-item">
+                        <div class="sop-escalation-num">1</div>
+                        <div class="sop-bilingual"><span class="en"><strong>No patrol response</strong> — Patrol unit
+                                does not answer or respond</span><span class="la"> — ທີມສາຍກວດບໍ່ຕອບ ຫຼື
+                                ບໍ່ຕອບສະໜອງ</span></div>
+                    </div>
+                    <div class="sop-escalation-item">
+                        <div class="sop-escalation-num">2</div>
+                        <div class="sop-bilingual"><span class="en"><strong>Issue unresolved &gt; 30 minutes</strong> —
+                                Problem lasts longer than 30 min</span><span class="la"> — ບັນຫາ ບໍ່ໄດ້ແກ້ໄຂເກີນ 30
+                                ນາທີ</span></div>
+                    </div>
+                    <div class="sop-escalation-item">
+                        <div class="sop-escalation-num">3</div>
+                        <div class="sop-bilingual"><span class="en"><strong>Client-involved incident</strong> — Any
+                                incident where a client is present/affected</span><span class="la"> —
+                                ເຫດການໃດກໍ່ຕາມມີລູກຄ້າມີສ່ວນກ່ຽວຂ້ອງ</span></div>
+                    </div>
+                    <div class="sop-escalation-item">
+                        <div class="sop-escalation-num">4</div>
+                        <div class="sop-bilingual"><span class="en"><strong>Recurring location issue</strong> — Same
+                                site reporting the same problem again</span><span class="la"> —
+                                ສະຖານທີ່ດຽວກັນລາຍງານບັນຫາດຽວກັນອີກ</span></div>
+                    </div>
+                </div>
+                <div style="margin-top:12px">
+                    <p class="sop-bilingual" style="font-size:14px;font-weight:600;margin-bottom:8px"><span
+                            class="en">Escalation Chain:</span><span class="la">ລໍາດັບການສົ່ງຕໍ່:</span></p>
+                    <div class="sop-chain">
+                        <span class="sop-chain-item" style="background:#eff6ff;border-color:#3b82f6"><span
+                                class="sop-en">🎧 Controller</span><span class="sop-la">🎧 ຜູ້ຄວບຄຸມ</span></span>
+                        <span class="sop-chain-arrow material-symbols-outlined">arrow_forward</span>
+                        <span class="sop-chain-item" style="background:#fffbeb;border-color:#f59e0b"><span
+                                class="sop-en">📋 Manager</span><span class="sop-la">📋 ຜູ້ຈັດການ</span></span>
+                        <span class="sop-chain-arrow material-symbols-outlined">arrow_forward</span>
+                        <span class="sop-chain-item" style="background:#fef2f2;border-color:#ef4444"><span
+                                class="sop-en">🔝 Senior Mgmt</span><span class="sop-la">🔝 ຜູ້ບໍລິຫານ</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prohibited Actions -->
+            <div class="sop-card critical">
+                <div class="sop-card-header">
+                    <div class="sop-card-icon red"><span class="material-symbols-outlined">do_not_disturb</span></div>
+                    <div>
+                        <div class="sop-card-title sop-bilingual"><span class="en">Prohibited Actions</span><span
+                                class="la">ການກະທໍາຕ້ອງ ຫ້າມ</span></div>
+                        <div class="sop-card-subtitle sop-bilingual"><span class="en">Never do these while on
+                                duty</span><span class="la">ຫ້າມທໍາສິ່ງເຫຼົານີ້ໃນເວລາເຮັດວຽກ</span></div>
+                    </div>
+                </div>
+                <div class="sop-prohibited-grid">
+                    <div class="sop-prohibited-item"><span class="icon">❌</span>
+                        <div class="sop-bilingual"><span class="en">Ignoring calls or messages</span><span class="la"> —
+                                ບໍ່ສົນໃຈສາຍ ຫຼື ຂໍ້ຄວາມ</span></div>
+                    </div>
+                    <div class="sop-prohibited-item"><span class="icon">❌</span>
+                        <div class="sop-bilingual"><span class="en">Unauthorized personal phone use</span><span
+                                class="la"> — ໃຊ້ໂທລະສັບສ່ວນໂຕໃນເວລາເຮັດວຽກ</span></div>
+                    </div>
+                    <div class="sop-prohibited-item"><span class="icon">❌</span>
+                        <div class="sop-bilingual"><span class="en">Leaving the control center unattended</span><span
+                                class="la"> — ອອກຈາກສູນຄວບຄຸມໂດຍບໍ່ມີຄົນ</span></div>
+                    </div>
+                    <div class="sop-prohibited-item"><span class="icon">❌</span>
+                        <div class="sop-bilingual"><span class="en">Disclosing confidential information</span><span
+                                class="la"> — ເປີດເຜີຍຂໍ້ມູນລັບ</span></div>
+                    </div>
+                    <div class="sop-prohibited-item"><span class="icon">❌</span>
+                        <div class="sop-bilingual"><span class="en">Sleeping or being under the influence</span><span
+                                class="la"> — ນອນຫຼັບ ຫຼື ມຶນເມົາ</span></div>
+                    </div>
+                    <div class="sop-prohibited-item"><span class="icon">❌</span>
+                        <div class="sop-bilingual"><span class="en">Falsifying logs or reports</span><span class="la"> —
+                                ປອມແປງບັນທຶກ ຫຼື ບົດລາຍງານ</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Disciplinary Consequences -->
+            <div class="sop-card">
+                <div class="sop-card-header">
+                    <div class="sop-card-icon slate"><span class="material-symbols-outlined">gavel</span></div>
+                    <div>
+                        <div class="sop-card-title sop-bilingual"><span class="en">Disciplinary Consequences</span><span
+                                class="la">ຜົນການລົງໂທດທາງວິໄນ</span></div>
+                        <div class="sop-card-subtitle sop-bilingual"><span class="en">Progressive discipline for
+                                violations</span><span class="la">ການລົງໂທດທາງວິໄນຕາມລໍາດັບ</span></div>
+                    </div>
+                </div>
+                <div class="sop-flow">
+                    <div class="sop-flow-step">
+                        <div class="sop-flow-num" style="background:#f59e0b">1</div>
+                        <div class="sop-flow-body">
+                            <div class="sop-flow-title sop-bilingual"><span class="en">Verbal Warning</span><span
+                                    class="la">ຕັກເຕືອນດ້ວຍວາຈາ</span></div>
+                            <div class="sop-flow-desc sop-bilingual"><span class="en">First offense — documented verbal
+                                    warning</span><span class="la"> — ການກະທໍາຜິດຄັ້ງທໍາອິດ</span></div>
+                        </div>
+                    </div>
+                    <div class="sop-flow-step">
+                        <div class="sop-flow-num" style="background:#f59e0b">2</div>
+                        <div class="sop-flow-body">
+                            <div class="sop-flow-title sop-bilingual"><span class="en">Written Warning</span><span
+                                    class="la">ຕັກເຕືອນເປັນລາຍລັກອັກສອນ</span></div>
+                            <div class="sop-flow-desc sop-bilingual"><span class="en">Second offense — formal written
+                                    warning</span><span class="la"> — ການກະທໍາຜິດຄັ້ງທີ 2</span></div>
+                        </div>
+                    </div>
+                    <div class="sop-flow-step">
+                        <div class="sop-flow-num" style="background:#ef4444">3</div>
+                        <div class="sop-flow-body">
+                            <div class="sop-flow-title sop-bilingual"><span class="en">Suspension</span><span
+                                    class="la">ພັກງານ</span></div>
+                            <div class="sop-flow-desc sop-bilingual"><span class="en">Third offense — temporary
+                                    suspension</span><span class="la"> — ການກະທໍາຜິດຄັ້ງທີ 3 — ໂຈະການເຮັດວຽກ</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sop-flow-step">
+                        <div class="sop-flow-num" style="background:#991b1b">4</div>
+                        <div class="sop-flow-body">
+                            <div class="sop-flow-title sop-bilingual"><span class="en">Removal</span><span
+                                    class="la">ໃຫ້ອອກ</span></div>
+                            <div class="sop-flow-desc sop-bilingual"><span class="en">Repeated violations — removal from
+                                    position</span><span class="la"> — ການກະທໍາຜິດຊໍ້າ — ປົດຍ້າຍຈາກຕໍາແໜ່ງ</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 6: SHIFT & KPIs ==================== -->
+        <div class="sop-tab-content" id="sop-shift">
+            <!-- Operating Hours -->
+            <div class="sop-card">
+                <div class="sop-card-header">
+                    <div class="sop-card-icon blue"><span class="material-symbols-outlined">schedule</span></div>
+                    <div>
+                        <div class="sop-card-title sop-bilingual"><span class="en">Operating Hours</span><span
+                                class="la">ເວລາ ການເຮັດວຽກ</span></div>
+                        <div class="sop-card-subtitle">24/7/365</div>
+                    </div>
+                </div>
+                <div class="sop-info">
+                    <span class="material-symbols-outlined">info</span>
+                    <div class="sop-bilingual">
+                        <span class="en"><strong>24 hours, 7 days a week, 365 days a year.</strong> The center never
+                            closes.</span>
+                        <span class="la"> — 24 ຊົ່ວໂມງ, 7 ມື້ຕໍ່ອາທິດ, 365 ວັນຕໍ່ປີ. ບໍ່ມີມື້ປິດ.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPIs -->
+            <div class="sop-card">
+                <div class="sop-card-header">
+                    <div class="sop-card-icon green"><span class="material-symbols-outlined">speed</span></div>
+                    <div>
+                        <div class="sop-card-title sop-bilingual"><span class="en">Key Performance
+                                Indicators</span><span class="la">ເປົ້າໝາຍການປະເມີນ</span></div>
+                        <div class="sop-card-subtitle sop-bilingual"><span class="en">Target metrics for all
+                                operators</span><span class="la">ເປົ້າຫມາຍສໍາລັບຜູ້ປະຕິບັດງານທັງໝົດ</span></div>
+                    </div>
+                </div>
+                <div class="sop-kpi-grid">
+                    <div class="sop-kpi-card">
+                        <div class="sop-kpi-value">100%</div>
+                        <div class="sop-kpi-label sop-bilingual"><span class="en">Call Answer Rate</span><span
+                                class="la">ອັດຕາຮັບສາຍ</span></div>
+                        <div class="sop-kpi-target sop-bilingual"><span class="en">All calls answered within 3
+                                rings</span><span class="la">ທຸກສາຍຕ້ອງຕອບພາຍໃນ 3 ຄັ້ງ</span></div>
+                    </div>
+                    <div class="sop-kpi-card">
+                        <div class="sop-kpi-value" style="color:#f59e0b">≤ 2 min</div>
+                        <div class="sop-kpi-label sop-bilingual"><span class="en">Dispatch Time</span><span
+                                class="la">ເວລາສົ່ງວຽກ</span></div>
+                        <div class="sop-kpi-target sop-bilingual"><span class="en">Dispatch within ≤ 2 min</span><span
+                                class="la">ສົ່ງວຽກໃນ ≤ 2 ນາທີ</span></div>
+                    </div>
+                    <div class="sop-kpi-card">
+                        <div class="sop-kpi-value" style="color:#10b981">100%</div>
+                        <div class="sop-kpi-label sop-bilingual"><span class="en">Logging Accuracy</span><span
+                                class="la">ຄວາມຖືກຕ້ອງ</span></div>
+                        <div class="sop-kpi-target sop-bilingual"><span class="en">Every call must be fully
+                                logged</span><span class="la">ທຸກສາຍຕ້ອງບັນທຶກຄົບຖ້ວນ</span></div>
+                    </div>
+                    <div class="sop-kpi-card">
+                        <div class="sop-kpi-value" style="color:#ef4444">0</div>
+                        <div class="sop-kpi-label sop-bilingual"><span class="en">Missed Calls</span><span
+                                class="la">ການໂທທີ່ພາດ</span></div>
+                        <div class="sop-kpi-target sop-bilingual"><span class="en">Zero tolerance for missed
+                                calls</span><span class="la">ບໍ່ຢອມຮັບການພາດສາຍ</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shift Handover -->
+            <div class="sop-card">
+                <div class="sop-card-header">
+                    <div class="sop-card-icon purple"><span class="material-symbols-outlined">swap_horiz</span></div>
+                    <div>
+                        <div class="sop-card-title sop-bilingual"><span class="en">Shift Handover</span><span
+                                class="la">ການສົ່ງມອບ ໜ້າວຽກ</span></div>
+                        <div class="sop-card-subtitle sop-bilingual"><span class="en">Required before ending every
+                                shift</span><span class="la">ຕ້ອງທໍາກ່ອນອອກກະທຸກຄັ້ງ</span></div>
+                    </div>
+                </div>
+                <div class="sop-bilingual" style="margin-bottom:12px">
+                    <p class="en">Before leaving your shift, you <strong>must</strong> complete a verbal and written
+                        handover to the incoming operator covering:</p>
+                    <p class="la">ກ່ອນຈະອອກເຮັດວຽກ ຕ້ອງ ລາຍງານ ແລະ ສົ່ງໜ້າວຽກໃຫ້ ກະຖັດໄປ:</p>
+                </div>
+                <ul class="sop-checklist">
+                    <li><span class="material-symbols-outlined">check_circle</span>
+                        <div class="sop-bilingual"><span class="en">All open / unresolved incidents</span><span
+                                class="la"> — ເຫດການທີ່ຍັງ ບໍ່ທັນແກ້ໄຂ</span></div>
+                    </li>
+                    <li><span class="material-symbols-outlined">check_circle</span>
+                        <div class="sop-bilingual"><span class="en">High-risk locations currently monitored</span><span
+                                class="la"> — ສະຖານທີ່ ທີ່ ມີຄວາມສ່ຽງສູງ ທີ່ກຳລັງ ຕິດຕາມ</span></div>
+                    </li>
+                    <li><span class="material-symbols-outlined">check_circle</span>
+                        <div class="sop-bilingual"><span class="en">Pending follow-up tasks</span><span class="la"> —
+                                ໜ້າວຽກ ທີ່ ລໍຖ້າ ຄໍາຕອບ</span></div>
+                    </li>
+                    <li><span class="material-symbols-outlined">check_circle</span>
+                        <div class="sop-bilingual"><span class="en">Equipment status (radios, cameras,
+                                phones)</span><span class="la"> — ສະຖານະອຸປະກອນ (ວິທະຍຸ, ກ້ອງ, ໂທລະສັບ)</span></div>
+                    </li>
+                </ul>
+                <div class="sop-warning">
+                    <span class="material-symbols-outlined">warning</span>
+                    <div class="sop-bilingual">
+                        <span class="en"><strong>Silent handovers are prohibited.</strong> Every shift change must have
+                            a documented briefing.</span>
+                        <span class="la"> — ການສົ່ງໜ້າວຽກ ແບບງຽບໆ ເປັນສິ່ງ ຕ້ອງ ຫ້າມ. ທຸກໆ ການປ່ຽນກະ ຕ້ອງ ມີ ການ ລາຍງານ
+                            ທີ່ ບັນທຶກ ໄວ້.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function switchSOPTab(tabId) {
+        document.querySelectorAll('.sop-tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.sop-tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('sop-' + tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+    function sopCopyText(btn, sourceId) {
+        const text = document.getElementById(sourceId).textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:14px">check</span> Copied!';
+            setTimeout(() => btn.innerHTML = orig, 2000);
+        });
+    }
+    function init_sop() {
+        // Set language class on SOP container
+        var container = document.querySelector('#page-sop .sop-container');
+        if (container) {
+            var lang = (typeof TranslationManager !== 'undefined' && TranslationManager.currentLang)
+                ? TranslationManager.currentLang : (localStorage.getItem('language') || 'en');
+            container.classList.remove('lang-en', 'lang-lo');
+            container.classList.add(lang === 'lo' ? 'lang-lo' : 'lang-en');
+        }
+    }
+
+    // Listen for language changes to update SOP page dynamically
+    window.addEventListener('languageChanged', function (e) {
+        var container = document.querySelector('#page-sop .sop-container');
+        if (container) {
+            container.classList.remove('lang-en', 'lang-lo');
+            container.classList.add(e.detail.language === 'lo' ? 'lang-lo' : 'lang-en');
+        }
+    });
+</script>

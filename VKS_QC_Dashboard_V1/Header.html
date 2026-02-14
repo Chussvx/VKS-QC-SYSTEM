@@ -1,0 +1,102 @@
+<!-- Header.html - Shared header component for GAS -->
+<!-- Usage in GAS: <?!= include('Components/Header'); ?> -->
+
+
+
+<header class="app-header">
+    <div class="header-left">
+        <button class="mobile-menu-btn" onclick="toggleMobileSidebar()">
+            <span class="material-symbols-outlined">menu</span>
+        </button>
+        <h2 class="page-title" id="page-title" data-i18n="nav.dashboard">Dashboard</h2>
+
+        <!-- Global Sync Indicator -->
+        <div id="global-sync-indicator" class="sync-indicator ml-4">
+            <span class="material-symbols-outlined">sync</span>
+            <span data-i18n="header.syncing">Syncing...</span>
+        </div>
+    </div>
+
+    <div class="header-center">
+        <div class="header-search">
+            <span class="material-symbols-outlined">search</span>
+            <input type="text" data-i18n-placeholder="header.search_placeholder" placeholder="Search logs..."
+                id="global-search" onkeyup="handleGlobalSearch(event)">
+        </div>
+    </div>
+
+    <div class="header-right">
+        <div class="header-actions" id="header-actions">
+            <!-- Dynamic page actions inserted here -->
+        </div>
+
+        <button class="header-icon-btn has-updates" data-i18n-title="header.notifications" title="Notifications"
+            onclick="openNotifications()">
+            <span class="material-symbols-outlined">notifications</span>
+        </button>
+
+        <div class="user-profile" id="user-profile-trigger">
+            <div class="user-info">
+                <div class="user-name" id="userName">Alex R.</div>
+                <div class="user-role" id="userRole">QC Lead</div>
+            </div>
+            <div class="user-avatar" id="userAvatar">
+                <span id="user-initials">AR</span>
+            </div>
+        </div>
+    </div>
+</header>
+
+<script>
+    // Update clock every second - guards against missing elements
+    function updateClock() {
+        const now = new Date();
+        const hoursEl = document.getElementById('clock-hours');
+        const minutesEl = document.getElementById('clock-minutes');
+        const secondsEl = document.getElementById('clock-seconds');
+        if (hoursEl) hoursEl.textContent = String(now.getUTCHours()).padStart(2, '0');
+        if (minutesEl) minutesEl.textContent = String(now.getUTCMinutes()).padStart(2, '0');
+        if (secondsEl) secondsEl.textContent = String(now.getUTCSeconds()).padStart(2, '0');
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Update page title based on current page
+    function setPageTitle(title) {
+        const el = document.getElementById('page-title');
+        if (el) el.textContent = title;
+    }
+
+    // Set header actions (called by each page)
+    function setHeaderActions(html) {
+        const el = document.getElementById('header-actions');
+        if (el) el.innerHTML = html;
+    }
+
+    // Load user info from backend
+    function loadUserInfo() {
+        google.script.run
+            .withSuccessHandler(function (user) {
+                const nameEl = document.getElementById('userName');
+                const roleEl = document.getElementById('userRole');
+                if (nameEl) nameEl.textContent = user.name || 'Guest';
+                if (roleEl) roleEl.textContent = user.role || 'User';
+                if (user.avatar) {
+                    const avatarEl = document.getElementById('userAvatar');
+                    if (avatarEl) avatarEl.style.backgroundImage = `url('${user.avatar}')`;
+                }
+            })
+            .getCurrentUser();
+    }
+
+    // Mobile sidebar toggle
+    function toggleMobileSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) sidebar.classList.toggle('mobile-visible');
+    }
+
+    // Notifications panel
+    function openNotifications() {
+        openModal('notifications');
+    }
+</script>

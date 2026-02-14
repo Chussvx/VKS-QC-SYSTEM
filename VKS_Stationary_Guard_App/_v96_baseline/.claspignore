@@ -1,0 +1,9 @@
+# Ignore backup folders
+_v74/**
+_broken_v95/**
+
+# Ignore local config files
+.clasp.json
+.deploy-cache.json
+deploy.ps1
+**/*.md

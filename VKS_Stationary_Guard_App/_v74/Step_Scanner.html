@@ -1,0 +1,107 @@
+<div class="absolute inset-0 bg-black overflow-hidden z-[100]">
+    <!-- QR Reader Mounting Point - Occupies Full Screen -->
+    <div id="qr-reader" class="absolute inset-0 z-0 bg-black"></div>
+
+    <!-- Floating UI Controls -->
+    <div class="absolute inset-x-0 top-0 z-20 flex items-center justify-between px-6 pt-12 pointer-events-none">
+        <button onclick="navigateTo('home')"
+            class="pointer-events-auto w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white border border-white/20 active:scale-90 transition-all">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+
+        <button id="flashlight-btn" onclick="toggleFlashlight()"
+            class="pointer-events-auto w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white border border-white/20 active:scale-90 transition-all">
+            <span class="material-symbols-outlined" id="torch-icon">flashlight_on</span>
+        </button>
+    </div>
+
+    <!-- Context Card (Floating at bottom) -->
+    <div class="absolute inset-x-0 bottom-12 z-20 px-6 pointer-events-none">
+        <div
+            class="glass-card rounded-[2.5rem] p-6 flex items-center justify-between bg-white/95 pointer-events-auto shadow-2xl">
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                    <span class="material-symbols-outlined text-3xl">qr_code_scanner</span>
+                </div>
+                <div>
+                    <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5"
+                        id="scan-context-label">ກຳລັງກວດສອບ...</span>
+                    <h3 class="text-lg font-bold text-slate-900 leading-tight" id="scan-context-title">
+                        ກຳລັງສະແກນ</h3>
+                </div>
+            </div>
+            <div id="scan-status-dot" class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let isTorchOn = false;
+
+    function updateScanContext() {
+        const titleEl = document.getElementById('scan-context-title');
+        const labelEl = document.getElementById('scan-context-label');
+
+        if (State.scanMode === 'patrol') {
+            titleEl.innerText = 'ສະແກນຈຸດລາດຕະເວນ';
+            labelEl.innerText = 'ກວດສອບຈຸດລາດຕະເວນ';
+        } else {
+            titleEl.innerText = 'ສະແກນເຂົ້າປະຕິບັດງານ';
+            labelEl.innerText = 'ກວດສອບການເຂົ້າວຽກ';
+        }
+    }
+
+    async function toggleFlashlight() {
+        if (!html5QrCode) {
+            showToast("Scanner not ready", "warning");
+            return;
+        }
+
+        const btn = document.getElementById('flashlight-btn');
+        const icon = document.getElementById('torch-icon');
+
+        try {
+            // Method 1: Use getRunningTrackCameraCapabilities (newer API)
+            const capabilities = html5QrCode.getRunningTrackCameraCapabilities();
+            if (capabilities && capabilities.torchFeature) {
+                const torchFeature = capabilities.torchFeature();
+                if (torchFeature.isSupported()) {
+                    isTorchOn = !isTorchOn;
+                    await torchFeature.apply(isTorchOn);
+                    updateTorchUI(btn, icon, isTorchOn);
+                    return;
+                }
+            }
+        } catch (e) {
+            console.log("Method 1 failed, trying fallback:", e);
+        }
+
+        try {
+            // Method 2: Use applyVideoConstraints (fallback)
+            isTorchOn = !isTorchOn;
+            await html5QrCode.applyVideoConstraints({
+                advanced: [{ torch: isTorchOn }]
+            });
+            updateTorchUI(btn, icon, isTorchOn);
+        } catch (err) {
+            console.error("Flashlight error:", err);
+            isTorchOn = false; // Reset state
+            showToast("ອຸປະກອນນີ້ບໍ່ຮອງຮັບໄຟສາຍ (Torch not supported)", "warning");
+        }
+    }
+
+    function updateTorchUI(btn, icon, isOn) {
+        if (isOn) {
+            btn.classList.add('bg-amber-500', 'border-amber-400');
+            btn.classList.remove('bg-white/10', 'border-white/20');
+            icon.innerText = 'flashlight_off';
+        } else {
+            btn.classList.remove('bg-amber-500', 'border-amber-400');
+            btn.classList.add('bg-white/10', 'border-white/20');
+            icon.innerText = 'flashlight_on';
+        }
+    }
+
+    // Initialize on load
+    setTimeout(updateScanContext, 100);
+</script>

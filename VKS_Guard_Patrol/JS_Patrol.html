@@ -1,0 +1,129 @@
+<script>
+    // JS_Patrol.html - Refactored Logic for Patrol Mode
+
+    // --- POPULATE PATROL DROPDOWNS ---
+    window.populatePatrolDropdowns = function (data) {
+        if (!data) return;
+
+        // 1. Populate Patrol Name dropdown
+        const patrolOptions = document.getElementById('patrolName-options');
+        const patrolDisplay = document.querySelector('#patrolName-select .custom-select-value');
+
+        if (patrolOptions && data.patrolNames && data.patrolNames.length > 0) {
+            patrolOptions.innerHTML = '';
+            patrolDisplay.textContent = 'ເລືອກຊື່ຜູ້ກວດກາ...';
+
+            data.patrolNames.forEach((name, index) => {
+                const opt = document.createElement('div');
+                opt.className = 'custom-select-option';
+                opt.dataset.value = name;
+                opt.textContent = name;
+                opt.onclick = function () { selectCustomOption(this, 'patrolName'); };
+                patrolOptions.appendChild(opt);
+            });
+            console.log("[Patrol] Dropdown populated with " + data.patrolNames.length + " names");
+        } else if (patrolDisplay) {
+            patrolDisplay.textContent = 'ບໍ່ພົບຂໍ້ມູນຜູ້ກວດກາ';
+            console.warn("[Patrol] No patrol names found in data");
+        }
+    };
+
+    // --- UPDATE PATROL SITE LIST ---
+    window.updatePatrolSiteList = function (preservedSite) {
+        console.log("=== updatePatrolSiteList called ===");
+        const routeA = document.getElementById('routeA')?.checked;
+        const routeB = document.getElementById('routeB')?.checked;
+        const siteInput = document.getElementById('siteName');
+        const siteDisplay = document.querySelector('#siteName-select .custom-select-value');
+        const siteOptions = document.getElementById('siteName-options');
+
+        if (!configData || !siteOptions || !siteInput || !siteDisplay) {
+            console.error("Missing elements or configData");
+            return;
+        }
+
+        // Determine effective current value (argument takes precedence, then DOM)
+        const currentVal = preservedSite !== undefined ? preservedSite : siteInput.value;
+
+        // Reset Options Container (but hold off on clearing Input)
+        siteOptions.innerHTML = '';
+
+        // Determine which sites to use
+        let sites = [];
+        if (routeA && configData.routeA) {
+            sites = configData.routeA;
+        } else if (routeB && configData.routeB) {
+            sites = configData.routeB;
+        }
+
+        // Handle Empty List
+        if (sites.length === 0) {
+            siteDisplay.textContent = 'ບໍ່ມີຂໍ້ມູນສະຖານທີ່';
+            siteInput.value = '';
+            siteInput.setAttribute('value', '');
+
+            const emptyOpt = document.createElement('div');
+            emptyOpt.className = 'custom-select-option';
+            emptyOpt.dataset.value = '';
+            emptyOpt.textContent = 'ບໍ່ມີຂໍ້ມູນສະຖານທີ່';
+            siteOptions.appendChild(emptyOpt);
+
+            updateSelectionIndicator('');
+            return;
+        }
+
+        // Populate options
+        let matched = false;
+        sites.forEach((site) => {
+            const siteValue = String(site).trim();
+            if (!siteValue) return;
+            const safeValue = siteValue.replace(/"/g, '&quot;');
+
+            const opt = document.createElement('div');
+            opt.className = 'custom-select-option';
+            opt.dataset.value = siteValue; // Use raw value for dataset
+            opt.textContent = siteValue;
+            opt.onclick = function () { selectCustomOption(this, 'siteName'); };
+
+            // Check if this matches our preserved value
+            if (currentVal && siteValue === currentVal) {
+                opt.classList.add('selected');
+                matched = true;
+            }
+
+            siteOptions.appendChild(opt);
+        });
+
+        // Finalize Selection State
+        if (matched) {
+            // Restore/Keep Selection
+            siteInput.value = currentVal;
+            siteInput.setAttribute('value', currentVal);
+            siteDisplay.textContent = currentVal;
+            updateSelectionIndicator(currentVal);
+            console.log("[Patrol] Preserved site selection:", currentVal);
+        } else {
+            // No match found or no previous selection -> Clear it
+            // EXCEPTION: If we had a preservedSite but it wasn't in the list, 
+            // the previous logic kept it as a "ghost" value. 
+            // For safety, let's keep it if explicitly provided (Refresh scenario),
+            // but clear it if it was a manual route switch (implied by undefined preservedSite?).
+            // Actually, safe bet: If not found in new list, it's invalid. Clear it.
+            // BUT: The user might have a value from an old config version. 
+            // Let's implement the "Soft Restore" logic: if preservedSite was passed, keep it visually but warn.
+            if (preservedSite && !matched) {
+                console.warn("[Patrol] Site not in list but preserving:", preservedSite);
+                siteInput.value = preservedSite;
+                siteDisplay.textContent = preservedSite;
+                updateSelectionIndicator(preservedSite);
+            } else {
+                siteInput.value = '';
+                siteInput.setAttribute('value', '');
+                siteDisplay.textContent = 'ເລືອກສະຖານທີ່...';
+                updateSelectionIndicator('');
+            }
+        }
+
+        console.log("[Patrol] Site dropdown populated with " + sites.length + " locations");
+    };
+</script>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Incident Report Modal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#21c45d",
+                        "background-light": "#f6f8f7",
+                        "background-dark": "#122017",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "0.5rem",
+                        "xl": "1rem", // Modified xl to match 16px request
+                        "2xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        /* Custom scrollbar for better aesthetic in modal content */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 20px;
+        }
+
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #374151;
+        }
+
+        /* Hide default calendar icon in some browsers to use custom styling if needed, 
+           though standard appearance is usually fine for MVP */
+        input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            opacity: 0.6;
+        }
+
+        input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark min-h-screen font-display flex items-center justify-center p-4 relative overflow-hidden"
+    data-alt="Abstract global security network map background"
+    style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAlznI4Jli5TG7vCiYUHqu6jQiPLBYrlqEz9f8LbtVJ7La7SUNGaCX79PEKdXH1f0v_hkjvbnudeiCOzo-mnnlyDbev6XZP0GRVddfmIMjVatYsYjuF5Aesk-WqDDn_AU2CR1zd8q0Ouzhc2lcKsZNOaAzYVZakQWBSMU4ZeOX3deyThCjTjda5qZi6LHUT92OoqnXG422KdJorL9nTZdgSTMBEwrH-GrO7lgZkmuCdi92z12BQrEe8T3Z49sRqrg_5Sv2ju_kLo_Bf'); background-size: cover; background-position: center;">
+    <!-- Backdrop Overlay -->
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm z-0"></div>
+    <!-- Modal Container -->
+    <div
+        class="relative z-10 w-full max-w-[700px] flex flex-col bg-white dark:bg-[#1C2A22] rounded-xl shadow-2xl max-h-[90vh] overflow-hidden border border-gray-100 dark:border-gray-800">
+        <!-- Header -->
+        <div
+            class="flex items-center justify-between px-6 py-5 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-[#1C2A22]">
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                    <span class="material-symbols-outlined">security</span>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-white leading-tight"
+                        data-i18n="incident.form.title">New Incident Report</h2>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">ID: #INC-2023-8842</p>
+                </div>
+            </div>
+            <button
+                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <!-- Tabs -->
+        <div class="px-6 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1C2A22]">
+            <div class="flex space-x-8">
+                <button class="relative py-4 px-1 text-sm font-bold text-primary border-b-2 border-primary"
+                    data-i18n="incident.form.tab.basic">
+                    Basic Info
+                </button>
+                <button
+                    class="relative py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600">
+                    Involved Parties
+                </button>
+                <button
+                    class="relative py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600">
+                    Evidence
+                </button>
+                <button
+                    class="relative py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600">
+                    Notes
+                </button>
+            </div>
+        </div>
+        <!-- Scrollable Content -->
+        <div class="p-8 overflow-y-auto custom-scrollbar bg-white dark:bg-[#1C2A22]">
+            <form class="flex flex-col gap-6">
+                <!-- Title Field -->
+                <div>
+                    <label
+                        class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2"
+                        data-i18n="incident.form.incident_title">
+                        Incident Title
+                    </label>
+                    <input
+                        class="w-full h-12 px-4 rounded-lg border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#15201A] text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:ring-primary focus:ring-1 transition-all text-sm shadow-sm"
+                        placeholder="e.g., Unauthorized Access at Main Gate" type="text" />
+                </div>
+                <!-- Site & Category Row -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label
+                            class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2"
+                            data-i18n="incident.form.site_location">
+                            Site Location
+                        </label>
+                        <div class="relative">
+                            <select
+                                class="w-full h-12 px-4 rounded-lg border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#15201A] text-gray-900 dark:text-white focus:border-primary focus:ring-primary focus:ring-1 appearance-none cursor-pointer text-sm shadow-sm">
+                                <option disabled="" selected="" value="" data-i18n="incident.form.select_site">Select a
+                                    site...</option>
+                                <option value="hq">VKS HQ - Building A</option>
+                                <option value="warehouse">Warehouse District B</option>
+                                <option value="parking">North Parking Lot</option>
+                            </select>
+                            <div
+                                class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500">
+                                <span class="material-symbols-outlined text-xl">expand_more</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label
+                            class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2"
+                            data-i18n="incident.form.category">
+                            Category
+                        </label>
+                        <div class="relative">
+                            <select
+                                class="w-full h-12 px-4 rounded-lg border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#15201A] text-gray-900 dark:text-white focus:border-primary focus:ring-primary focus:ring-1 appearance-none cursor-pointer text-sm shadow-sm">
+                                <option disabled="" selected="" value="" data-i18n="incident.form.select_category">
+                                    Select category...</option>
+                                <option value="theft">Theft / Loss</option>
+                                <option value="access">Access Violation</option>
+                                <option value="safety">Safety Hazard</option>
+                                <option value="maintenance">Maintenance Issue</option>
+                            </select>
+                            <div
+                                class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500">
+                                <span class="material-symbols-outlined text-xl">expand_more</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Severity Selector -->
+                <div>
+                    <label
+                        class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3"
+                        data-i18n="incident.form.priority_level">
+                        Severity Level
+                    </label>
+                    <div class="grid grid-cols-4 gap-3">
+                        <!-- Critical -->
+                        <label class="cursor-pointer group relative">
+                            <input class="peer sr-only" name="severity" type="radio" />
+                            <div
+                                class="h-full flex flex-col items-center justify-center p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#15201A] hover:bg-red-50 dark:hover:bg-red-900/10 peer-checked:border-red-500 peer-checked:bg-red-50 dark:peer-checked:bg-red-900/20 peer-checked:ring-1 peer-checked:ring-red-500 transition-all">
+                                <div class="h-2 w-2 rounded-full bg-red-500 mb-2"></div>
+                                <span
+                                    class="text-sm font-bold text-gray-700 dark:text-gray-200 peer-checked:text-red-700 dark:peer-checked:text-red-400">Critical</span>
+                                <span class="text-[10px] uppercase font-bold text-gray-400 mt-1">SLA: &lt;1h</span>
+                            </div>
+                        </label>
+                        <!-- High (Pre-selected for demo) -->
+                        <label class="cursor-pointer group relative">
+                            <input checked="" class="peer sr-only" name="severity" type="radio" />
+                            <div
+                                class="h-full flex flex-col items-center justify-center p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#15201A] hover:bg-orange-50 dark:hover:bg-orange-900/10 peer-checked:border-orange-500 peer-checked:bg-orange-50 dark:peer-checked:bg-orange-900/20 peer-checked:ring-1 peer-checked:ring-orange-500 transition-all">
+                                <div class="h-2 w-2 rounded-full bg-orange-500 mb-2"></div>
+                                <span
+                                    class="text-sm font-bold text-gray-700 dark:text-gray-200 peer-checked:text-orange-700 dark:peer-checked:text-orange-400">High</span>
+                                <span class="text-[10px] uppercase font-bold text-gray-400 mt-1">SLA: &lt;4h</span>
+                            </div>
+                        </label>
+                        <!-- Medium -->
+                        <label class="cursor-pointer group relative">
+                            <input class="peer sr-only" name="severity" type="radio" />
+                            <div
+                                class="h-full flex flex-col items-center justify-center p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#15201A] hover:bg-yellow-50 dark:hover:bg-yellow-900/10 peer-checked:border-yellow-500 peer-checked:bg-yellow-50 dark:peer-checked:bg-yellow-900/20 peer-checked:ring-1 peer-checked:ring-yellow-500 transition-all">
+                                <div class="h-2 w-2 rounded-full bg-yellow-500 mb-2"></div>
+                                <span
+                                    class="text-sm font-bold text-gray-700 dark:text-gray-200 peer-checked:text-yellow-700 dark:peer-checked:text-yellow-400">Medium</span>
+                                <span class="text-[10px] uppercase font-bold text-gray-400 mt-1">SLA: &lt;24h</span>
+                            </div>
+                        </label>
+                        <!-- Low -->
+                        <label class="cursor-pointer group relative">
+                            <input class="peer sr-only" name="severity" type="radio" />
+                            <div
+                                class="h-full flex flex-col items-center justify-center p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#15201A] hover:bg-blue-50 dark:hover:bg-blue-900/10 peer-checked:border-blue-500 peer-checked:bg-blue-50 dark:peer-checked:bg-blue-900/20 peer-checked:ring-1 peer-checked:ring-blue-500 transition-all">
+                                <div class="h-2 w-2 rounded-full bg-blue-500 mb-2"></div>
+                                <span
+                                    class="text-sm font-bold text-gray-700 dark:text-gray-200 peer-checked:text-blue-700 dark:peer-checked:text-blue-400">Low</span>
+                                <span class="text-[10px] uppercase font-bold text-gray-400 mt-1">No SLA</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                <!-- Date & Time -->
+                <div>
+                    <label
+                        class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2"
+                        data-i18n="incident.form.incident_datetime">
+                        Occurred Date &amp; Time
+                    </label>
+                    <div class="relative">
+                        <input
+                            class="w-full h-12 px-4 rounded-lg border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#15201A] text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:ring-primary focus:ring-1 text-sm shadow-sm"
+                            type="datetime-local" />
+                    </div>
+                    <p class="text-xs text-gray-400 mt-2 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[14px]">info</span>
+                        Server time: UTC-5 (EST)
+                    </p>
+                </div>
+            </form>
+        </div>
+        <!-- Footer -->
+        <div
+            class="px-8 py-5 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1C2A22] flex items-center justify-end gap-3">
+            <button
+                class="px-5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                data-i18n="incident.form.btn.cancel">
+                Cancel
+            </button>
+            <button
+                class="px-5 py-2.5 rounded-lg bg-primary hover:bg-primary/90 text-white text-sm font-bold shadow-lg shadow-primary/30 transition-all flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">save</span>
+                <span data-i18n="incident.form.btn.save">Save Incident</span>
+            </button>
+        </div>
+    </div>
+</body>
+
+</html>

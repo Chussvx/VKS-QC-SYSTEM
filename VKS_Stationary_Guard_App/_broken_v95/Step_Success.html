@@ -1,0 +1,38 @@
+<div class="flex flex-col h-full items-center justify-center p-8 text-center space-y-12 pb-32">
+
+    <!-- Success Animation / Icon -->
+    <div class="relative">
+        <div
+            class="w-32 h-32 glass-card rounded-full flex items-center justify-center animate-pulse border-emerald-500/30">
+            <div
+                class="w-24 h-24 bg-gradient-to-tr from-emerald-600 to-emerald-400 rounded-full flex items-center justify-center shadow-xl shadow-emerald-200">
+                <span class="material-symbols-outlined text-6xl text-white">check_circle</span>
+            </div>
+        </div>
+
+        <!-- Floating Stars Orbit -->
+        <div
+            class="absolute -top-4 -right-4 w-12 h-12 glass-card rounded-2xl flex items-center justify-center shadow-lg animate-bounce">
+            <span class="material-symbols-outlined text-emerald-500">stars</span>
+        </div>
+        <div
+            class="absolute -bottom-2 -left-4 w-10 h-10 glass-card rounded-xl flex items-center justify-center shadow-md animate-pulse delay-700">
+            <span class="material-symbols-outlined text-emerald-400 text-sm">verified_user</span>
+        </div>
+    </div>
+
+    <!-- Success Messaging -->
+    <div class="space-y-3">
+        <h2 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tighter uppercase">ຢືນຢັນສຳເລັດ</h2>
+        <p class="text-slate-500 dark:text-slate-400 font-medium leading-relaxed max-w-[240px] mx-auto"
+            id="success-message">
+            ການບັນທຶກສຳເລັດແລ້ວ. ຂໍ້ມູນຖືກສົ່ງໄປຍັງສູນກາງ.
+        </p>
+    </div>
+
+    <!-- Global CTA -->
+    <button onclick="navigateTo('home')"
+        class="tactile-btn w-full h-16 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-[2rem] font-black text-lg shadow-2xl tracking-widest uppercase">
+        ກັບຄືນໜ້າຫຼັກ
+    </button>
+</div>

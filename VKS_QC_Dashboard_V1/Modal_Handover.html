@@ -1,0 +1,298 @@
+<!-- Modal_Handover.html - Premium Handover Detail Modal -->
+
+<template id="modal-handover-detail">
+    <div class="handover-modal-card">
+        <!-- Header with Gradient -->
+        <div class="handover-modal-header">
+            <button class="btn-close-white" onclick="closeModal()">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+            <div class="handover-header-content">
+                <div class="handover-site-badge">
+                    <span class="material-symbols-outlined">location_on</span>
+                    <span id="handover-det-type">CHECK-IN</span>
+                </div>
+                <h2 class="handover-site-name" id="handover-det-site">BCEL HQ</h2>
+                <div class="handover-meta-row">
+                    <div class="handover-meta-chip">
+                        <span class="material-symbols-outlined">schedule</span>
+                        <span id="handover-det-time">08:00</span>
+                    </div>
+                    <div class="handover-meta-chip">
+                        <span class="material-symbols-outlined">calendar_today</span>
+                        <span id="handover-det-date">20 Jan 2026</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Card -->
+        <div class="handover-section">
+            <div class="handover-map-container" id="handover-map">
+                <div class="map-loading">
+                    <span class="material-symbols-outlined spin">progress_activity</span>
+                    <span data-i18n="handover.modal.loading_map">Loading map...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Guard Info Card -->
+        <div class="handover-section">
+            <div class="handover-guard-card">
+                <div class="guard-avatar" id="handover-det-avatar">SK</div>
+                <div class="guard-info">
+                    <span class="guard-label" data-i18n="handover.modal.patrol_guard">PATROL GUARD</span>
+                    <span class="guard-name" id="handover-det-guard">ສະຫາຍ ສົມສັກ</span>
+                    <span class="guard-route" id="handover-det-route">ສາຍ A ພາກເຊົ້າ</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notes Card -->
+        <div class="handover-section">
+            <div class="handover-notes-card">
+                <div class="notes-header">
+                    <span class="material-symbols-outlined">notes</span>
+                    <span data-i18n="handover.modal.handover_notes">HANDOVER NOTES</span>
+                </div>
+                <p class="notes-content" id="handover-det-notes">
+                    "ສະພາບປົກກະຕິ, ບໍ່ມີຫຍັງຜິດປົກກະຕິ."
+                </p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="handover-modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal()"><span data-i18n="common.close">Close</span></button>
+            <button class="btn btn-primary" onclick="contactSiteFromHandover()">
+                <span class="material-symbols-outlined">call</span>
+                <span data-i18n="handover.modal.btn.contact">Contact Site</span>
+            </button>
+        </div>
+    </div>
+</template>
+
+<style>
+    /* Premium Handover Modal */
+    .handover-modal-card {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        max-width: 480px;
+        width: 100%;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Header with Gradient */
+    .handover-modal-header {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        padding: 24px;
+        position: relative;
+        color: white;
+    }
+
+    .btn-close-white {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+    }
+
+    .btn-close-white:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+    .handover-header-content {
+        text-align: center;
+        padding-top: 8px;
+    }
+
+    .handover-site-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+    }
+
+    .handover-site-badge .material-symbols-outlined {
+        font-size: 16px;
+    }
+
+    .handover-site-name {
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0 0 16px 0;
+        line-height: 1.2;
+    }
+
+    .handover-meta-row {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+    }
+
+    .handover-meta-chip {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(255, 255, 255, 0.15);
+        padding: 8px 14px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .handover-meta-chip .material-symbols-outlined {
+        font-size: 18px;
+        opacity: 0.9;
+    }
+
+    /* Sections */
+    .handover-section {
+        padding: 16px 20px;
+    }
+
+    .handover-section:not(:last-of-type) {
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    /* Map Container */
+    .handover-map-container {
+        height: 160px;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #f8fafc;
+        position: relative;
+    }
+
+    .map-loading {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        color: #64748b;
+        font-size: 14px;
+    }
+
+    .map-unavailable {
+        color: #94a3b8;
+    }
+
+    /* Guard Card */
+    .handover-guard-card {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px;
+        background: #f8fafc;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .guard-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        font-weight: 700;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .guard-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        flex: 1;
+        min-width: 0;
+        overflow-wrap: break-word;
+        word-wrap: break-word;
+    }
+
+    .guard-label {
+        font-size: 10px;
+        font-weight: 700;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .guard-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1e293b;
+        word-break: break-word;
+        overflow-wrap: break-word;
+    }
+
+    .guard-route {
+        font-size: 13px;
+        font-weight: 500;
+        color: #10b981;
+    }
+
+    /* Notes Card */
+    .handover-notes-card {
+        background: #fefce8;
+        border-radius: 12px;
+        padding: 16px;
+        border-left: 4px solid #10b981;
+    }
+
+    .notes-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 10px;
+    }
+
+    .notes-header .material-symbols-outlined {
+        font-size: 18px;
+        color: #10b981;
+    }
+
+    .notes-content {
+        font-size: 15px;
+        color: #374151;
+        line-height: 1.6;
+        font-style: italic;
+        margin: 0;
+    }
+
+    /* Footer */
+    .handover-modal-footer {
+        display: flex;
+        justify-content: space-between;
+        padding: 16px 20px;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+    }
+</style>

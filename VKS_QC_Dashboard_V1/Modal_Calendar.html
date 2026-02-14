@@ -1,0 +1,184 @@
+<!-- Modal_Calendar.html - Patrol Plans Modals -->
+
+<!-- ==================== ADD SITES MODAL ==================== -->
+<template id="modal-pp-add-sites">
+    <div class="modal-card-solid" style="max-width: 520px;">
+        <div class="modal-header-refined">
+            <div class="modal-title-group">
+                <div class="modal-icon-box success">
+                    <span class="material-symbols-outlined">add_location_alt</span>
+                </div>
+                <div>
+                    <h3 class="modal-title" id="pp-add-title" data-i18n="patrol.add_sites">ADD SITES</h3>
+                    <div class="modal-subtitle-flex">
+                        <span class="text-xs text-muted" data-i18n="patrol.select_sites_subtitle">Select sites to
+                            include in this shift's patrol plan</span>
+                    </div>
+                </div>
+            </div>
+            <button class="btn-close" onclick="closeModal()">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <!-- Search Bar -->
+        <div style="padding: 12px 20px 8px; border-bottom: 1px solid var(--border, rgba(60,60,67,0.08));">
+            <div class="pp-search-bar">
+                <span class="material-symbols-outlined"
+                    style="font-size: 18px; color: var(--text-muted, #94a3b8);">search</span>
+                <input type="text" id="pp-site-search" data-i18n-placeholder="patrol.search_sites"
+                    placeholder="Search sites..." oninput="ppFilterSiteSearch(this.value)"
+                    style="border: none; outline: none; flex: 1; font-size: 14px; background: transparent; color: var(--text-primary);">
+            </div>
+        </div>
+
+        <div class="modal-body" style="padding: 0; max-height: 380px; overflow-y: auto;">
+            <div id="pp-sites-checklist">
+                <div class="text-center py-8">
+                    <span class="material-symbols-outlined spin text-primary">progress_activity</span>
+                    <p class="text-xs text-muted mt-2" data-i18n="patrol.loading_analytics">Loading sites...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer-refined" style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <button class="btn btn-ghost" onclick="closeModal()" data-i18n="patrol.cancel">Cancel</button>
+                <span id="pp-add-counter" class="pp-selection-pill" style="display: none;">0 selected</span>
+            </div>
+            <button class="btn btn-primary" id="pp-add-save-btn" onclick="ppSubmitAddSites()"
+                style="border-radius: 12px; gap: 6px;">
+                <span class="material-symbols-outlined" style="font-size: 18px;">check_circle</span>
+                <span data-i18n="patrol.add_sites_btn">Add Sites</span>
+            </button>
+        </div>
+    </div>
+</template>
+
+<!-- ==================== COPY PLAN MODAL ==================== -->
+<template id="modal-pp-copy-plan">
+    <div class="modal-card-solid" style="max-width: 520px;">
+        <div class="modal-header-refined">
+            <div class="modal-title-group">
+                <div class="modal-icon-box success">
+                    <span class="material-symbols-outlined">content_copy</span>
+                </div>
+                <div>
+                    <h3 class="modal-title" data-i18n="patrol.copy_plan">COPY PLAN</h3>
+                    <div class="modal-subtitle-flex">
+                        <span class="text-xs text-muted" data-i18n="patrol.copy_subtitle">Duplicate plans to other
+                            dates</span>
+                    </div>
+                </div>
+            </div>
+            <button class="btn-close" onclick="closeModal()">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <div class="modal-body p-6">
+            <!-- Copy Mode Selector -->
+            <div class="section-title" data-i18n="patrol.copy_mode">COPY MODE</div>
+            <div class="flex gap-2 mb-6">
+                <button class="btn btn-secondary btn-sm pp-copy-mode-btn active" data-mode="shift"
+                    onclick="ppSetCopyMode('shift')">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">schedule</span>
+                    <span data-i18n="patrol.copy.shift">Copy Shift</span>
+                </button>
+                <button class="btn btn-secondary btn-sm pp-copy-mode-btn" data-mode="day"
+                    onclick="ppSetCopyMode('day')">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">today</span>
+                    <span data-i18n="patrol.copy.day">Copy Full Day</span>
+                </button>
+                <button class="btn btn-secondary btn-sm pp-copy-mode-btn" data-mode="weekly"
+                    onclick="ppSetCopyMode('weekly')">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">date_range</span>
+                    <span data-i18n="patrol.copy.weekly">Weekly Repeat</span>
+                </button>
+            </div>
+
+            <!-- Source Date -->
+            <div class="section-title" data-i18n="patrol.source">SOURCE</div>
+            <div class="form-group mb-4">
+                <label class="form-label required" data-i18n="patrol.source_date">Source Date</label>
+                <div style="position: relative;">
+                    <input type="text" id="pp-copy-source" class="form-input" readonly
+                        style="cursor:pointer; padding-right:2.5rem;" placeholder="Select date...">
+                    <span class="material-symbols-outlined"
+                        style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);font-size:1.1rem;color:var(--text-muted);pointer-events:none;">calendar_today</span>
+                </div>
+            </div>
+
+            <!-- Shift selector (only for 'shift' mode) -->
+            <div class="form-group mb-4" id="pp-copy-shift-row">
+                <label class="form-label required" data-i18n="patrol.shift_to_copy">Shift to Copy</label>
+                <select id="pp-copy-shift-select" class="form-input">
+                    <option value="morning">🌅 Morning (05:30–14:30)</option>
+                    <option value="evening">🌆 evening (13:30–22:30)</option>
+                    <option value="night">🌙 Night (21:30–06:30)</option>
+                </select>
+            </div>
+
+            <!-- Target Date (for shift / day mode) -->
+            <div class="section-title" id="pp-copy-target-label" data-i18n="patrol.target">TARGET</div>
+            <div class="form-group mb-4" id="pp-copy-target-row">
+                <label class="form-label required" data-i18n="patrol.target_date">Target Date</label>
+                <div style="position: relative;">
+                    <input type="text" id="pp-copy-target" class="form-input" readonly
+                        style="cursor:pointer; padding-right:2.5rem;" placeholder="Select target...">
+                    <span class="material-symbols-outlined"
+                        style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);font-size:1.1rem;color:var(--text-muted);pointer-events:none;">calendar_today</span>
+                </div>
+            </div>
+
+            <!-- Weekday selector (only for 'weekly' mode) -->
+            <div id="pp-copy-weekday-row" style="display: none;">
+                <div class="form-group mb-4">
+                    <label class="form-label required" data-i18n="patrol.repeat_days">Repeat on These Days</label>
+                    <div class="pp-weekday-grid">
+                        <div class="pp-weekday-btn" data-day="1" onclick="ppToggleWeekday(this)">Mon</div>
+                        <div class="pp-weekday-btn" data-day="2" onclick="ppToggleWeekday(this)">Tue</div>
+                        <div class="pp-weekday-btn" data-day="3" onclick="ppToggleWeekday(this)">Wed</div>
+                        <div class="pp-weekday-btn" data-day="4" onclick="ppToggleWeekday(this)">Thu</div>
+                        <div class="pp-weekday-btn" data-day="5" onclick="ppToggleWeekday(this)">Fri</div>
+                        <div class="pp-weekday-btn" data-day="6" onclick="ppToggleWeekday(this)">Sat</div>
+                        <div class="pp-weekday-btn" data-day="0" onclick="ppToggleWeekday(this)">Sun</div>
+                    </div>
+                </div>
+                <div class="form-group mb-4">
+                    <label class="form-label" data-i18n="patrol.weeks_ahead">Weeks Ahead</label>
+                    <select id="pp-copy-weeks" class="form-input" style="width: 120px;">
+                        <option value="1">1 week</option>
+                        <option value="2">2 weeks</option>
+                        <option value="3">3 weeks</option>
+                        <option value="4" selected>4 weeks</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer-refined">
+            <button class="btn btn-ghost" onclick="closeModal()" data-i18n="patrol.cancel">CANCEL</button>
+            <button class="btn btn-primary" id="pp-copy-save-btn" onclick="ppSubmitCopy()">
+                <span class="material-symbols-outlined">content_copy</span>
+                <span data-i18n="patrol.copy_btn">COPY</span>
+            </button>
+        </div>
+    </div>
+</template>
+
+<style>
+    .pp-copy-mode-btn {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+    }
+
+    .pp-copy-mode-btn.active {
+        background: var(--primary) !important;
+        color: #fff !important;
+        border-color: var(--primary) !important;
+    }
+</style>

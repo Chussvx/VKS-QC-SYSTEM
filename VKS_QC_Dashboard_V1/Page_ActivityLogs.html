@@ -1,0 +1,378 @@
+<!-- Page_ActivityLogs.html - Admin Activity Log Viewer (Premium) -->
+<div id="page-activity-logs" class="page-content">
+
+    <!-- Header -->
+    <div class="mb-6 flex items-center justify-between">
+        <div>
+            <h2 class="text-2xl font-bold" data-i18n="activity.title">Activity Logs</h2>
+            <p class="text-muted" data-i18n="activity.subtitle">Track all user actions across the system</p>
+        </div>
+        <button class="btn btn-secondary" onclick="exportActivityCSV()">
+            <span class="material-symbols-outlined">download</span>
+            <span data-i18n="activity.export">Export CSV</span>
+        </button>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-3 gap-4 mb-6">
+        <div class="card p-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-blue-100 text-blue-600 rounded-lg">
+                    <span class="material-symbols-outlined">bolt</span>
+                </div>
+                <div>
+                    <p class="text-xs text-muted uppercase font-bold" data-i18n="activity.kpi.today">Actions Today</p>
+                    <p class="text-2xl font-bold" id="activity-kpi-today">0</p>
+                </div>
+            </div>
+        </div>
+        <div class="card p-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
+                    <span class="material-symbols-outlined">group</span>
+                </div>
+                <div>
+                    <p class="text-xs text-muted uppercase font-bold" data-i18n="activity.kpi.users">Active Users Today
+                    </p>
+                    <p class="text-2xl font-bold" id="activity-kpi-users">0</p>
+                </div>
+            </div>
+        </div>
+        <div class="card p-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-purple-100 text-purple-600 rounded-lg">
+                    <span class="material-symbols-outlined">trending_up</span>
+                </div>
+                <div>
+                    <p class="text-xs text-muted uppercase font-bold" data-i18n="activity.kpi.most_active">Most Active
+                    </p>
+                    <p class="text-lg font-bold" id="activity-kpi-active"
+                        style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">—</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters (Premium VKS Dropdowns + Flatpickr Date Range) -->
+    <div class="card mb-4">
+        <div class="p-4 flex items-center gap-4 flex-wrap">
+            <!-- Action Dropdown (VKS Custom) -->
+            <div class="form-group mb-0" style="min-width: 160px;">
+                <label class="form-label text-xs" data-i18n="activity.filter.action">Action</label>
+                <div id="activity-action-dropdown" class="custom-select"></div>
+                <input type="hidden" id="activity-filter-action" value="">
+            </div>
+
+            <!-- Page Dropdown (VKS Custom) -->
+            <div class="form-group mb-0" style="min-width: 170px;">
+                <label class="form-label text-xs" data-i18n="activity.filter.page">Page</label>
+                <div id="activity-page-dropdown" class="custom-select"></div>
+                <input type="hidden" id="activity-filter-page" value="">
+            </div>
+
+            <!-- Date Range (Flatpickr Trigger Button) -->
+            <div class="form-group mb-0" style="min-width: 200px;">
+                <label class="form-label text-xs" data-i18n="activity.filter.date_range">Date Range</label>
+                <button id="activity-date-trigger" class="date-range-picker-btn">
+                    <span class="material-symbols-outlined">calendar_today</span>
+                    <span id="activity-date-label" data-i18n="filter.date_pick">Pick a date</span>
+                </button>
+                <input type="hidden" id="activity-filter-start">
+                <input type="hidden" id="activity-filter-end">
+            </div>
+
+            <!-- Clear Filters -->
+            <div class="form-group mb-0" style="align-self: flex-end;">
+                <button class="btn btn-secondary btn-sm" onclick="clearActivityFilters()">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">filter_alt_off</span>
+                    <span data-i18n="common.clear">Clear</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Log Table -->
+    <div class="card">
+        <!-- Loading -->
+        <div id="activity-loading" class="p-6 text-center text-muted">
+            <span class="material-symbols-outlined animate-spin" style="font-size: 24px;">progress_activity</span>
+            <p class="mt-2 text-sm" data-i18n="common.loading">Loading...</p>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto" id="activity-table-wrapper" style="display: none;">
+            <table class="table w-full">
+                <thead>
+                    <tr>
+                        <th data-i18n="activity.col.time">Timestamp</th>
+                        <th data-i18n="activity.col.user">User</th>
+                        <th data-i18n="activity.col.action">Action</th>
+                        <th data-i18n="activity.col.page">Page</th>
+                        <th data-i18n="activity.col.target">Target</th>
+                        <th data-i18n="activity.col.details">Details</th>
+                    </tr>
+                </thead>
+                <tbody id="activity-table-body">
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Empty -->
+        <div id="activity-empty" class="p-8 text-center text-muted" style="display: none;">
+            <span class="material-symbols-outlined" style="font-size: 48px; opacity: 0.3;">receipt_long</span>
+            <p class="mt-2" data-i18n="activity.empty">No activity found</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    var _activityLogs = [];
+    var _activityDatePicker = null;
+
+    function init_activity_logs() {
+        // Admin check
+        if (typeof SessionManager !== 'undefined' && !SessionManager.isAdmin()) {
+            showToast('Access denied. Admin only.', 'error');
+            navigateTo('dashboard');
+            return;
+        }
+
+        // Initialize VKS premium dropdowns
+        initActivityDropdowns();
+
+        // Initialize date range picker
+        initActivityDateRange();
+
+        // Set default date range to today
+        var today = new Date().toISOString().split('T')[0];
+        document.getElementById('activity-filter-start').value = today;
+        document.getElementById('activity-filter-end').value = today;
+
+        // Set flatpickr to today
+        if (_activityDatePicker) {
+            _activityDatePicker.setDate([today, today]);
+        }
+
+        loadActivityLogs();
+    }
+
+    function initActivityDropdowns() {
+        // Translate helper
+        function t(key, fallback) {
+            if (typeof TranslationManager !== 'undefined' && typeof TranslationManager.t === 'function') {
+                return TranslationManager.t(key) || fallback;
+            }
+            return fallback;
+        }
+
+        // Action dropdown
+        initVKSDropdown({
+            containerId: 'activity-action-dropdown',
+            hiddenInputId: 'activity-filter-action',
+            placeholder: t('activity.filter.all_actions', 'All Actions'),
+            searchable: false,
+            items: [
+                { value: '', label: t('activity.filter.all_actions', 'All Actions') },
+                { value: 'CREATE', label: t('activity.action.create', 'Create') },
+                { value: 'UPDATE', label: t('activity.action.update', 'Update') },
+                { value: 'DELETE', label: t('activity.action.delete', 'Delete') },
+                { value: 'LOGIN', label: t('activity.action.login', 'Login') },
+                { value: 'LOGOUT', label: t('activity.action.logout', 'Logout') },
+                { value: 'GENERATE', label: t('activity.action.generate', 'Generate') },
+                { value: 'PRINT', label: t('activity.action.print', 'Print') },
+                { value: 'EXPORT', label: t('activity.action.export', 'Export') }
+            ],
+            onSelect: function () { loadActivityLogs(); }
+        });
+
+        // Page dropdown
+        initVKSDropdown({
+            containerId: 'activity-page-dropdown',
+            hiddenInputId: 'activity-filter-page',
+            placeholder: t('activity.filter.all_pages', 'All Pages'),
+            searchable: false,
+            items: [
+                { value: '', label: t('activity.filter.all_pages', 'All Pages') },
+                { value: 'Complaints', label: t('nav.complaints', 'Complaints') },
+                { value: 'Incidents', label: t('nav.incidents', 'Incidents') },
+                { value: 'Guards', label: t('nav.guards', 'Guards') },
+                { value: 'Sites', label: t('nav.sites', 'Sites') },
+                { value: 'Reports', label: t('nav.reports', 'Reports') },
+                { value: 'Settings', label: t('nav.settings', 'Settings') },
+                { value: 'User Management', label: t('nav.user_management', 'User Management') },
+                { value: 'System', label: t('nav.system', 'System') }
+            ],
+            onSelect: function () { loadActivityLogs(); }
+        });
+    }
+
+    function initActivityDateRange() {
+        _activityDatePicker = initDateRangePicker(
+            'activity-date-trigger',
+            'activity-date-label',
+            null,
+            function (dates, dateStr) {
+                if (dates.length > 0) {
+                    var d1 = dates[0].toISOString().split('T')[0];
+                    var d2 = dates[1] ? dates[1].toISOString().split('T')[0] : d1;
+
+                    document.getElementById('activity-filter-start').value = d1;
+                    document.getElementById('activity-filter-end').value = d2;
+                } else {
+                    document.getElementById('activity-filter-start').value = '';
+                    document.getElementById('activity-filter-end').value = '';
+                }
+                loadActivityLogs();
+            }
+        );
+    }
+
+    function loadActivityLogs() {
+        var loading = document.getElementById('activity-loading');
+        var tableWrapper = document.getElementById('activity-table-wrapper');
+        var emptyState = document.getElementById('activity-empty');
+
+        if (loading) loading.style.display = '';
+        if (tableWrapper) tableWrapper.style.display = 'none';
+        if (emptyState) emptyState.style.display = 'none';
+
+        var filters = {
+            action: document.getElementById('activity-filter-action').value || '',
+            page: document.getElementById('activity-filter-page').value || '',
+            startDate: document.getElementById('activity-filter-start').value || '',
+            endDate: document.getElementById('activity-filter-end').value || ''
+        };
+
+        var adminId = SessionManager.getUserId();
+        google.script.run
+            .withSuccessHandler(function (result) {
+                if (loading) loading.style.display = 'none';
+
+                if (result && result.success && result.logs.length > 0) {
+                    _activityLogs = result.logs;
+                    renderActivityTable(result.logs);
+                    updateActivityKPIs(result.logs);
+                    if (tableWrapper) tableWrapper.style.display = '';
+                } else {
+                    _activityLogs = [];
+                    if (emptyState) emptyState.style.display = '';
+                    updateActivityKPIs([]);
+                }
+            })
+            .withFailureHandler(function (error) {
+                if (loading) loading.style.display = 'none';
+                if (emptyState) emptyState.style.display = '';
+                showToast('Failed to load activity logs.', 'error');
+            })
+            .getActivityLogs(adminId, filters);
+    }
+
+    function renderActivityTable(logs) {
+        var tbody = document.getElementById('activity-table-body');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        var actionColors = {
+            'CREATE': 'badge-success',
+            'UPDATE': 'badge-info',
+            'DELETE': 'badge-danger',
+            'LOGIN': 'badge-primary',
+            'LOGOUT': 'badge-secondary',
+            'GENERATE': 'badge-purple',
+            'PRINT': 'badge-warning',
+            'EXPORT': 'badge-warning'
+        };
+
+        logs.forEach(function (log) {
+            var ts = new Date(log.timestamp);
+            var timeStr = ts.toLocaleDateString() + ' ' + ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            var badgeClass = actionColors[log.action] || 'badge-secondary';
+
+            var row = document.createElement('tr');
+            row.innerHTML =
+                '<td class="text-sm" style="white-space: nowrap;">' + timeStr + '</td>' +
+                '<td class="text-sm font-medium">' + (log.userName || 'Unknown') + '</td>' +
+                '<td><span class="badge ' + badgeClass + '">' + log.action + '</span></td>' +
+                '<td class="text-sm">' + (log.page || '—') + '</td>' +
+                '<td class="text-sm" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (log.target || '—') + '</td>' +
+                '<td class="text-sm text-muted" style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (log.details || '—') + '</td>';
+            tbody.appendChild(row);
+        });
+    }
+
+    function updateActivityKPIs(logs) {
+        var today = new Date().toISOString().split('T')[0];
+        var todayLogs = logs.filter(function (l) {
+            return l.timestamp && l.timestamp.startsWith(today);
+        });
+
+        document.getElementById('activity-kpi-today').textContent = todayLogs.length;
+
+        // Unique users today
+        var uniqueUsers = {};
+        todayLogs.forEach(function (l) { if (l.userId) uniqueUsers[l.userId] = l.userName; });
+        document.getElementById('activity-kpi-users').textContent = Object.keys(uniqueUsers).length;
+
+        // Most active user
+        var userCounts = {};
+        todayLogs.forEach(function (l) {
+            if (l.userName) {
+                userCounts[l.userName] = (userCounts[l.userName] || 0) + 1;
+            }
+        });
+        var mostActive = '—';
+        var maxCount = 0;
+        for (var name in userCounts) {
+            if (userCounts[name] > maxCount) {
+                maxCount = userCounts[name];
+                mostActive = name;
+            }
+        }
+        document.getElementById('activity-kpi-active').textContent = mostActive;
+    }
+
+    function clearActivityFilters() {
+        // Reset hidden inputs
+        document.getElementById('activity-filter-action').value = '';
+        document.getElementById('activity-filter-page').value = '';
+        document.getElementById('activity-filter-start').value = '';
+        document.getElementById('activity-filter-end').value = '';
+
+        // Reset VKS dropdown displays
+        if (typeof setVKSDropdownValue === 'function') {
+            setVKSDropdownValue('activity-action-dropdown', '');
+            setVKSDropdownValue('activity-page-dropdown', '');
+        }
+
+        // Reset date range picker
+        if (_activityDatePicker) {
+            _activityDatePicker.clear();
+        }
+        var dateLabel = document.getElementById('activity-date-label');
+        if (dateLabel) dateLabel.textContent = typeof t === 'function' ? t('filter.date_pick') : 'Pick a date';
+
+        loadActivityLogs();
+    }
+
+    function exportActivityCSV() {
+        if (!_activityLogs || _activityLogs.length === 0) {
+            showToast('No data to export.', 'warning');
+            return;
+        }
+
+        var csv = 'Timestamp,UserID,UserName,Action,Page,Target,Details\n';
+        _activityLogs.forEach(function (log) {
+            csv += '"' + (log.timestamp || '') + '","' + (log.userId || '') + '","' +
+                (log.userName || '') + '","' + (log.action || '') + '","' +
+                (log.page || '') + '","' + (log.target || '').replace(/"/g, '""') + '","' +
+                (log.details || '').replace(/"/g, '""') + '"\n';
+        });
+
+        var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        var link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'VKS_ActivityLog_' + new Date().toISOString().split('T')[0] + '.csv';
+        link.click();
+        showToast('CSV exported!', 'success');
+    }
+</script>

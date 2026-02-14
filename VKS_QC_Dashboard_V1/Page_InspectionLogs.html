@@ -1,0 +1,1386 @@
+<!-- Page_InspectionLogs.html - QC Inspection Logs -->
+<div id="page-inspection-logs" class="page-content">
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="filter-group">
+            <!-- Search -->
+            <div class="search-input w-52">
+                <span class="material-symbols-outlined">search</span>
+                <input type="text" id="inspection-search" data-i18n-placeholder="header.search_placeholder"
+                    placeholder="Search logs..." onkeyup="filterInspections()">
+            </div>
+
+            <div class="divider-v h-6"></div>
+
+            <!-- Site Filter -->
+            <div class="custom-select w-40" data-select-id="inspection-site" data-onchange="filterInspections">
+                <button class="custom-select-trigger" onclick="toggleSelect('inspection-site')">
+                    <span class="custom-select-value" data-i18n="filter.all_sites">All Sites</span>
+                    <span class="material-symbols-outlined">expand_more</span>
+                </button>
+                <div class="custom-select-menu" id="inspection-site-menu">
+                    <div class="custom-select-item selected" data-value=""
+                        onclick="selectOption('inspection-site', '', t('filter.all_sites'))"><span
+                            data-i18n="filter.all_sites">All Sites</span></div>
+                </div>
+                <input type="hidden" id="inspection-site" name="inspection-site" value="">
+            </div>
+
+            <!-- Route Filter -->
+            <div class="custom-select w-36" data-select-id="inspection-route" data-onchange="filterInspections">
+                <button class="custom-select-trigger" onclick="toggleSelect('inspection-route')">
+                    <span class="custom-select-value" data-i18n="filter.all_routes">All Routes</span>
+                    <span class="material-symbols-outlined">expand_more</span>
+                </button>
+                <div class="custom-select-menu">
+                    <div class="custom-select-item selected" data-value=""
+                        onclick="selectOption('inspection-route', '', t('filter.all_routes'))"><span
+                            data-i18n="filter.all_routes">All Routes</span></div>
+                    <div class="custom-select-item" data-value="A"
+                        onclick="selectOption('inspection-route', 'A', 'Route A')">Route A</div>
+                    <div class="custom-select-item" data-value="B"
+                        onclick="selectOption('inspection-route', 'B', 'Route B')">Route B</div>
+                </div>
+                <input type="hidden" id="inspection-route" name="inspection-route" value="">
+            </div>
+
+            <!-- Inspector Filter -->
+            <div class="custom-select w-44" data-select-id="inspection-inspector" data-onchange="filterInspections">
+                <button class="custom-select-trigger" onclick="toggleSelect('inspection-inspector')">
+                    <span class="custom-select-value" data-i18n="filter.all_inspectors">All Inspectors</span>
+                    <span class="material-symbols-outlined">expand_more</span>
+                </button>
+                <div class="custom-select-menu" id="inspection-inspector-menu">
+                    <div class="custom-select-item selected" data-value=""
+                        onclick="selectOption('inspection-inspector', '', t('filter.all_inspectors'))"><span
+                            data-i18n="filter.all_inspectors">All Inspectors</span></div>
+                </div>
+                <input type="hidden" id="inspection-inspector" name="inspection-inspector" value="">
+            </div>
+
+            <!-- Shift Filter -->
+            <div class="custom-select w-36" data-select-id="inspection-shift" data-onchange="filterInspections">
+                <button class="custom-select-trigger" onclick="toggleSelect('inspection-shift')">
+                    <span class="custom-select-value">All Shifts</span>
+                    <span class="material-symbols-outlined">expand_more</span>
+                </button>
+                <div class="custom-select-menu" id="inspection-shift-menu">
+                    <div class="custom-select-item selected" data-value=""
+                        onclick="selectOption('inspection-shift', '', 'All Shifts')">All Shifts</div>
+                    <div class="custom-select-item" data-value="morning"
+                        onclick="selectOption('inspection-shift', 'morning', '🌅 AM')">🌅 AM</div>
+                    <div class="custom-select-item" data-value="evening"
+                        onclick="selectOption('inspection-shift', 'evening', '🌆 PM')">🌆 PM</div>
+                    <div class="custom-select-item" data-value="night"
+                        onclick="selectOption('inspection-shift', 'night', '🌙 Night')">🌙 Night</div>
+                </div>
+                <input type="hidden" id="inspection-shift" name="inspection-shift" value="">
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3 ml-auto">
+            <!-- Date Range -->
+            <button id="inspection-date-trigger" class="date-range-picker-btn">
+                <span class="material-symbols-outlined">calendar_today</span>
+                <span id="inspection-date-label" data-i18n="filter.date_pick">Pick a date</span>
+            </button>
+            <input type="hidden" id="inspection-start-date">
+            <input type="hidden" id="inspection-end-date">
+        </div>
+    </div>
+    <!-- Inspection Logs Table -->
+    <div class="card p-0 overflow-hidden">
+        <div class="table-container">
+            <table class="data-table" id="inspections-table">
+                <thead>
+                    <tr>
+                        <th data-i18n="table.date_time">Date/Time</th>
+                        <th data-i18n="table.site">Site</th>
+                        <th data-i18n="table.inspector">Inspector</th>
+                        <th data-i18n="table.route">Route</th>
+                        <th data-i18n="table.guard_eval">Guard Evaluated</th>
+                        <th data-i18n="table.score">Score</th>
+                        <th data-i18n="table.status">Status</th>
+                        <th class="text-right"></th>
+                    </tr>
+                </thead>
+                <tbody id="inspections-tbody">
+                    <tr class="skeleton-row">
+                        <td>
+                            <div class="skeleton-text" style="width:85%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:60%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:70%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:50%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:45%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:90%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:55%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:40%"></div>
+                        </td>
+                    </tr>
+                    <tr class="skeleton-row">
+                        <td>
+                            <div class="skeleton-text" style="width:60%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:70%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:50%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:45%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:90%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:55%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:40%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:65%"></div>
+                        </td>
+                    </tr>
+                    <tr class="skeleton-row">
+                        <td>
+                            <div class="skeleton-text" style="width:70%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:50%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:45%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:90%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:55%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:40%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:65%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:85%"></div>
+                        </td>
+                    </tr>
+                    <tr class="skeleton-row">
+                        <td>
+                            <div class="skeleton-text" style="width:50%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:45%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:90%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:55%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:40%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:65%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:85%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:60%"></div>
+                        </td>
+                    </tr>
+                    <tr class="skeleton-row">
+                        <td>
+                            <div class="skeleton-text" style="width:45%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:90%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:55%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:40%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:65%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:85%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:60%"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton-text" style="width:70%"></div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex items-center justify-between mt-4">
+        <p class="text-sm text-muted">
+            <span id="inspection-showing" data-i18n="pagination.showing"
+                data-i18n-params='{"start": 1, "end": 10, "total": 0}'>Showing 1-10 of 0 entries</span>
+        </p>
+        <div class="flex items-center gap-2">
+            <button class="btn btn-secondary btn-sm" id="inspection-prev" onclick="prevInspectionPage()" disabled
+                data-i18n="pagination.prev">Previous</button>
+            <button class="btn btn-secondary btn-sm" id="inspection-next" onclick="nextInspectionPage()"
+                data-i18n="pagination.next">Next</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Inspection Logs page state
+    let inspectionsData = [];
+    let inspectionsFiltered = [];
+    let inspectionPage = 0;
+    const INSPECTIONS_PER_PAGE = 10;
+    let lastInspSignal = 0;
+    let inspSignalPoller = null;
+
+    // Background loading state (invisible to user)
+    let backgroundLoadMonths = 1; // Start after initial 30 days
+    let isBackgroundLoading = false;
+    let backgroundLoadComplete = false;
+
+    // InspectionCache - In-memory cache for faster page revisits (Amazon-style)
+    const InspectionCache = {
+        data: null,
+        timestamp: 0,
+        maxAge: 60000,
+
+        get: function () {
+            if (this.data && (Date.now() - this.timestamp) < this.maxAge) {
+                console.log('[InspectionCache] HIT');
+                return this.data;
+            }
+            return null;
+        },
+
+        set: function (data) {
+            this.data = data;
+            this.timestamp = Date.now();
+            console.log('[InspectionCache] SET');
+        },
+
+        clear: function () {
+            this.data = null;
+            this.timestamp = 0;
+        }
+    };
+
+    // Site coordinate cache for mini-map
+    var _siteCoordCache = null;
+    var _inspMiniMap = null;
+
+    // Shift filter state
+    var _inspShiftFilter = '';          // '' (all) | 'morning' | 'evening' | 'night'
+    var _inspectorShiftMap = {};         // { inspectorName: 'morning'|'evening'|'night' }
+
+    /** Set the active shift filter and re-filter (called by dropdown or deep-link) */
+    function setInspShiftFilter(shift) {
+        _inspShiftFilter = shift || '';
+        filterInspections();
+    }
+
+    // Initialize Inspections page
+    function init_inspection_logs() {
+        console.log('init_inspection_logs called');
+        // Set header actions
+        setHeaderActions(`
+            <button class="btn btn-secondary btn-sm" onclick="openTestPopup()" title="Test Popup UI">
+                <span class="material-symbols-outlined">bug_report</span>
+                <span class="hidden sm:inline">Test UI</span>
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="exportInspections()">
+                <span class="material-symbols-outlined">download</span>
+                <span class="hidden sm:inline" data-i18n="action.export_csv">Export CSV</span>
+            </button>
+        `);
+        // Apply pending filter values IMMEDIATELY (before data loads) to prevent flash
+        if (window._pendingInspectionFilter) {
+            var p = window._pendingInspectionFilter;
+            console.log('[InspShift] Pre-setting pending filters:', p);
+            // Set shift dropdown
+            if (p.shift) {
+                var shiftLabels = { morning: '🌅 AM', evening: '🌆 PM', night: '🌙 Night' };
+                selectOption('inspection-shift', p.shift, shiftLabels[p.shift] || p.shift);
+            }
+            // Set route dropdown
+            if (p.route) {
+                selectOption('inspection-route', p.route, 'Route ' + p.route);
+            }
+            // Set date filter
+            if (p.date) {
+                document.getElementById('inspection-start-date').value = p.date;
+                document.getElementById('inspection-end-date').value = p.date;
+                var label = document.getElementById('inspection-date-label');
+                if (label) label.textContent = p.date;
+            }
+            window._pendingInspectionFilter = null;
+        }
+        loadInspectionFilters();
+        loadInspections();
+        startInspectionSignalListener();
+
+        // Fire-and-forget: preload site coordinates for mini-map
+        if (!_siteCoordCache) {
+            google.script.run
+                .withSuccessHandler(function (data) {
+                    _siteCoordCache = {};
+                    (data || []).forEach(function (s) {
+                        if (s.name && s.lat && s.lng) {
+                            _siteCoordCache[s.name] = { lat: parseFloat(s.lat), lng: parseFloat(s.lng) };
+                        }
+                    });
+                    console.log('[SiteCoords] Cached', Object.keys(_siteCoordCache).length, 'sites');
+                })
+                .withFailureHandler(function (err) {
+                    console.warn('[SiteCoords] Preload failed:', err.message);
+                })
+                .getSiteCoordinates();
+        }
+    }
+
+    // Parse GPS coordinates from a Google Maps URL
+    function parseGpsUrl(url) {
+        if (!url) return null;
+        var m = url.match(/[?&](?:q|query)=([-\d.]+),([-\d.]+)/) ||
+            url.match(/@([-\d.]+),([-\d.]+)/);
+        if (!m) return null;
+        var lat = parseFloat(m[1]), lng = parseFloat(m[2]);
+        if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+        return { lat: lat, lng: lng };
+    }
+
+    // Calculate distance between two lat/lng points (Haversine, returns meters)
+    function calcDistanceM(lat1, lng1, lat2, lng2) {
+        var R = 6371000;
+        var dLat = (lat2 - lat1) * Math.PI / 180;
+        var dLng = (lng2 - lng1) * Math.PI / 180;
+        var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    // Initialize the mini Leaflet map in the inspection popup
+    function initInspectionMiniMap(log) {
+        var container = document.getElementById('insp-mini-map');
+        if (!container) return;
+
+        var detected = parseGpsUrl(log.gps);
+        var registered = _siteCoordCache ? _siteCoordCache[log.siteName] : null;
+
+        // Need at least one point
+        if (!detected && !registered) {
+            container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:12px;">GPS data unavailable</div>';
+            return;
+        }
+
+        // Cleanup previous map instance
+        if (_inspMiniMap) {
+            try { _inspMiniMap.remove(); } catch (e) { }
+            _inspMiniMap = null;
+        }
+
+        var center = detected || registered;
+        _inspMiniMap = L.map(container, {
+            zoomControl: false,
+            attributionControl: false,
+            dragging: false,
+            scrollWheelZoom: false,
+            doubleClickZoom: false,
+            touchZoom: false
+        }).setView([center.lat, center.lng], 16);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }).addTo(_inspMiniMap);
+
+        var bounds = [];
+
+        // Registered site marker (blue)
+        if (registered) {
+            L.circleMarker([registered.lat, registered.lng], {
+                radius: 8, fillColor: '#3b82f6', color: '#fff', weight: 2, fillOpacity: 0.9
+            }).addTo(_inspMiniMap).bindTooltip(t('popup.location.registered') || 'Registered', { permanent: false });
+            bounds.push([registered.lat, registered.lng]);
+        }
+
+        // Detected GPS marker (red/orange)
+        if (detected) {
+            L.circleMarker([detected.lat, detected.lng], {
+                radius: 8, fillColor: '#ef4444', color: '#fff', weight: 2, fillOpacity: 0.9
+            }).addTo(_inspMiniMap).bindTooltip(t('popup.location.detected') || 'Detected', { permanent: false });
+            bounds.push([detected.lat, detected.lng]);
+        }
+
+        // Draw line between if both exist
+        if (registered && detected) {
+            L.polyline([[registered.lat, registered.lng], [detected.lat, detected.lng]], {
+                color: '#94a3b8', weight: 2, dashArray: '6,4', opacity: 0.7
+            }).addTo(_inspMiniMap);
+        }
+
+        // Fit bounds if 2 points
+        if (bounds.length === 2) {
+            _inspMiniMap.fitBounds(bounds, { padding: [30, 30], maxZoom: 17 });
+        }
+
+        // Update distance text
+        var distEl = document.getElementById('insp-map-distance');
+        if (distEl && registered && detected) {
+            var dist = calcDistanceM(registered.lat, registered.lng, detected.lat, detected.lng);
+            var distText = dist < 1000 ? Math.round(dist) + 'm' : (dist / 1000).toFixed(1) + 'km';
+            var isClose = dist < 100;
+            distEl.innerHTML = '<span class="material-symbols-outlined" style="font-size:14px;vertical-align:-2px;">' + (isClose ? 'check_circle' : 'warning') + '</span> ' + distText;
+            distEl.style.color = isClose ? 'var(--success)' : 'var(--warning)';
+        }
+    }
+
+    // Navigate to Inspector Routes with pre-applied filters
+    function viewInspectionRoute(inspectorName, dateStr) {
+        closeModal();
+        window._pendingRouteView = {
+            inspector: inspectorName,
+            date: dateStr
+        };
+        setTimeout(function () {
+            navigateTo('inspector-routes');
+        }, 350);
+    }
+
+    function openTestPopup() {
+        console.log("Opening Test Popup...");
+        try {
+            const mockLog = {
+                timestamp: new Date().toISOString(),
+                siteName: "TEST SITE (UI VERIFICATION)",
+                guardName: "Mr. Test Guard",
+                shift: "Shift 1 (Permanent)",
+                patrolName: "Test Inspector",
+                score: 1.5,
+                status: "has_issues",
+                issues: "ເຄື່ອງແບບບໍ່ຄົບ: ໝວກ | ອຸປະກອນປ້ອງກັນບໍ່ຄົບ: ກຸນແຈມື | 😴 ນອນຫຼັບ (ເຫດຜົນ: ບໍ່ສະບາຍ) | ❌ ບໍ່ຢູ່ຈຸດ (ເຫດຜົນ: ໄປຫ້ອງນ້ຳ) | ກ້ອງວົງຈອນປິດບໍ່ປົກກະຕິ",
+                checks: {
+                    uniform: "No",
+                    defenseTools: "No",
+                    flashlight: "Yes",
+                    logbook: "Yes",
+                    sleeping: "Yes",
+                    position: "No",
+                    gates: "Ok",
+                    lighting: "Ok",
+                    fireSafety: "Ok",
+                    cameraGood: "Issue"
+                },
+                notes: "[Ratings | Comm: 2/5, Unif: 1/5] Testing all failure conditions.",
+                handoverComment: "Test handover comment.",
+                images: [], // Kept for backward compatibility
+                photos: [
+                    "https://placehold.co/600x400/png?text=Photo+1",
+                    "https://placehold.co/600x400/png?text=Photo+2",
+                    "https://placehold.co/600x400/png?text=Photo+3",
+                    "https://placehold.co/600x400/png?text=Photo+4",
+                    "https://placehold.co/600x400/png?text=Photo+5"
+                ] // 5 Sample images for UI layout testing
+            };
+            openInspectionDetail(mockLog);
+        } catch (e) {
+            console.error("Test Popup Failed:", e);
+            alert("Test Popup Error: " + e.message);
+        }
+    }
+
+    /**
+     * Polling Signal Listener (Inspection Logs)
+     * Checks for LAST_INSPECTION_SIGNAL every 10 seconds.
+     */
+    function startInspectionSignalListener() {
+        if (inspSignalPoller) clearInterval(inspSignalPoller);
+
+        inspSignalPoller = setInterval(() => {
+            if (currentPage !== 'inspection-logs') return;
+
+            google.script.run
+                .withSuccessHandler(function (signals) {
+                    if (signals && signals.lastInspection > lastInspSignal) {
+                        console.log('[Signal] New inspection logs synced! Refreshing...', signals.lastInspection);
+
+                        if (lastInspSignal === 0) {
+                            lastInspSignal = signals.lastInspection;
+                            return;
+                        }
+
+                        lastInspSignal = signals.lastInspection;
+                        loadInspections();
+                    }
+                })
+                .getUpdateSignals();
+        }, 10000); // Check every 10 seconds
+    }
+
+
+
+    // Load filter options (populate custom dropdowns)
+    function loadInspectionFilters() {
+        // Load site options into custom dropdown
+        google.script.run
+            .withSuccessHandler(function (options) {
+                // Create lookup map for filters (ID -> Name)
+                window.siteIdToNameMap = {};
+                options.forEach(opt => {
+                    if (opt.value) window.siteIdToNameMap[opt.value] = opt.label;
+                });
+                console.log('Site ID Map loaded:', window.siteIdToNameMap);
+
+                const menu = document.getElementById('inspection-site-menu');
+                if (menu) {
+                    let html = '<div class="custom-select-item selected" data-value="" onclick="selectOption(\'inspection-site\', \'\', \'All Sites\')">All Sites</div>';
+                    options.forEach(opt => {
+                        html += `<div class="custom-select-item" data-value="${opt.value}" onclick="selectOption('inspection-site', '${opt.value}', this)">${escapeHtml(opt.label)}</div>`;
+                    });
+                    menu.innerHTML = html;
+                }
+            })
+            .getSiteOptions();
+
+        // Load inspector options (patrol names from Inspectors sheet)
+        google.script.run
+            .withSuccessHandler(function (options) {
+                // Build inspector→shift map for shift filtering
+                _inspectorShiftMap = {};
+                (options || []).forEach(function (opt) {
+                    if (opt.value && opt.shift) {
+                        _inspectorShiftMap[opt.value] = opt.shift;
+                    }
+                });
+                console.log('[InspShift] Map built:', Object.keys(_inspectorShiftMap).length, 'inspectors');
+
+                const menu = document.getElementById('inspection-inspector-menu');
+                if (menu) {
+                    let html = '<div class="custom-select-item selected" data-value="" onclick="selectOption(\'inspection-inspector\', \'\', \'All Inspectors\')">All Inspectors</div>';
+                    options.forEach(opt => {
+                        html += `<div class="custom-select-item" data-value="${opt.value}" onclick="selectOption('inspection-inspector', '${opt.value}', '${escapeHtml(opt.label)}')">${escapeHtml(opt.label)}</div>`;
+                    });
+                    menu.innerHTML = html;
+                }
+            })
+            .getPatrolNameOptions();
+    }
+
+    // Load inspections from backend (initial load = last 30 days)
+    function loadInspections() {
+        console.log('loadInspections() called - initial load');
+
+        // Check cache first (Amazon-style instant loading)
+        const cached = InspectionCache.get();
+        if (cached && cached.length > 0) {
+            console.log('[InspectionCache] Using cached data:', cached.length, 'items');
+            inspectionsData = cached;
+            inspectionPage = 0;
+            filterInspections();
+            return;
+        }
+
+        // Reset background loading state for fresh load
+        backgroundLoadMonths = 1;
+        isBackgroundLoading = false;
+        backgroundLoadComplete = false;
+
+        // Only show full loading spinner if we have no data
+        if (!inspectionsData || inspectionsData.length === 0) {
+            showTableLoading('inspections-tbody', 8);
+        }
+
+        google.script.run
+            .withSuccessHandler(function (response) {
+                console.log('getInspectionLogs initial response length:', response ? response.length : 0);
+
+                let data = [];
+                try {
+                    data = (typeof response === 'string') ? JSON.parse(response) : (response || []);
+                } catch (e) {
+                    console.error('Failed to parse inspection logs:', e);
+                    data = [];
+                }
+
+                console.log('[Initial Load] Parsed items:', data.length, '(last 30 days)');
+                inspectionsData = data;
+                InspectionCache.set(data); // Cache for next time
+                inspectionPage = 0;
+                filterInspections();
+
+                // Start invisible background loading after 2 seconds
+                setTimeout(loadNextBatch, 2000);
+            })
+            .withFailureHandler(function (error) {
+                console.error('getInspectionLogs failed:', error);
+                showTableError('inspections-tbody', 8, 'Failed to load: ' + error.message);
+            })
+            .getInspectionLogs({});
+    }
+
+    // Invisible background batch loading (user doesn't see this)
+    function loadNextBatch() {
+        if (backgroundLoadComplete || isBackgroundLoading) return;
+        if (currentPage !== 'inspection-logs') return; // Stop if user left page
+
+        isBackgroundLoading = true;
+
+        // Calculate date range for this batch (30-day chunks going backwards)
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() - (backgroundLoadMonths * 30));
+
+        const startDate = new Date(endDate);
+        startDate.setDate(startDate.getDate() - 30);
+
+        console.log('[Background] Loading batch', backgroundLoadMonths, ':',
+            startDate.toLocaleDateString(), 'to', endDate.toLocaleDateString());
+
+        google.script.run
+            .withSuccessHandler(function (response) {
+                isBackgroundLoading = false;
+
+                let batchData = [];
+                try {
+                    batchData = (typeof response === 'string') ? JSON.parse(response) : (response || []);
+                } catch (e) {
+                    batchData = [];
+                }
+
+                console.log('[Background] Batch', backgroundLoadMonths, 'returned', batchData.length, 'items');
+
+                if (batchData.length === 0) {
+                    // No more data - we've loaded everything
+                    backgroundLoadComplete = true;
+                    console.log('[Background] Complete! Total loaded:', inspectionsData.length);
+                    return;
+                }
+
+                // Merge new data, avoiding duplicates
+                const existingIds = new Set(inspectionsData.map(d => d.id));
+                const newItems = batchData.filter(d => !existingIds.has(d.id));
+
+                if (newItems.length > 0) {
+                    inspectionsData = [...inspectionsData, ...newItems];
+                    // Re-sort by timestamp (newest first)
+                    inspectionsData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+                    // Re-apply current filters
+                    filterInspections();
+
+                    console.log('[Background] Added', newItems.length, 'new items. Total:', inspectionsData.length);
+                }
+
+                // Move to next batch after 2 seconds
+                backgroundLoadMonths++;
+                setTimeout(loadNextBatch, 2000);
+            })
+            .withFailureHandler(function (error) {
+                isBackgroundLoading = false;
+                console.warn('[Background] Batch failed:', error.message);
+                // Retry after 5 seconds on failure
+                setTimeout(loadNextBatch, 5000);
+            })
+            .getInspectionLogs({
+                batchStartDate: startDate.toISOString(),
+                batchEndDate: endDate.toISOString()
+            });
+    }
+
+    // Filter inspections
+    function filterInspections() {
+        const search = document.getElementById('inspection-search').value.toLowerCase();
+        const site = document.getElementById('inspection-site').value;
+        const route = document.getElementById('inspection-route').value;
+        const inspector = document.getElementById('inspection-inspector').value;
+
+        const startDate = document.getElementById('inspection-start-date').value;
+        const endDate = document.getElementById('inspection-end-date').value;
+
+        // Debug Log
+        console.log('Filtering:', { site: site, route: route, inspector: inspector, dates: [startDate, endDate] });
+
+        // Resolve Site ID to Name (if applicable) because Logs only have Site Name
+        let filterSiteName = site;
+        if (site && window.siteIdToNameMap && window.siteIdToNameMap[site]) {
+            filterSiteName = window.siteIdToNameMap[site];
+            console.log('Resolved Site ID', site, 'to Name:', filterSiteName);
+        }
+
+        inspectionsFiltered = inspectionsData.filter(log => {
+            const matchSearch = !search ||
+                (log.siteName && log.siteName.toLowerCase().includes(search)) ||
+                (log.inspectorName && log.inspectorName.toLowerCase().includes(search)) ||
+                (log.guardName && log.guardName.toLowerCase().includes(search));
+
+            // Site Filter: Match against Site Name (resolved from ID) OR ID directly (fallback)
+            const matchSite = !site ||
+                log.siteName === filterSiteName ||
+                log.siteId === site; // Fallback if log actually has ID
+
+            // Route Filter: Case-insensitive matching, handles 'A', 'Route A', 'route a' etc.
+            const matchRoute = !route || (function () {
+                const logRoute = (log.route || '').toString().toUpperCase().trim();
+                const filterRoute = route.toUpperCase().trim();
+                // Match exact or if log contains the filter value (e.g., 'Route A' contains 'A')
+                return logRoute === filterRoute || logRoute.includes(filterRoute) || filterRoute.includes(logRoute);
+            })();
+
+            // Inspector Filter: Match against inspectorName (which comes from backend)
+            // Backend returns 'inspectorName', but dropdown uses Name as value.
+            const matchInspector = !inspector ||
+                log.inspectorName === inspector ||
+                log.patrolName === inspector; // Fallback
+
+            // Date Filter — use localDate (Asia/Vientiane) to avoid UTC offset issues
+            let matchDate = true;
+            if (startDate) {
+                if (!log.localDate) {
+                    matchDate = false;
+                } else {
+                    const logDate = log.localDate; // Already 'yyyy-MM-dd' in local timezone
+                    const start = startDate;
+                    const end = endDate || startDate;
+                    matchDate = logDate >= start && logDate <= end;
+                }
+            }
+
+            if (!matchSite || !matchInspector) {
+                // console.log('Row filtered out:', { id: log.id, site: matchSite, insp: matchInspector });
+            }
+
+            // Shift filter: match inspector's assigned shift from Inspectors sheet
+            const shiftFilter = document.getElementById('inspection-shift').value;
+            const matchShift = !shiftFilter ||
+                _inspectorShiftMap[log.inspectorName] === shiftFilter;
+
+            return matchSearch && matchSite && matchRoute && matchInspector && matchDate && matchShift;
+        });
+
+        console.log('Filtered Results:', inspectionsFiltered.length);
+
+        inspectionPage = 0;
+        renderInspectionsTable();
+        updateInspectionPagination();
+    }
+
+    // Update pagination display
+    function updateInspectionPagination() {
+        const total = inspectionsFiltered.length;
+        const start = total === 0 ? 0 : inspectionPage * INSPECTIONS_PER_PAGE + 1;
+        const end = Math.min((inspectionPage + 1) * INSPECTIONS_PER_PAGE, total);
+
+        // Update with translation support
+        const showingEl = document.getElementById('inspection-showing');
+        if (showingEl) {
+            showingEl.textContent = t('pagination.showing', { start, end, total });
+            // Store params for language switch updates if needed, though active page re-render handles it usually
+        }
+
+        document.getElementById('inspection-prev').disabled = inspectionPage === 0;
+        document.getElementById('inspection-next').disabled = end >= total;
+    }
+
+    // Page navigation
+    function prevInspectionPage() {
+        if (inspectionPage > 0) {
+            inspectionPage--;
+            renderInspectionsTable();
+            updateInspectionPagination();
+        }
+    }
+
+    function nextInspectionPage() {
+        if ((inspectionPage + 1) * INSPECTIONS_PER_PAGE < inspectionsFiltered.length) {
+            inspectionPage++;
+            renderInspectionsTable();
+            updateInspectionPagination();
+        }
+    }
+
+    // Render inspections table
+    function renderInspectionsTable() {
+        const tbody = document.getElementById('inspections-tbody');
+        const start = inspectionPage * INSPECTIONS_PER_PAGE;
+        const pageData = inspectionsFiltered.slice(start, start + INSPECTIONS_PER_PAGE);
+
+        if (pageData.length === 0) {
+            tbody.innerHTML = `
+      <tr>
+        <td colspan="8" class="text-center py-8 text-muted">
+          <span class="material-symbols-outlined text-5xl mb-2">fact_check</span>
+          <p>No inspection logs found</p>
+        </td>
+      </tr>
+    `;
+            return;
+        }
+
+        DiffRenderer.render(tbody, pageData, {
+            keyFn: log => log.id,
+            renderFn: log => `
+    <tr class="clickable-row" onclick="openInspectionDetail('${log.id}')">
+      <td>
+        <div>
+          <p class="font-medium">${log.dateDisplay}</p>
+          <p class="text-xs text-muted">${log.timeDisplay}</p>
+        </div>
+      </td>
+        <td>
+          <div class="flex items-center gap-3">
+            <span class="text-2xl" title="${escapeHtml(log.siteType)}">${getSiteTypeIcon(log.siteType)}</span>
+            <span class="font-medium">${escapeHtml(log.siteName)}</span>
+          </div>
+        </td>
+      <td>
+        <div class="flex items-center gap-2">
+          <div class="avatar avatar-xs" style="background-color: ${getAvatarColor(log.inspectorName || 'Unknown')}">
+            ${getInitials(log.inspectorName || '?')}
+          </div>
+          <span>${escapeHtml(log.inspectorName || 'Unknown')}</span>
+        </div>
+      </td>
+      <td>
+        <span class="route-badge route-${(log.route || 'a').toLowerCase()}">${log.route || '-'}</span>
+      </td>
+      <td>${escapeHtml(log.guardName || '-')}</td>
+      <td>
+        <div class="flex items-center gap-2">
+          <span class="font-semibold">${log.score || '-'}</span>
+          ${renderStars(log.score)}
+        </div>
+      </td>
+      <td>${getInspectionStatusBadge(log.status)}</td>
+      <td class="text-right">
+        <span class="material-symbols-outlined text-muted">chevron_right</span>
+      </td>
+    </tr>
+  `,
+            onUpdate: (el, item, changed) => {
+                if (changed) {
+                    el.classList.add('row-update-flash');
+                    setTimeout(() => el.classList.remove('row-update-flash'), 2000);
+                }
+            }
+        });
+    }
+
+    // Render star rating
+    function renderStars(score) {
+        if (!score) return '';
+        const fullStars = Math.floor(score);
+        const hasHalf = score % 1 >= 0.5;
+        let html = '<div class="star-rating">';
+
+        for (let i = 0; i < 5; i++) {
+            if (i < fullStars) {
+                html += '<span class="material-symbols-outlined fill star">star</span>';
+            } else if (i === fullStars && hasHalf) {
+                html += '<span class="material-symbols-outlined fill star">star_half</span>';
+            } else {
+                html += '<span class="material-symbols-outlined star-empty">star</span>';
+            }
+        }
+
+        return html + '</div>';
+    }
+
+    // Get inspection status badge
+    function getInspectionStatusBadge(status) {
+        const badges = {
+            'normal': '<span class="badge badge-success"><span class="status-dot bg-success"></span>Normal</span>',
+            'has_issues': '<span class="badge badge-danger"><span class="status-dot bg-danger"></span>Has Issues</span>',
+            'pending': '<span class="badge badge-warning"><span class="status-dot bg-warning"></span>Pending</span>'
+        };
+        return badges[status] || badges['normal'];
+    }
+
+    // Open inspection detail modal (V2 PORT)
+    // Open inspection detail modal (V2 PORT)
+    function openInspectionDetail(logOrId) {
+        // Support both ID lookup and direct object injection (for Test UI)
+        let log;
+        if (typeof logOrId === 'object') {
+            log = logOrId;
+        } else {
+            log = inspectionsData.find(l => l.id === logOrId);
+        }
+
+        if (!log) {
+            console.error("openInspectionDetail: Log not found for", logOrId);
+            return;
+        }
+
+        // 1. Populate Header (Standard Fields)
+        openModal('inspection-detail');
+        document.getElementById('insp-header-site').textContent = log.siteName || 'Unknown Site';
+        document.getElementById('insp-header-route').textContent = log.route || 'No Route';
+        document.getElementById('insp-header-inspector').textContent = log.inspectorName;
+
+        // 2. Phase 2: Enhanced Header with Time Range & Duration
+        const dateEl = document.getElementById('insp-header-date');
+        if (dateEl) {
+            const timeInfo = log.timeRange ? `${log.timeRange} (${log.duration || '0 min'})` : log.timeDisplay;
+            dateEl.innerHTML = `${log.dateDisplay} <span class="text-gray-300 mx-2">•</span> <span class="text-gray-500 font-medium">${timeInfo}</span>`;
+        }
+
+        // 3. Header Status Badge - Check for ACTUAL issues
+        const issuesText = (log.issues || '').toString().toLowerCase().trim();
+        const noIssuesPhrases = ['ບໍ່ມີບັນຫາ', 'no issue', 'none', 'normal', 'ok', '-', ''];
+        const hasRealIssues = log.status === 'has_issues' ||
+            (issuesText.length > 2 && !noIssuesPhrases.some(phrase => issuesText === phrase || issuesText.includes('ບໍ່ມີ')));
+
+        let statusBadge = '<span class="flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-600 text-xs font-semibold rounded"><span class="material-symbols-outlined text-sm">check_circle</span> Normal</span>';
+        if (hasRealIssues) {
+            statusBadge = '<span class="flex items-center gap-1 px-2 py-0.5 bg-red-50 text-red-600 text-xs font-semibold rounded"><span class="material-symbols-outlined text-sm">warning</span> Issue Found</span>';
+        }
+        document.getElementById('insp-header-badge').innerHTML = statusBadge;
+
+        // --- DATA PREPARATION ---
+
+        // 1. Shift Parsing
+        let shiftName = log.shift || '-';
+        let shiftType = 'Normal';
+        if (shiftName.includes('(')) {
+            const parts = shiftName.match(/(.*?)\s*\((.*?)\)/);
+            if (parts && parts.length >= 3) {
+                shiftName = parts[1];
+                shiftType = parts[2];
+            }
+        }
+
+        // 2. Ratings Parsing
+        let commRating = 0;
+        let unifRating = 0;
+        let notesDisplay = log.notes || '';
+        const ratingMatch = notesDisplay.match(/\[Ratings\s*\|\s*Comm:\s*(\d+)\/5,\s*Unif:\s*(\d+)\/5\]/i);
+        if (ratingMatch) {
+            commRating = parseInt(ratingMatch[1]) || 0;
+            unifRating = parseInt(ratingMatch[2]) || 0;
+            notesDisplay = notesDisplay.replace(ratingMatch[0], '').trim();
+        }
+
+        // 3. Helper Functions for rendering
+        function getCheckLogic(label, val) {
+            var valStr = (val || '').toString().toLowerCase().trim();
+            var labelLower = label.toLowerCase();
+
+            // Negative questions: "Yes" = BAD (e.g., "Was guard sleeping?" Yes = Bad)
+            var negativeQuestions = ['sleeping', 'phone', 'phone usage', 'intoxicated', 'drinking'];
+            var isNegativeQ = negativeQuestions.some(function (q) { return labelLower.includes(q); });
+
+            // "No news is good news" questions - empty/undefined = PASS
+            // These are issues that only get logged when there's a problem
+            var noNewsIsGoodNews = ['sleeping', 'position'];
+            var isNoNewsGoodNews = noNewsIsGoodNews.some(function (q) { return labelLower.includes(q); });
+
+            var isPassed = false;
+
+            // Handle empty values first
+            if (!valStr || valStr === '') {
+                if (isNoNewsGoodNews) {
+                    return true; // No data = no problem found for these special cases
+                }
+                return false; // For other questions, empty = fail
+            }
+
+            if (isNegativeQ) {
+                // For negative questions like "Sleeping":
+                // - "No" = PASS (guard was NOT sleeping)
+                // - "Yes" = FAIL (guard WAS sleeping - bad!)
+                isPassed = ['no', 'none', 'non', 'bhomee', 'ບໍ່ມີ', 'normal', 'ບໍ່ນອນ'].includes(valStr);
+            } else {
+                // For positive questions like "Uniform", "Position":
+                // - "Yes" = PASS
+                // - "No" = FAIL
+                isPassed = ['yes', 'ok', '✓', 'normal', 'good', 'mitmai', 'ມີ', 'complete', 'porkkati', 'pakati', 'ປົກກະຕິ'].includes(valStr);
+            }
+            return isPassed;
+        }
+
+
+        const getCheckRow = (label, val) => {
+            const isPassed = getCheckLogic(label, val);
+            const icon = isPassed ? 'check_circle' : 'cancel';
+            const colorClass = isPassed ? 'text-vks-primary' : 'text-vks-danger';
+            return `
+            <div class="flex justify-between items-center py-2 border-b border-gray-50 last:border-0">
+                <span class="text-sm text-gray-600">${label}</span>
+                <span class="material-symbols-outlined ${colorClass}" style="font-size: 20px;">${icon}</span>
+            </div>`;
+        };
+
+        function getSecurityIconClass(val) {
+            if (!val) return 'text-gray-300';
+            var isPassed = ['yes', 'ok', '✓', 'normal', 'good', 'open', 'closed', 'lock', 'locked', 'mitmai', 'complete', 'porkkati', 'ປົກກະຕິ', 'ມີ'].includes(val.toString().toLowerCase());
+            return isPassed ? 'text-vks-primary' : 'text-vks-danger';
+        }
+
+
+        // 4. Calculate Pass Rate
+        const checks = log.checks || {};
+        const allCheckItems = [
+            { l: 'Uniform', v: checks.uniform },
+            { l: 'Defense', v: checks.defenseTools },
+            { l: 'Flashlight', v: checks.flashlight },
+            { l: 'Logbook', v: checks.logbook },
+            { l: 'Sleeping', v: checks.sleeping },
+            { l: 'Position', v: checks.position },
+            { l: 'Gates', v: checks.gates },
+            { l: 'Lighting', v: checks.lighting },
+            { l: 'Fire', v: checks.fireSafety }
+        ].filter(item => item.v !== undefined && item.v !== '');
+
+        let passCount = 0;
+        allCheckItems.forEach(item => { if (getCheckLogic(item.l, item.v)) passCount++; });
+        const passRate = allCheckItems.length > 0 ? Math.round((passCount / allCheckItems.length) * 100) : 0;
+        const failCount = allCheckItems.length - passCount;
+        const passColor = passRate === 100 ? 'text-vks-primary' : (passRate >= 80 ? 'text-vks-warning' : 'text-vks-danger');
+
+        // --- COMPONENT STRINGS ---
+
+        // A. Guard Profile Card
+        const guardCardHtml = `
+        <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-6 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
+                    <span class="material-symbols-outlined text-3xl">person</span>
+                </div>
+                <div>
+                    <div class="text-xs font-bold text-gray-400 uppercase mb-1">${t('popup.guard_evaluated')}</div>
+                    <h3 class="text-lg font-bold text-gray-900">${escapeHtml(log.guardName)}</h3>
+                    <div class="text-sm text-gray-500">ID: #${getInitials(log.guardName)}-${shiftName.replace('Shift ', '')}</div>
+                    <div class="mt-1 flex gap-2">
+                         <span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded border border-gray-200">${shiftType}</span>
+                         <span class="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-medium rounded border border-blue-200">${shiftName}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-8 border-l border-gray-100 pl-8">
+                <div class="text-center">
+                    <div class="text-xs font-bold text-gray-400 uppercase mb-1">${t('popup.score')}</div>
+                    <div class="text-2xl font-bold text-gray-900">${log.score ? log.score.toFixed(1) : '0.0'}</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-xs font-bold text-gray-400 uppercase mb-1">${t('popup.checks')}</div>
+                    <div class="text-2xl font-bold ${passColor}">${passRate}%</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-xs font-bold text-gray-400 uppercase mb-1">${t('popup.incidents')}</div>
+                    <div class="text-2xl font-bold text-gray-900">${failCount}</div>
+                </div>
+            </div>
+        </div>`;
+
+        // B. Equipment & Discipline (with Issue Parsing)
+        const issueList = (log.issues || '').split('|').map(s => s.trim());
+        const getIssueDetail = (categoryKeywords) => {
+            const match = issueList.find(issue => categoryKeywords.some(k => issue.toLowerCase().includes(k.toLowerCase())));
+            if (!match) return '';
+            // Extract the part after the colon or parenthesis if it exists
+            const detail = match.includes(':') ? match.split(':')[1].trim() : (match.includes('(') ? (match.match(/\((.*?)\)/)?.[1] || match) : match);
+            return detail ? `<div class="text-[10px] text-red-500 font-medium mt-0.5 leading-tight">${detail}</div>` : '';
+        };
+
+        const getEnhancedCheckRow = (label, val, keywords, logicKey) => {
+            const isPassed = getCheckLogic(logicKey || label, val);
+            const icon = isPassed ? 'check_circle' : 'cancel';
+            const colorClass = isPassed ? 'text-vks-primary' : 'text-vks-danger';
+            const detail = !isPassed ? getIssueDetail(keywords || [label]) : '';
+            return `
+            <div class="flex justify-between items-center py-2 border-b border-gray-50 last:border-0">
+                <div class="flex flex-col">
+                    <span class="text-sm text-gray-600">${label}</span>
+                    ${detail}
+                </div>
+                <span class="material-symbols-outlined ${colorClass}" style="font-size: 20px;">${icon}</span>
+            </div>`;
+        };
+
+        const equipmentHtml = `
+        <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+            <div class="flex items-center gap-2 mb-4">
+                <span class="material-symbols-outlined text-blue-500">inventory_2</span>
+                <h4 class="font-bold text-gray-800 uppercase text-sm">${t('popup.equipment_check')}</h4>
+            </div>
+            ${getEnhancedCheckRow(t('popup.item.uniform'), checks.uniform, ['ເຄື່ອງແບບ', 'uniform'], 'Uniform')}${getEnhancedCheckRow(t('popup.item.defense'), checks.defenseTools, ['ອຸປະກອນປ້ອງກັນ', 'defense'], 'Defense Gear')}${getEnhancedCheckRow(t('popup.item.flashlight'), checks.flashlight, ['flashlight', 'ໄຟສາຍ'], 'Flashlight')}${getEnhancedCheckRow(t('popup.item.logbook'), checks.logbook, ['logbook', 'ປຶ້ມບັນທຶກ'], 'Logbook')}
+        </div>`;
+
+        const disciplineHtml = `
+        <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+            <div class="flex items-center gap-2 mb-4">
+                <span class="material-symbols-outlined text-purple-500">psychology</span>
+                <h4 class="font-bold text-gray-800 uppercase text-sm">${t('popup.discipline_check')}</h4>
+            </div>
+            ${getEnhancedCheckRow(t('popup.item.sleeping'), checks.sleeping, ['ນອນຫຼັບ', 'sleeping'], 'Sleeping')}${getEnhancedCheckRow(t('popup.item.position'), checks.position, ['ບໍ່ຢູ່ຈຸດ', 'position'], 'Proper Position')}
+        </div>`;
+
+        // C. Security Check (GPS map moved to Location Verification card below)
+        // Map button removed from here — replaced by inline mini-map
+
+        const securityHtml = `
+        <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+            <div class="flex items-center gap-2 mb-4">
+                <span class="material-symbols-outlined text-orange-500">security</span>
+                <h4 class="font-bold text-gray-800 uppercase text-sm">${t('popup.security_check')}</h4>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="p-3 bg-gray-50 rounded-lg text-center border border-gray-100">
+                    <span class="material-symbols-outlined ${getSecurityIconClass(checks.fireSafety)} mb-1">fire_extinguisher</span>
+                    <div class="text-xs font-medium text-gray-600">${t('popup.item.fire')}</div>
+                </div>
+                <div class="p-3 bg-gray-50 rounded-lg text-center border border-gray-100">
+                    <span class="material-symbols-outlined ${getSecurityIconClass(checks.cctv || 'ok')} mb-1">videocam</span>
+                    <div class="text-xs font-medium text-gray-600">${t('popup.item.cctv')}</div>
+                </div>
+                <div class="p-3 bg-gray-50 rounded-lg text-center border border-gray-100">
+                    <span class="material-symbols-outlined ${getSecurityIconClass(checks.gates)} mb-1">door_front</span>
+                    <div class="text-xs font-medium text-gray-600">${t('popup.item.exits')}</div>
+                </div>
+                <div class="p-3 bg-gray-50 rounded-lg text-center border border-gray-100">
+                    <span class="material-symbols-outlined ${getSecurityIconClass(checks.lighting)} mb-1">lightbulb</span>
+                    <div class="text-xs font-medium text-gray-600">${t('popup.item.lighting')}</div>
+                </div>
+            </div>
+        </div>`;
+
+        // Helper for Google Drive Thumbnails (Fast Loading)
+        function getThumbnailUrl(url, size) {
+            size = size || 400;
+            if (!url) return '';
+            var match = url.match(/[-\w]{25,}/);
+            if (match) return 'https://lh3.googleusercontent.com/d/' + match[0] + '=s' + size;
+            return url;
+        }
+
+
+
+        // C.1. Issues List (Raw Details)
+        let issuesHtml = '';
+        if (log.issues && log.issues !== 'ບໍ່ມີບັນຫາ') {
+            const issuesList = log.issues.split('|').filter(i => i.trim());
+            if (issuesList.length > 0) {
+                issuesHtml = `
+                <div class="mt-6 bg-red-50/50 p-5 rounded-xl border border-red-100">
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="material-symbols-outlined text-red-500" style="font-size: 20px;">report_problem</span>
+                        <h4 class="font-bold text-red-800 uppercase text-xs tracking-wider">${t('popup.incidents')}</h4>
+                    </div>
+                    <div class="space-y-2">
+                        ${issuesList.map(issue => `
+                            <div class="flex items-start gap-2 text-sm text-red-900 leading-relaxed">
+                                <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0"></span>
+                                <div>${escapeHtml(issue.trim())}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>`;
+            }
+        }
+
+        let handoverHtml = '';
+        if (log.handoverComment) {
+            handoverHtml = `
+            <div class="mt-6 bg-blue-50/50 p-5 rounded-xl border border-blue-100 italic">
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="material-symbols-outlined text-blue-500" style="font-size: 20px;">chat_bubble</span>
+                    <h4 class="font-bold text-blue-800 uppercase text-xs tracking-wider">${t('popup.handover_comment')}</h4>
+                </div>
+                <p class="text-sm text-blue-900 leading-relaxed">${escapeHtml(log.handoverComment)}</p>
+            </div>`;
+        }
+
+        // D. Ratings & Photos
+        const ratingsHtml = `
+        <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+            <h4 class="font-bold text-gray-800 uppercase text-sm mb-4">${t('popup.inspector_ratings')}</h4>
+            <div class="mb-4">
+                <div class="flex justify-between text-sm font-medium mb-1"><span>${t('popup.item.communication')}</span><span>${commRating}/5</span></div>
+                <div class="w-full bg-gray-100 rounded-full h-2.5"><div class="bg-vks-primary h-2.5 rounded-full" style="width: ${(commRating / 5) * 100}%"></div></div>
+            </div>
+            <div>
+                <div class="flex justify-between text-sm font-medium mb-1"><span>${t('popup.item.appearance')}</span><span>${unifRating}/5</span></div>
+                <div class="w-full bg-gray-100 rounded-full h-2.5"><div class="bg-vks-primary h-2.5 rounded-full" style="width: ${(unifRating / 5) * 100}%"></div></div>
+            </div>
+        </div>`;
+
+        let photoGridHtml = '';
+        if (log.photos && log.photos.length > 0) {
+            photoGridHtml = log.photos.map(function (url, idx) {
+                const thumbUrl = getThumbnailUrl(url);
+                // Use data attribute to store URL safely, avoid inline onclick issues
+                return '<div class="photo-thumb aspect-video bg-gray-100 rounded-lg bg-cover bg-center cursor-pointer hover:opacity-90 transition-opacity border border-gray-200 relative group" ' +
+                    'data-photo-url="' + encodeURIComponent(url) + '" ' +
+                    'style="background-image: url(\'' + thumbUrl + '\')">' +
+                    '<div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center">' +
+                    '<span class="material-symbols-outlined text-white opacity-0 group-hover:opacity-100 text-sm">visibility</span>' +
+                    '</div></div>';
+            }).join('');
+        } else {
+            photoGridHtml = '<div class="col-span-2 bg-gray-50 rounded-lg border-2 border-dashed border-gray-100 h-full w-full cursor-default"></div>';
+        }
+
+
+        const photosHtml = `
+        <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm h-full">
+            <h4 class="font-bold text-gray-800 uppercase text-sm mb-4">${t('popup.photos')} (${log.photos ? log.photos.length : 0})</h4>
+            <div class="grid grid-cols-2 gap-3">
+                ${photoGridHtml}
+            </div>
+        </div>`;
+
+        // E. Notes
+        const notesHtml = (notesDisplay || (log.statusText && log.statusText.includes('issue'))) ? `
+        <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+            <h4 class="font-bold text-gray-800 uppercase text-sm mb-3">${t('popup.inspector_notes')}</h4>
+            <div class="bg-gray-50 p-4 rounded-lg text-gray-600 text-sm italic border border-gray-100">
+                "${escapeHtml(notesDisplay || t('popup.no_notes'))}"
+            </div>
+        </div>` : '';
+
+        // --- LOCATION VERIFICATION CARD ---
+        const detectedGps = parseGpsUrl(log.gps);
+        const registeredCoord = _siteCoordCache ? _siteCoordCache[log.siteName] : null;
+        const logDateStr = log.timestamp ? new Date(log.timestamp).toISOString().split('T')[0] : '';
+
+        let locationHtml = '';
+        if (log.gps || registeredCoord) {
+            let distHtml = '';
+            if (detectedGps && registeredCoord) {
+                var dist = calcDistanceM(registeredCoord.lat, registeredCoord.lng, detectedGps.lat, detectedGps.lng);
+                var distText = dist < 1000 ? Math.round(dist) + 'm' : (dist / 1000).toFixed(1) + 'km';
+                var isClose = dist < 100;
+                distHtml = `<div class="flex items-center gap-1.5 text-sm font-semibold" style="color: ${isClose ? 'var(--success)' : 'var(--warning)'}">
+                    <span class="material-symbols-outlined" style="font-size:16px;">${isClose ? 'check_circle' : 'warning'}</span>
+                    <span id="insp-map-distance">${distText}</span>
+                </div>`;
+            }
+
+            locationHtml = `
+            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-6">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="material-symbols-outlined text-blue-500">pin_drop</span>
+                    <h4 class="font-bold text-gray-800 uppercase text-sm">${t('popup.location.title') || 'Location Verification'}</h4>
+                </div>
+                <div style="display:flex;gap:16px;align-items:stretch;">
+                    <div id="insp-mini-map" style="width:200px;min-height:160px;border-radius:12px;overflow:hidden;border:1px solid var(--border);background:var(--hover-bg);flex-shrink:0;"></div>
+                    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:10px;">
+                        ${registeredCoord ? `<div class="flex items-center gap-2">
+                            <span style="width:10px;height:10px;border-radius:50%;background:#3b82f6;flex-shrink:0;"></span>
+                            <div>
+                                <div class="text-xs font-semibold text-gray-400 uppercase">${t('popup.location.registered') || 'Registered'}</div>
+                                <div class="text-sm font-medium text-gray-800">${escapeHtml(log.siteName)}</div>
+                            </div>
+                        </div>` : ''}
+                        ${detectedGps ? `<div class="flex items-center gap-2">
+                            <span style="width:10px;height:10px;border-radius:50%;background:#ef4444;flex-shrink:0;"></span>
+                            <div>
+                                <div class="text-xs font-semibold text-gray-400 uppercase">${t('popup.location.detected') || 'Detected GPS'}</div>
+                                <div class="text-sm font-medium text-gray-800">${detectedGps.lat.toFixed(5)}°N, ${detectedGps.lng.toFixed(5)}°E</div>
+                            </div>
+                        </div>` : ''}
+                        ${distHtml}
+                        <button onclick="viewInspectionRoute('${escapeHtml(log.inspectorName)}', '${logDateStr}')" class="flex items-center gap-1.5 text-xs font-semibold text-vks-primary hover:text-vks-primary-dark border border-blue-200 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors mt-1" style="width:fit-content;">
+                            <span class="material-symbols-outlined" style="font-size:16px;">route</span>
+                            ${t('popup.location.view_route') || 'View Full Route'}
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        // --- FINAL ASSEMBLY ---
+        const finalHtml = guardCardHtml +
+            '<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">' + equipmentHtml + disciplineHtml + securityHtml + '</div>' +
+            locationHtml +
+            '<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">' + ratingsHtml + photosHtml + '</div>' +
+            notesHtml + issuesHtml + handoverHtml;
+
+        document.getElementById('inspection-detail-content').innerHTML = finalHtml;
+
+        // Init mini-map after DOM render
+        if (log.gps || registeredCoord) {
+            setTimeout(function () { initInspectionMiniMap(log); }, 150);
+        }
+    }
+
+    // --- LIGHTBOX LOGIC ---
+    function openLightbox(url) {
+        // Transform Google Drive URLs to displayable image URLs
+        let displayUrl = url;
+        const driveMatch = url.match(/[-\w]{25,}/);
+        if (driveMatch) {
+            // Use lh3.googleusercontent.com for full resolution (1600px)
+            displayUrl = 'https://lh3.googleusercontent.com/d/' + driveMatch[0] + '=s1600';
+        }
+
+        const lightbox = document.createElement('div');
+        lightbox.id = 'vks-lightbox';
+        lightbox.className = 'fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center opacity-0 transition-opacity duration-300';
+        lightbox.innerHTML = `
+            <div class="relative max-w-[90vw] max-h-[90vh]">
+                <img src="${displayUrl}" class="max-w-full max-h-[90vh] rounded-lg shadow-2xl transform scale-95 transition-transform duration-300" onload="this.classList.remove('scale-95'); this.classList.add('scale-100')" onerror="this.src='https://placehold.co/600x400/1a1a1a/666?text=Image+Not+Available'">
+                <button onclick="closeLightbox()" class="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors">
+                    <span class="material-symbols-outlined text-4xl">close</span>
+                </button>
+            </div>
+        `;
+        document.body.appendChild(lightbox);
+
+        // Trigger animation
+        requestAnimationFrame(() => lightbox.classList.remove('opacity-0'));
+
+        // Close on background click
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) closeLightbox();
+        });
+    }
+
+    function closeLightbox() {
+        const lightbox = document.getElementById('vks-lightbox');
+        if (lightbox) {
+            lightbox.classList.add('opacity-0');
+            setTimeout(() => lightbox.remove(), 300);
+        }
+    }
+
+    // Event delegation for photo thumbnail clicks (handles dynamically rendered photos)
+    document.addEventListener('click', function (e) {
+        const thumb = e.target.closest('.photo-thumb');
+        if (thumb && thumb.dataset.photoUrl) {
+            const url = decodeURIComponent(thumb.dataset.photoUrl);
+            openLightbox(url);
+        }
+    });
+</script>

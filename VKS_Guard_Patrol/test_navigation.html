@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navigation Logic Test</title>
+    <style>
+        :root {
+            --primary: 221.2 83.2% 43.3%;
+            --muted: 210 40% 96.1%;
+            --border: 214.3 31.8% 75%;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Noto Sans Lao', 'Noto Sans', system-ui, sans-serif;
+            background: #f5f5f5;
+            padding-bottom: 80px;
+        }
+
+        .header {
+            background: white;
+            padding: 1rem;
+            border-bottom: 1px solid #ddd;
+            position: sticky;
+            top: 0;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: #e0e0e0;
+            margin-top: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: hsl(221.2 83.2% 43.3%);
+            transition: width 0.3s;
+        }
+
+        .step-content {
+            display: none;
+            padding: 2rem;
+            background: white;
+            margin: 1rem;
+            border-radius: 12px;
+            min-height: 300px;
+            text-align: center;
+        }
+
+        .step-content.active {
+            display: block;
+        }
+
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #ddd;
+            padding: 1rem;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: hsl(221.2 83.2% 43.3%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .success-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.02);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .pulse-btn {
+            animation: pulse 2s infinite;
+        }
+
+        .debug {
+            position: fixed;
+            top: 60px;
+            right: 10px;
+            background: #333;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div>🛡️ VKS Safety (TEST)</div>
+            <div>ຂັ້ນຕອນ <span id="currentStepNum">1</span> / 6</div>
+        </div>
+        <div class="progress-bar">
+            <div id="progressBar" class="progress-fill" style="width: 16.67%;"></div>
+        </div>
+    </header>
+
+    <!-- Debug Panel -->
+    <div class="debug">
+        <div>Current Step: <span id="debugStep">1</span></div>
+        <div>Next Btn: <span id="debugNext">visible</span></div>
+        <div>Submit Btn: <span id="debugSubmit">hidden</span></div>
+    </div>
+
+    <!-- Steps -->
+    <div id="step-1" class="step-content active">
+        <h2>📍 Step 1: Start</h2>
+        <p>ເລີ່ມຕົ້ນການລົງກວດກາ</p>
+    </div>
+    <div id="step-2" class="step-content">
+        <h2>👮 Step 2: Guard Info</h2>
+        <p>ຂໍ້ມູນພະນັກງານເວນຍາມ</p>
+    </div>
+    <div id="step-3" class="step-content">
+        <h2>🛡️ Step 3: Evaluation</h2>
+        <p>ກວດສອບຄວາມພ້ອມ & ບັນຫາ</p>
+    </div>
+    <div id="step-4" class="step-content">
+        <h2>🔍 Step 4: Security</h2>
+        <p>ກວດກາບໍລິເວນສະຖານທີ່</p>
+    </div>
+    <div id="step-5" class="step-content">
+        <h2>📝 Step 5: Confirm</h2>
+        <p>ກວດສອບຄືນ & ສົ່ງບົດລາຍງານ</p>
+    </div>
+    <div id="step-6" class="step-content">
+        <div class="success-icon">✅</div>
+        <h2>ສົ່ງຂໍ້ມູນສຳເລັດແລ້ວ!</h2>
+        <p>This is the SUCCESS page - Next button should now show "Restart"</p>
+    </div>
+
+    <!-- Navigation Bar -->
+    <div id="navigationBar" class="bottom-bar">
+        <button id="btnBack" class="btn btn-secondary hidden" onclick="changeStep(-1)">⬅️ ກັບຄືນ</button>
+        <button id="btnNext" class="btn btn-primary" onclick="changeStep(1)">ຕໍ່ໄປ ➡️</button>
+        <button id="btnSubmit" class="btn btn-primary hidden" onclick="simulateSubmit()">🚀 ສົ່ງບົດລາຍງານ</button>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 6;
+
+        function changeStep(direction) {
+            const newStep = currentStep + direction;
+            if (newStep < 1 || newStep > 6) return;
+
+            document.getElementById(`step-${currentStep}`).classList.remove('active');
+            currentStep = newStep;
+            document.getElementById(`step-${currentStep}`).classList.add('active');
+
+            updateProgressBar();
+            updateNavButtons();
+            updateDebug();
+        }
+
+        function updateProgressBar() {
+            const progress = Math.min((currentStep / totalSteps) * 100, 100);
+            const progressBar = document.getElementById('progressBar');
+            const stepNum = document.getElementById('currentStepNum');
+
+            if (progressBar) progressBar.style.width = progress + '%';
+            if (stepNum) stepNum.innerText = Math.min(currentStep, totalSteps);
+        }
+
+        function updateNavButtons() {
+            const btnBack = document.getElementById('btnBack');
+            const btnNext = document.getElementById('btnNext');
+            const btnSubmit = document.getElementById('btnSubmit');
+            const navBar = document.getElementById('navigationBar');
+
+            if (!navBar || !btnBack || !btnNext || !btnSubmit) return;
+
+            navBar.classList.remove('hidden');
+
+            // Step 6 - Success: Show only "Restart" button (repurpose Next)
+            if (currentStep === 6) {
+                btnBack.classList.add('hidden');
+                btnSubmit.classList.add('hidden');
+                btnNext.classList.remove('hidden');
+                btnNext.innerText = '🔄 ເລີ່ມຕົ້ນໃໝ່';
+                btnNext.onclick = resetForm;
+                return;
+            }
+
+            // Normal flow - Reset Next button behavior
+            btnNext.innerText = 'ຕໍ່ໄປ ➡️';
+            btnNext.onclick = function () { changeStep(1); };
+
+            // Back only on 2,3,4,5
+            btnBack.classList.toggle('hidden', currentStep === 1);
+
+            // Next only on 1,2,3,4
+            btnNext.classList.toggle('hidden', currentStep >= 5);
+
+            // Submit only on 5
+            btnSubmit.classList.toggle('hidden', currentStep !== 5);
+
+            // Pulse the submit button on Step 5
+            if (currentStep === 5) {
+                btnSubmit.classList.add('pulse-btn');
+            } else {
+                btnSubmit.classList.remove('pulse-btn');
+            }
+        }
+
+        function simulateSubmit() {
+            // Simulate successful submission
+            alert('Simulating submission... Moving to Step 6');
+
+            document.getElementById(`step-${currentStep}`).classList.remove('active');
+            currentStep = 6;
+            document.getElementById('step-6').classList.add('active');
+            document.getElementById('currentStepNum').innerText = '6';
+            updateNavButtons();
+            updateDebug();
+        }
+
+        function resetForm() {
+            document.getElementById(`step-${currentStep}`).classList.remove('active');
+            currentStep = 1;
+            document.getElementById('step-1').classList.add('active');
+            updateProgressBar();
+            updateNavButtons();
+            updateDebug();
+            alert('Form reset! Back to Step 1');
+        }
+
+        function updateDebug() {
+            document.getElementById('debugStep').innerText = currentStep;
+            document.getElementById('debugNext').innerText =
+                document.getElementById('btnNext').classList.contains('hidden') ? 'hidden' :
+                    document.getElementById('btnNext').innerText;
+            document.getElementById('debugSubmit').innerText =
+                document.getElementById('btnSubmit').classList.contains('hidden') ? 'hidden' : 'visible';
+        }
+
+        // Initialize
+        updateNavButtons();
+        updateDebug();
+    </script>
+</body>
+
+</html>

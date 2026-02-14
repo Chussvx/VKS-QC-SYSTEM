@@ -1,0 +1,275 @@
+<!-- Page_Reports.html - Reports Hub -->
+<div id="page-reports" class="page-content">
+
+    <!-- Header -->
+    <div class="filter-bar">
+        <div>
+            <h2 class="text-lg font-semibold" data-i18n="reports.title">Reports</h2>
+            <p class="text-sm text-muted" data-i18n="reports.subtitle">Generate and export operational reports</p>
+        </div>
+    </div>
+
+    <!-- Report Categories -->
+    <div class="mb-6">
+        <h3 class="section-title" data-i18n="reports.type">REPORT CATEGORIES</h3>
+        <div class="report-categories-grid">
+
+            <!-- Daily Summary -->
+            <div class="report-card-new">
+                <div class="report-card-icon bg-blue">
+                    <span class="material-symbols-outlined">today</span>
+                </div>
+                <h4 class="report-card-title" data-i18n="reports.daily.title">Daily Summary</h4>
+                <p class="report-card-desc" data-i18n="reports.daily.desc">Patrol completion, incidents, and activity
+                    summary for selected date</p>
+                <button class="btn-generate" onclick="openReportModal('daily')">
+                    <span class="material-symbols-outlined">bolt</span>
+                    <span data-i18n="reports.generate">Generate</span>
+                </button>
+            </div>
+
+            <!-- Patrol Compliance -->
+            <div class="report-card-new">
+                <div class="report-card-icon bg-green">
+                    <span class="material-symbols-outlined">route</span>
+                </div>
+                <h4 class="report-card-title" data-i18n="reports.patrol.title">Patrol Compliance</h4>
+                <p class="report-card-desc" data-i18n="reports.patrol.desc">Checkpoint completion rates by site and
+                    guard</p>
+                <button class="btn-generate" onclick="openReportModal('patrol')">
+                    <span class="material-symbols-outlined">bolt</span>
+                    <span data-i18n="reports.generate">Generate</span>
+                </button>
+            </div>
+
+            <!-- Guard Performance -->
+            <div class="report-card-new">
+                <div class="report-card-icon bg-purple">
+                    <span class="material-symbols-outlined">trending_up</span>
+                </div>
+                <h4 class="report-card-title" data-i18n="reports.performance.title">Guard Performance</h4>
+                <p class="report-card-desc" data-i18n="reports.performance.desc">Individual performance metrics and
+                    attendance</p>
+                <button class="btn-generate" onclick="openReportModal('performance')">
+                    <span class="material-symbols-outlined">bolt</span>
+                    <span data-i18n="reports.generate">Generate</span>
+                </button>
+            </div>
+
+            <!-- Inspection Summary -->
+            <div class="report-card-new">
+                <div class="report-card-icon bg-teal">
+                    <span class="material-symbols-outlined">fact_check</span>
+                </div>
+                <h4 class="report-card-title" data-i18n="reports.inspection.title">Inspection Summary</h4>
+                <p class="report-card-desc" data-i18n="reports.inspection.desc">Summary of inspector visits, quality
+                    ratings, and checklist...</p>
+                <button class="btn-generate" onclick="openReportModal('inspection')">
+                    <span class="material-symbols-outlined">bolt</span>
+                    <span data-i18n="reports.generate">Generate</span>
+                </button>
+            </div>
+
+            <!-- Incident Report -->
+            <div class="report-card-new">
+                <div class="report-card-icon bg-red">
+                    <span class="material-symbols-outlined">local_fire_department</span>
+                </div>
+                <h4 class="report-card-title" data-i18n="reports.incident.title">Incident Report</h4>
+                <p class="report-card-desc" data-i18n="reports.incident.desc">Detailed logs of theft, fire, and safety
+                    incidents with resolution...</p>
+                <button class="btn-generate" onclick="openReportModal('incident')">
+                    <span class="material-symbols-outlined">bolt</span>
+                    <span data-i18n="reports.generate">Generate</span>
+                </button>
+            </div>
+
+            <!-- Complaint Report -->
+            <div class="report-card-new">
+                <div class="report-card-icon bg-yellow">
+                    <span class="material-symbols-outlined">warning</span>
+                </div>
+                <h4 class="report-card-title" data-i18n="reports.complaint.title">Complaint Report</h4>
+                <p class="report-card-desc" data-i18n="reports.complaint.desc">Track service quality issues, tenant
+                    complaints, and SLA adherence.</p>
+                <button class="btn-generate" onclick="openReportModal('complaint')">
+                    <span class="material-symbols-outlined">bolt</span>
+                    <span data-i18n="reports.generate">Generate</span>
+                </button>
+            </div>
+
+            <!-- Overtime Summary -->
+            <div class="report-card-new">
+                <div class="report-card-icon bg-orange">
+                    <span class="material-symbols-outlined">more_time</span>
+                </div>
+                <h4 class="report-card-title" data-i18n="reports.overtime.title">Overtime Report</h4>
+                <p class="report-card-desc" data-i18n="reports.overtime.desc">Breakdown of extra hours worked, overtime
+                    trends, and associated costs.</p>
+                <button class="btn-generate" onclick="openReportModal('overtime')">
+                    <span class="material-symbols-outlined">bolt</span>
+                    <span data-i18n="reports.generate">Generate</span>
+                </button>
+            </div>
+
+            <!-- Monthly Summary -->
+            <div class="report-card-new">
+                <div class="report-card-icon bg-pink">
+                    <span class="material-symbols-outlined">calendar_month</span>
+                </div>
+                <h4 class="report-card-title" data-i18n="reports.monthly.title">Monthly Summary Report</h4>
+                <p class="report-card-desc" data-i18n="reports.monthly.desc">High-level executive overview of all
+                    operations for monthly...</p>
+                <button class="btn-generate" onclick="openReportModal('monthly')">
+                    <span class="material-symbols-outlined">bolt</span>
+                    <span data-i18n="reports.generate">Generate</span>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Recent Generations -->
+    <div>
+        <h3 class="section-title" data-i18n="reports.recent">RECENT GENERATIONS</h3>
+        <div class="card p-0 overflow-hidden">
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th data-i18n="reports.type">REPORT NAME</th>
+                            <th data-i18n="reports.type">TYPE</th>
+                            <th data-i18n="reports.range">DATE GENERATED</th>
+                            <th data-i18n="reports.generated_by">GENERATED BY</th>
+                            <th class="text-right" data-i18n="reports.download">ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-reports-body">
+                        <tr>
+                            <td colspan="5" class="text-center py-6 text-muted">
+                                <span class="material-symbols-outlined text-4xl mb-2 block">description</span>
+                                <span data-i18n="common.loading">No reports generated yet</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Reports page memory cache (Layer 3)
+    let cachedReports = null;
+
+    // Initialize Reports page (Layer 3: memory cache guard)
+    function init_reports() {
+        if (cachedReports) {
+            console.log('[Reports] Memory cache hit — instant render');
+            renderRecentReports(cachedReports);
+            return;
+        }
+        loadRecentReports();
+    }
+
+    // Load recent report generations
+    // NOTE: getRecentReports() backend does not exist yet — show empty state
+    function loadRecentReports() {
+        cachedReports = [];
+        renderRecentReports(cachedReports);
+    }
+
+    // Render recent reports table
+    function renderRecentReports(reports) {
+        const tbody = document.getElementById('recent-reports-body');
+
+        if (reports.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center py-6 text-muted">
+                        <span class="material-symbols-outlined text-4xl mb-2 block">description</span>
+                        No reports generated yet
+                    </td>
+                </tr>`;
+            return;
+        }
+
+        tbody.innerHTML = reports.map(r => `
+            <tr>
+                <td class="font-medium">${escapeHtml(r.name)}</td>
+                <td><span class="badge ${getReportTypeBadge(r.type)}">${r.type}</span></td>
+                <td class="text-muted">${formatDate(r.date, 'long')}</td>
+                <td class="text-muted">${escapeHtml(r.generatedBy)}</td>
+                <td class="text-right">
+                    <a href="${r.url}" target="_blank" class="download-link ${r.format === 'csv' ? 'csv' : 'pdf'}">
+                        <span class="material-symbols-outlined">download</span>
+                        ${r.format.toUpperCase()}
+                    </a>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // Get badge class for report type
+    function getReportTypeBadge(type) {
+        const types = {
+            'Presentation': 'badge-primary',
+            'Performance': 'badge-info',
+            'Incidents': 'badge-danger',
+            'Site Audit': 'badge-default',
+            'Attendance': 'badge-success'
+        };
+        return types[type] || 'badge-default';
+    }
+
+    // Open report modal
+    function openReportModal(reportType) {
+        const modalId = `modal-report-${reportType}`;
+        const modal = document.getElementById(modalId);
+
+        if (modal) {
+            openModal(modalId);
+
+            // Initialize premium controls for this report type
+            if (typeof reportInitFunctions !== 'undefined' && reportInitFunctions[reportType]) {
+                reportInitFunctions[reportType]();
+            }
+        } else {
+            showToast(`Report type "${reportType}" not yet implemented`, 'info');
+        }
+    }
+
+    // Generate report
+    function generateReport(reportType) {
+        const dateRange = getReportDateRange(reportType);
+
+        showToast('Generating report...', 'info');
+        closeModal();
+
+        google.script.run
+            .withSuccessHandler(function (url) {
+                showToast('Report generated!', 'success');
+                loadRecentReports(); // Refresh list
+                window.open(url, '_blank');
+            })
+            .withFailureHandler(function (error) {
+                showToast('Failed: ' + error.message, 'error');
+            })
+            .generateReport({ type: reportType, ...dateRange });
+    }
+
+    // Get date range from modal
+    function getReportDateRange(reportType) {
+        const modal = document.getElementById(`modal-report-${reportType}`);
+        if (!modal) return {};
+
+        const startInput = modal.querySelector('[id*="start"]');
+        const endInput = modal.querySelector('[id*="end"]');
+
+        return {
+            startDate: startInput ? startInput.value : null,
+            endDate: endInput ? endInput.value : null
+        };
+    }
+</script>

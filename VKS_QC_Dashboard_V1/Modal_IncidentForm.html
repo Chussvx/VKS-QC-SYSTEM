@@ -1,0 +1,364 @@
+<!-- Modal_IncidentForm.html - Incident Report Form Modal (3 tabs) -->
+<!-- 
+  Stitch Reference: 
+  - Tab 1: 843442931ae14dc5b361f40aaec8e658
+  - Tab 2: 6e6f286cec51444384db556d0870041e  
+  - Tab 3: 14cbd99c99744f878d2f2e2af4a7a823
+-->
+
+<style>
+    .modal-incident .modal-content {
+        max-width: 650px;
+    }
+
+    .modal-incident .modal-header {
+        border-left: 4px solid var(--danger);
+    }
+
+    .tab-nav-incident {
+        display: flex;
+        gap: 0;
+        border-bottom: 1px solid var(--border);
+        margin: -1rem -1.5rem 1rem -1.5rem;
+        padding: 0 1.5rem;
+    }
+
+    .tab-nav-incident button {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        background: transparent;
+        border: none;
+        border-bottom: 2px solid transparent;
+        color: var(--text-muted);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .tab-nav-incident button.active {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+    }
+
+    .tab-nav-incident button:hover:not(.active) {
+        color: var(--text);
+        background: var(--bg-hover);
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    .severity-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.5rem;
+    }
+
+    .severity-option {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0.75rem 0.5rem;
+        border: 2px solid var(--border);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .severity-option:hover {
+        border-color: var(--text-muted);
+    }
+
+    .severity-option.selected {
+        border-width: 2px;
+    }
+
+    .severity-option.critical {
+        --sev-color: var(--danger);
+    }
+
+    .severity-option.high {
+        --sev-color: var(--warning);
+    }
+
+    .severity-option.medium {
+        --sev-color: var(--info);
+    }
+
+    .severity-option.low {
+        --sev-color: var(--text-muted);
+    }
+
+    .severity-option.selected {
+        border-color: var(--sev-color);
+        background: color-mix(in srgb, var(--sev-color) 10%, transparent);
+    }
+
+    .severity-option .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--sev-color);
+        margin-bottom: 0.25rem;
+    }
+
+    .severity-option input {
+        display: none;
+    }
+
+    .checkbox-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+    .upload-zone {
+        border: 2px dashed var(--border);
+        border-radius: 8px;
+        padding: 2rem;
+        text-align: center;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .upload-zone:hover {
+        border-color: var(--primary);
+        background: var(--bg-hover);
+    }
+
+    .upload-zone .material-symbols-outlined {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+</style>
+
+<div id="modal-incident-form" class="dialog-overlay modal-incident" style="display:none;">
+    <div class="dialog-content modal-content">
+        <!-- Header -->
+        <div class="modal-header">
+            <div>
+                <h2 class="modal-title" data-i18n="incidents.new">Report New Incident</h2>
+                <p class="modal-subtitle text-muted">Complete all required fields</p>
+            </div>
+            <button class="btn-icon" onclick="closeIncidentForm()">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="modal-body">
+            <div class="tab-nav-incident">
+                <button class="active" onclick="switchIncidentTab(0)" data-i18n="incidents.tab_details">Details</button>
+                <button onclick="switchIncidentTab(1)" data-i18n="incidents.tab_response">Response</button>
+                <button onclick="switchIncidentTab(2)" data-i18n="incidents.tab_evidence">Evidence</button>
+            </div>
+
+            <form id="form-incident" onsubmit="return false;">
+                <!-- TAB 1: Details -->
+                <div class="tab-content active" id="incident-tab-0">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label required" data-i18n="incidents.incident_time">Incident
+                                Date/Time</label>
+                            <input type="datetime-local" id="incident-time" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required" data-i18n="incidents.site">Site</label>
+                            <select id="incident-site" class="form-input" required>
+                                <option value="">Select site...</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-span-2">
+                            <label class="form-label" data-i18n="incidents.location">Exact Location</label>
+                            <input type="text" id="incident-location" class="form-input"
+                                placeholder="e.g., Main Gate, Parking Lot B">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required" data-i18n="incidents.category">Category</label>
+                            <select id="incident-category" class="form-input" required>
+                                <option value="">Select category...</option>
+                                <option value="theft">🔐 Theft</option>
+                                <option value="fire">🔥 Fire</option>
+                                <option value="medical">🚑 Medical</option>
+                                <option value="vandalism">💔 Vandalism</option>
+                                <option value="access">🚫 Access Control</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required" data-i18n="incidents.severity">Severity</label>
+                            <div class="severity-grid">
+                                <label class="severity-option critical">
+                                    <input type="radio" name="incident-severity" value="critical">
+                                    <span class="dot"></span>
+                                    <span class="text-xs">Critical</span>
+                                </label>
+                                <label class="severity-option high">
+                                    <input type="radio" name="incident-severity" value="high">
+                                    <span class="dot"></span>
+                                    <span class="text-xs">High</span>
+                                </label>
+                                <label class="severity-option medium selected">
+                                    <input type="radio" name="incident-severity" value="medium" checked>
+                                    <span class="dot"></span>
+                                    <span class="text-xs">Medium</span>
+                                </label>
+                                <label class="severity-option low">
+                                    <input type="radio" name="incident-severity" value="low">
+                                    <span class="dot"></span>
+                                    <span class="text-xs">Low</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group col-span-2">
+                            <label class="form-label required" data-i18n="incidents.description">Description</label>
+                            <textarea id="incident-description" class="form-input" rows="3" required
+                                placeholder="Describe what happened..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: Response -->
+                <div class="tab-content" id="incident-tab-1">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label required" data-i18n="incidents.reported_by">Reported By</label>
+                            <input type="text" id="incident-reported-by" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="incidents.reported_to">Reported To</label>
+                            <input type="text" id="incident-reported-to" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="incidents.response_time">Response Time</label>
+                            <input type="datetime-local" id="incident-response-time" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="incidents.responded_by">Responded By</label>
+                            <input type="text" id="incident-responded-by" class="form-input">
+                        </div>
+                        <div class="form-group col-span-2">
+                            <label class="form-label" data-i18n="incidents.notifications">Notifications</label>
+                            <div class="checkbox-grid">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="incident-supervisor">
+                                    <span>Supervisor Notified</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="incident-authorities">
+                                    <span>Authorities Contacted</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group col-span-2">
+                            <label class="form-label" data-i18n="incidents.damage">Damage Assessment</label>
+                            <div class="checkbox-grid">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="incident-injuries">
+                                    <span>Any Injuries</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="incident-property-damage">
+                                    <span>Property Damage</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group col-span-2">
+                            <label class="form-label" data-i18n="incidents.estimated_loss">Estimated Loss (LAK)</label>
+                            <input type="number" id="incident-loss" class="form-input" placeholder="0">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: Evidence -->
+                <div class="tab-content" id="incident-tab-2">
+                    <div class="stack gap-4">
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="incidents.photos">Photo Evidence</label>
+                            <div class="upload-zone" onclick="document.getElementById('incident-photos').click()">
+                                <span class="material-symbols-outlined">cloud_upload</span>
+                                <p>Drag photos here or click to upload</p>
+                                <p class="text-xs">Max 5 photos, 5MB each</p>
+                            </div>
+                            <input type="file" id="incident-photos" multiple accept="image/*" style="display:none">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="incidents.witnesses">Witness Names</label>
+                            <textarea id="incident-witnesses" class="form-input" rows="2"
+                                placeholder="Enter witness names, one per line"></textarea>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" data-i18n="incidents.police_report">Police Report #</label>
+                                <input type="text" id="incident-police-report" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">&nbsp;</label>
+                                <label class="checkbox-label" style="margin-top: 0.5rem;">
+                                    <input type="checkbox" id="incident-cctv">
+                                    <span>CCTV Footage Available</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="incidents.immediate_actions">Immediate Actions
+                                Taken</label>
+                            <textarea id="incident-actions" class="form-input" rows="2"
+                                placeholder="What actions were taken on scene?"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="incidents.notes">Additional Notes</label>
+                            <textarea id="incident-notes" class="form-input" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('modal-incident-form')"
+                data-i18n="common.cancel">Cancel</button>
+            <button class="btn btn-primary" onclick="submitIncidentForm()" data-i18n="incidents.save">Save
+                Incident</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Tab switching for Incident form
+    function switchIncidentTab(index) {
+        // Update tab buttons
+        document.querySelectorAll('.tab-nav-incident button').forEach(function (btn, i) {
+            btn.classList.toggle('active', i === index);
+        });
+        // Update tab content
+        document.querySelectorAll('#modal-incident-form .tab-content').forEach(function (tab, i) {
+            tab.classList.toggle('active', i === index);
+        });
+    }
+
+    // Severity selection
+    document.querySelectorAll('.severity-option').forEach(function (opt) {
+        opt.addEventListener('click', function () {
+            document.querySelectorAll('.severity-option').forEach(function (o) {
+                o.classList.remove('selected');
+            });
+            opt.classList.add('selected');
+            opt.querySelector('input').checked = true;
+        });
+    });
+
+    // NOTE: openIncidentForm is defined in Page_Incidents.html
+    // It was removed here to prevent function override conflict.
+    // See modal_failure_analysis.md for details.
+
+    // NOTE: closeIncidentForm and submitIncidentForm are defined in Modal_Issues.html
+    // They were removed here to prevent function override conflict.
+    // The correct versions use closeModal() for template-based modals.
+</script>

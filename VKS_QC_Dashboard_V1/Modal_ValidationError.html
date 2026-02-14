@@ -1,0 +1,133 @@
+<!-- Modal: Validation Error - Inline Validation System
+     Instead of opening a separate modal (which destroys the form DOM),
+     this system highlights invalid fields inline + shows a toast notification.
+     The modal-validation-error div is kept as a hidden placeholder for backward compat. -->
+<div id="modal-validation-error" class="hidden"></div>
+
+<script>
+    /**
+     * Show inline validation errors on form fields.
+     * Highlights invalid fields with red borders + shake animation,
+     * auto-switches to the correct tab, and shows a toast.
+     * 
+     * @param {Array<string|{label:string, fieldId:string, type:string}>} missingFields 
+     *   Can be:
+     *   - Array of strings (legacy): just shows toast with count
+     *   - Array of objects: highlights specific fields inline
+     *     - label: Display name (e.g., "Reporter Name")
+     *     - fieldId: DOM element ID (e.g., "complaint-customer-new")
+     *     - type: "input" (default), "dropdown" (custom-select parent), "radio" (radio group)
+     */
+    function showValidationErrorModal(missingFields) {
+        if (!missingFields || missingFields.length === 0) return;
+
+        // Clear any previous error highlights
+        clearValidationErrors();
+
+        var fieldNames = [];
+
+        for (var i = 0; i < missingFields.length; i++) {
+            var field = missingFields[i];
+
+            if (typeof field === 'string') {
+                // Legacy format: just a label string
+                fieldNames.push(field);
+            } else if (typeof field === 'object' && field.label) {
+                fieldNames.push(field.label);
+
+                // Highlight the field
+                if (field.fieldId) {
+                    var el = document.getElementById(field.fieldId);
+                    if (el) {
+                        var fieldType = field.type || 'input';
+
+                        if (fieldType === 'dropdown') {
+                            // Custom dropdown: highlight the parent container
+                            var container = el.closest('.custom-select') || el.parentElement;
+                            if (container) {
+                                container.classList.add('field-error-parent');
+                            }
+                        } else if (fieldType === 'radio') {
+                            // Radio group: highlight the grid container
+                            var radioGrid = el.closest('.grid');
+                            if (radioGrid) {
+                                radioGrid.classList.add('field-error-group');
+                            }
+                        } else {
+                            // Standard input/textarea
+                            el.classList.add('field-error');
+                        }
+
+                        // Auto-clear on focus/change
+                        el.addEventListener('focus', clearFieldError, { once: true });
+                        el.addEventListener('change', clearFieldError, { once: true });
+                        el.addEventListener('input', clearFieldError, { once: true });
+                    }
+                }
+            }
+        }
+
+        // Scroll to first highlighted field
+        var firstError = document.querySelector('.field-error, .field-error-parent, .field-error-group');
+        if (firstError) {
+            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // Show toast with count
+        var count = fieldNames.length;
+        var toastMsg = count === 1
+            ? 'Please fill in: ' + fieldNames[0]
+            : 'Please fill in ' + count + ' required field' + (count > 1 ? 's' : '');
+
+        if (typeof showToast === 'function') {
+            showToast(toastMsg, 'error');
+        } else {
+            alert(toastMsg);
+        }
+    }
+
+    /**
+     * Clear a single field's error state (called on focus/change)
+     */
+    function clearFieldError(e) {
+        var el = e.target;
+        // Clear direct class
+        el.classList.remove('field-error');
+
+        // Clear parent dropdown class
+        var container = el.closest('.field-error-parent');
+        if (container) container.classList.remove('field-error-parent');
+
+        // Clear radio group class
+        var radioGrid = el.closest('.field-error-group');
+        if (radioGrid) radioGrid.classList.remove('field-error-group');
+    }
+
+    /**
+     * Clear ALL validation error highlights from the page
+     */
+    function clearValidationErrors() {
+        document.querySelectorAll('.field-error').forEach(function (el) {
+            el.classList.remove('field-error');
+        });
+        document.querySelectorAll('.field-error-parent').forEach(function (el) {
+            el.classList.remove('field-error-parent');
+        });
+        document.querySelectorAll('.field-error-group').forEach(function (el) {
+            el.classList.remove('field-error-group');
+        });
+    }
+
+    /**
+     * Show save error as toast (no modal needed)
+     * Replaces the old showSaveErrorModal that called openModal
+     */
+    function showSaveErrorModal(errorType, errorMessage, errorContext) {
+        var msg = (errorType || 'Save Failed') + ': ' + (errorMessage || 'Unknown error');
+        if (typeof showToast === 'function') {
+            showToast(msg, 'error');
+        } else {
+            alert(msg);
+        }
+    }
+</script>

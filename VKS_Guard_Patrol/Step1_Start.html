@@ -1,0 +1,55 @@
+﻿<!-- Step 1: Start -->
+<div id="step-1" class="step-content">
+
+    <!-- LANDING PAGE (Mode Selection) -->
+    <div id="step-1-landing">
+        <div class="mb-6 text-center sm:text-left pt-8">
+            <h1 class="text-3xl font-bold text-slate-900 leading-tight mb-3">ເລືອກປະເພດວຽກ</h1>
+            <p class="text-slate-500 text-lg leading-relaxed">
+                ກະລຸນາກົດເລືອກປະເພດວຽກລຸ່ມນີ້ ເພື່ອເລີ່ມຕົ້ນການເຮັດວຽກ.
+            </p>
+        </div>
+
+        <div class="space-y-6 px-1">
+            <!-- Patrol Mode Card -->
+            <div onclick="selectMode('patrol')" class="mode-card patrol py-6">
+                <div class="mode-icon-box w-16 h-16">
+                    <span class="material-symbols-outlined text-4xl">local_police</span>
+                </div>
+                <div>
+                    <h3 class="mode-card-title text-xl text-slate-900 mb-1">ລາດຕະເວນປົກກະຕິ</h3>
+                </div>
+                <div class="mode-chevron">
+                    <span class="material-symbols-outlined text-3xl">chevron_right</span>
+                </div>
+            </div>
+
+            <!-- Special Duty Card -->
+            <div onclick="selectMode('special')" class="mode-card special py-6">
+                <div class="mode-icon-box w-16 h-16">
+                    <span class="material-symbols-outlined text-4xl">shield_person</span>
+                </div>
+                <div>
+                    <h3 class="mode-card-title text-xl text-slate-900 mb-1">ວຽກພິເສດ / ປະຈຳຈຸດ</h3>
+                </div>
+                <div class="mode-chevron">
+                    <span class="material-symbols-outlined text-3xl">chevron_right</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <!-- END LANDING PAGE -->
+
+    <div id="step-1-form-container" class="hidden">
+
+        <!-- Header Navigation REMOVED (Moved to Footer) -->
+        <div class="hidden"></div>
+
+        <!-- Forms moved back inside for nesting logic -->
+        <?!= include('Step1_Patrol'); ?>
+        <?!= include('Step1_Special'); ?>
+    </div>
+
+</div>
+<!-- END STEP 1 -->

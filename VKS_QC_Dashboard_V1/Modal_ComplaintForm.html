@@ -1,0 +1,320 @@
+<!-- Modal_ComplaintForm.html - Complaint Form Modal (2 tabs) -->
+<!-- 
+  Stitch Reference: 
+  - Tab 1: 182d9413bc034f11be9f3944f554073e
+  - Tab 2: 2f361e8bda874b5a874a4d1b23e948dd
+-->
+
+<style>
+    .modal-complaint .modal-content {
+        max-width: 600px;
+    }
+
+    .modal-complaint .modal-header {
+        border-left: 4px solid var(--info);
+    }
+
+    .tab-nav-complaint {
+        display: flex;
+        gap: 0;
+        border-bottom: 1px solid var(--border);
+        margin: -1rem -1.5rem 1rem -1.5rem;
+        padding: 0 1.5rem;
+    }
+
+    .tab-nav-complaint button {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        background: transparent;
+        border: none;
+        border-bottom: 2px solid transparent;
+        color: var(--text-muted);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .tab-nav-complaint button.active {
+        color: var(--info);
+        border-bottom-color: var(--info);
+    }
+
+    .tab-nav-complaint button:hover:not(.active) {
+        color: var(--text);
+        background: var(--bg-hover);
+    }
+
+    .priority-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.5rem;
+    }
+
+    .priority-option {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0.5rem;
+        border: 2px solid var(--border);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: center;
+    }
+
+    .priority-option:hover {
+        border-color: var(--text-muted);
+    }
+
+    .priority-option.p1 {
+        --pri-color: var(--danger);
+    }
+
+    .priority-option.p2 {
+        --pri-color: var(--warning);
+    }
+
+    .priority-option.p3 {
+        --pri-color: hsl(48, 96%, 53%);
+    }
+
+    .priority-option.p4 {
+        --pri-color: var(--text-muted);
+    }
+
+    .priority-option.selected {
+        border-color: var(--pri-color);
+        background: color-mix(in srgb, var(--pri-color) 10%, transparent);
+    }
+
+    .priority-option .badge-priority {
+        font-size: 0.65rem;
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+        background: var(--pri-color);
+        color: white;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .priority-option input {
+        display: none;
+    }
+
+    .severity-radio-group {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .severity-radio {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .severity-radio:hover {
+        border-color: var(--info);
+    }
+
+    .severity-radio.selected {
+        border-color: var(--info);
+        background: var(--bg-info);
+    }
+
+    .severity-radio input {
+        display: none;
+    }
+</style>
+
+<div id="modal-complaint-form" class="dialog-overlay modal-complaint" style="display:none;">
+    <div class="dialog-content modal-content">
+        <!-- Header -->
+        <div class="modal-header">
+            <div>
+                <h2 class="modal-title" data-i18n="complaints.new">Log New Complaint</h2>
+                <p class="modal-subtitle text-muted">Record complaint details</p>
+            </div>
+            <button class="btn-icon" onclick="closeComplaintForm()">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="modal-body">
+            <div class="tab-nav-complaint">
+                <button class="active" onclick="switchComplaintTab(0)" data-i18n="complaints.tab_details">Issue
+                    Details</button>
+                <button onclick="switchComplaintTab(1)" data-i18n="complaints.tab_reporter">Reporter Info</button>
+            </div>
+
+            <form id="form-complaint" onsubmit="return false;">
+                <!-- TAB 1: Issue Details -->
+                <div class="tab-content active" id="complaint-tab-0">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label required" data-i18n="complaints.site">Site</label>
+                            <select id="complaint-site" class="form-input" required>
+                                <option value="">Select site...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="complaints.guard">Guard Involved</label>
+                            <select id="complaint-guard" class="form-input">
+                                <option value="">None / Unknown</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-span-2">
+                            <label class="form-label required" data-i18n="complaints.category">Category</label>
+                            <select id="complaint-category" class="form-input" required>
+                                <option value="">Select category...</option>
+                                <option value="service">😐 Service Quality</option>
+                                <option value="behavior">🎖️ Guard Behavior</option>
+                                <option value="billing">🧾 Billing Dispute</option>
+                                <option value="punctuality">⏰ Punctuality</option>
+                                <option value="uniform">👔 Uniform</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-span-2">
+                            <label class="form-label required" data-i18n="complaints.priority">Priority</label>
+                            <div class="priority-grid">
+                                <label class="priority-option p1">
+                                    <input type="radio" name="complaint-priority" value="p1">
+                                    <span class="badge-priority">P1</span>
+                                    <span class="text-xs">Critical</span>
+                                </label>
+                                <label class="priority-option p2">
+                                    <input type="radio" name="complaint-priority" value="p2">
+                                    <span class="badge-priority">P2</span>
+                                    <span class="text-xs">High</span>
+                                </label>
+                                <label class="priority-option p3 selected">
+                                    <input type="radio" name="complaint-priority" value="p3" checked>
+                                    <span class="badge-priority">P3</span>
+                                    <span class="text-xs">Medium</span>
+                                </label>
+                                <label class="priority-option p4">
+                                    <input type="radio" name="complaint-priority" value="p4">
+                                    <span class="badge-priority">P4</span>
+                                    <span class="text-xs">Low</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group col-span-2">
+                            <label class="form-label" data-i18n="complaints.severity">Severity</label>
+                            <div class="severity-radio-group">
+                                <label class="severity-radio">
+                                    <input type="radio" name="complaint-severity" value="light">
+                                    <span>Light</span>
+                                </label>
+                                <label class="severity-radio selected">
+                                    <input type="radio" name="complaint-severity" value="medium" checked>
+                                    <span>Medium</span>
+                                </label>
+                                <label class="severity-radio">
+                                    <input type="radio" name="complaint-severity" value="severe">
+                                    <span>Severe</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group col-span-2">
+                            <label class="form-label required" data-i18n="complaints.description">Problem
+                                Description</label>
+                            <textarea id="complaint-description" class="form-input" rows="4" required
+                                placeholder="Describe the complaint in detail..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: Reporter Info -->
+                <div class="tab-content" id="complaint-tab-1">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label required" data-i18n="complaints.customer_name">Reporter
+                                Name</label>
+                            <input type="text" id="complaint-customer-name" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="complaints.customer_phone">Reporter Phone</label>
+                            <input type="tel" id="complaint-customer-phone" class="form-input"
+                                placeholder="+856 20 ...">
+                        </div>
+                        <div class="form-group col-span-2">
+                            <label class="form-label" data-i18n="complaints.customer_type">Reporter Type</label>
+                            <select id="complaint-customer-type" class="form-input">
+                                <option value="client">Client</option>
+                                <option value="guard">Guard</option>
+                                <option value="staff">Staff</option>
+                                <option value="public">Public</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="complaints.notified_by">Notified By</label>
+                            <input type="text" id="complaint-notified-by" class="form-input"
+                                placeholder="Staff who received complaint">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="complaints.recorded_by">Recorded By</label>
+                            <input type="text" id="complaint-recorded-by" class="form-input" disabled>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeComplaintForm()" data-i18n="common.cancel">Cancel</button>
+            <button class="btn btn-info" onclick="submitComplaintForm()" data-i18n="complaints.submit">Submit
+                Complaint</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Tab switching for Complaint form
+    function switchComplaintTab(index) {
+        // Update tab buttons
+        document.querySelectorAll('.tab-nav-complaint button').forEach(function (btn, i) {
+            btn.classList.toggle('active', i === index);
+        });
+        // Update tab content
+        document.querySelectorAll('#modal-complaint-form .tab-content').forEach(function (tab, i) {
+            tab.classList.toggle('active', i === index);
+        });
+    }
+
+    // Priority selection
+    document.querySelectorAll('.priority-option').forEach(function (opt) {
+        opt.addEventListener('click', function () {
+            document.querySelectorAll('.priority-option').forEach(function (o) {
+                o.classList.remove('selected');
+            });
+            opt.classList.add('selected');
+            opt.querySelector('input').checked = true;
+        });
+    });
+
+    // Severity selection
+    document.querySelectorAll('.severity-radio').forEach(function (opt) {
+        opt.addEventListener('click', function () {
+            document.querySelectorAll('.severity-radio').forEach(function (o) {
+                o.classList.remove('selected');
+            });
+            opt.classList.add('selected');
+            opt.querySelector('input').checked = true;
+        });
+    });
+
+    // NOTE: openComplaintForm is defined in Page_Complaints.html
+    // It was removed here to prevent function override conflict.
+    // See modal_failure_analysis.md for details.
+
+    // NOTE: closeComplaintForm and submitComplaintForm are defined in Modal_Issues.html
+    // They were removed here to prevent function override conflict.
+    // The correct versions use closeModal() for template-based modals.
+</script>

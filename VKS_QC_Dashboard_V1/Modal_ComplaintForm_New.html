@@ -1,0 +1,566 @@
+<!-- 
+    Modal_ComplaintForm_New.html
+    Stitch-generated comprehensive complaint form, converted to GAS template format
+    Version: v161 - Added i18n attributes
+-->
+
+<!-- Complaint Form Modal Template (Comprehensive with ALL Fields) -->
+<template id="modal-complaint-form-new">
+    <div class="flex flex-col w-full bg-white rounded-xl shadow-2xl overflow-hidden relative"
+        style="max-height: 90vh; width: 100%; max-width: 700px;">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
+                    <span class="material-symbols-outlined text-[20px]">shield_person</span>
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-gray-900 modal-title leading-tight"
+                        data-i18n="complaint.form.title">Log New Complaint</h2>
+                    <p class="text-xs text-gray-500"><span data-i18n="table.id">ID</span>: <span
+                            id="complaint-display-id" data-i18n="complaint.form.auto_id">Auto-generated</span></p>
+                </div>
+            </div>
+            <button class="text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-full hover:bg-gray-100"
+                onclick="closeModal()">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="px-6 border-b border-gray-100">
+            <div class="flex gap-8">
+                <button type="button"
+                    class="complaint-tab relative py-4 text-sm font-bold text-amber-600 border-b-[3px] border-amber-500"
+                    data-tab="customer" data-i18n="complaint.form.tab.customer">
+                    Reporter & Issue
+                </button>
+                <button type="button"
+                    class="complaint-tab relative py-4 text-sm font-bold text-gray-500 hover:text-gray-700 border-b-[3px] border-transparent"
+                    data-tab="details" data-i18n="complaint.form.tab.details">
+                    Details & Resolution
+                </button>
+            </div>
+        </div>
+
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-y-auto p-6 bg-white" style="max-height: 55vh;">
+            <form id="form-complaint-new" data-complaint-id="">
+
+                <!-- TAB 1: CUSTOMER & ISSUE -->
+                <div id="complaint-tab-customer" class="complaint-tab-content">
+
+                    <!-- Reporter Details Section -->
+                    <section class="mb-6">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4"
+                            data-i18n="complaint.form.customer_details">Reporter Details</h3>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <label class="flex flex-col gap-1.5">
+                                <span class="text-xs font-bold uppercase tracking-wide text-gray-500 required"
+                                    data-i18n="complaint.form.customer_name">Reporter
+                                    Name</span>
+                                <input type="text" id="complaint-customer-new"
+                                    class="form-input w-full h-11 rounded-lg bg-gray-50 border border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-sm"
+                                    placeholder="Enter reporter name"
+                                    data-i18n-placeholder="complaint.form.customer_name" required>
+                            </label>
+                            <label class="flex flex-col gap-1.5">
+                                <span class="text-xs font-bold uppercase tracking-wide text-gray-500 required"
+                                    data-i18n="complaint.form.phone_number">Phone
+                                    Number</span>
+                                <input type="tel" id="complaint-phone-new"
+                                    class="form-input w-full h-11 rounded-lg bg-gray-50 border border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-sm"
+                                    placeholder="+856 20 xxx xxx" required>
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <label class="flex flex-col gap-1.5">
+                                <span class="text-xs font-bold uppercase tracking-wide text-gray-500 required"
+                                    data-i18n="complaint.form.customer_type">Reporter
+                                    Type</span>
+                                <input type="hidden" id="complaint-customer-type-new" required>
+                                <div class="custom-select" id="complaint-type-dropdown" style="width: 100%;">
+                                    <!-- Populated by initComplaintFormControls() -->
+                                </div>
+                            </label>
+                            <label class="flex flex-col gap-1.5">
+                                <span class="text-xs font-bold uppercase tracking-wide text-gray-500"
+                                    data-i18n="complaint.form.email">Email</span>
+                                <input type="email" id="complaint-email-new"
+                                    class="form-input w-full h-11 rounded-lg bg-gray-50 border border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-sm"
+                                    placeholder="reporter@email.com">
+                            </label>
+                        </div>
+                    </section>
+
+                    <!-- Issue Context Section -->
+                    <section class="mb-6">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4"
+                            data-i18n="complaint.form.issue_context">Issue Context</h3>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <label class="flex flex-col gap-1.5">
+                                <span class="text-xs font-bold uppercase tracking-wide text-gray-500 required"
+                                    data-i18n="complaint.form.site_location">Site
+                                    Location</span>
+                                <input type="hidden" id="complaint-site-new" required>
+                                <div class="custom-select" id="complaint-site-dropdown" style="width: 100%;">
+                                    <!-- Populated by initComplaintFormControls() -->
+                                </div>
+                            </label>
+                            <label class="flex flex-col gap-1.5">
+                                <span class="text-xs font-bold uppercase tracking-wide text-gray-500"
+                                    data-i18n="complaint.form.guard_involved">Guard
+                                    Involved</span>
+                                <input type="hidden" id="complaint-guard-new">
+                                <div class="custom-select" id="complaint-guard-dropdown" style="width: 100%;">
+                                    <!-- Populated by initComplaintFormControls() -->
+                                </div>
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <label class="flex flex-col gap-1.5">
+                                <span class="text-xs font-bold uppercase tracking-wide text-gray-500 required"
+                                    data-i18n="complaint.form.category">Category</span>
+                                <input type="hidden" id="complaint-category-new" required>
+                                <div class="custom-select" id="complaint-category-dropdown" style="width: 100%;">
+                                    <!-- Populated by initComplaintFormControls() -->
+                                </div>
+                            </label>
+                            <label class="flex flex-col gap-1.5">
+                                <span class="text-xs font-bold uppercase tracking-wide text-gray-500"
+                                    data-i18n="complaint.form.complaint_date">Complaint
+                                    Date</span>
+                                <div style="position: relative;">
+                                    <input type="text" id="complaint-datetime-new" readonly
+                                        class="form-input w-full cursor-pointer"
+                                        style="height: 2.75rem; padding-right: 2.5rem;"
+                                        placeholder="Select date & time...">
+                                    <span class="material-symbols-outlined"
+                                        style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none; font-size: 18px;">calendar_today</span>
+                                </div>
+                            </label>
+                        </div>
+                    </section>
+
+                    <!-- Classification Section -->
+                    <section>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4"
+                            data-i18n="complaint.form.classification">Classification</h3>
+                        <div class="mb-4">
+                            <span class="text-xs font-bold uppercase tracking-wide text-gray-500 block mb-2 required"
+                                data-i18n="complaint.form.priority_level">Priority
+                                Level</span>
+                            <div class="grid grid-cols-4 gap-3">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="complaint-priority-new" value="p1" class="peer sr-only"
+                                        required>
+                                    <div class="h-10 rounded-lg border border-red-200 bg-red-50 text-red-700 flex items-center justify-center text-xs font-bold uppercase tracking-wide peer-checked:ring-2 peer-checked:ring-red-500 peer-checked:bg-red-100 transition-all hover:bg-red-100"
+                                        data-i18n="complaint.form.p1_critical">
+                                        P1 Critical
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="complaint-priority-new" value="p2" class="peer sr-only">
+                                    <div class="h-10 rounded-lg border border-orange-200 bg-orange-50 text-orange-700 flex items-center justify-center text-xs font-bold uppercase tracking-wide peer-checked:ring-2 peer-checked:ring-orange-500 peer-checked:bg-orange-100 transition-all hover:bg-orange-100"
+                                        data-i18n="complaint.form.p2_high">
+                                        P2 High
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="complaint-priority-new" value="p3" class="peer sr-only">
+                                    <div class="h-10 rounded-lg border border-yellow-200 bg-yellow-50 text-yellow-700 flex items-center justify-center text-xs font-bold uppercase tracking-wide peer-checked:ring-2 peer-checked:ring-yellow-500 peer-checked:bg-yellow-100 transition-all hover:bg-yellow-100"
+                                        data-i18n="complaint.form.p3_medium">
+                                        P3 Medium
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="complaint-priority-new" value="p4" class="peer sr-only">
+                                    <div class="h-10 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 flex items-center justify-center text-xs font-bold uppercase tracking-wide peer-checked:ring-2 peer-checked:ring-blue-500 peer-checked:bg-blue-100 transition-all hover:bg-blue-100"
+                                        data-i18n="complaint.form.p4_low">
+                                        P4 Low
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- TAB 2: DETAILS & RESOLUTION -->
+                <div id="complaint-tab-details" class="complaint-tab-content hidden">
+
+                    <!-- Description Section -->
+                    <section class="mb-6">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4"
+                            data-i18n="complaint.form.complaint_details">Complaint Details</h3>
+                        <label class="flex flex-col gap-1.5 mb-4">
+                            <span class="text-xs font-bold uppercase tracking-wide text-gray-500 required"
+                                data-i18n="complaint.form.description">Description</span>
+                            <textarea id="complaint-description-new" rows="4"
+                                class="form-textarea w-full rounded-lg bg-gray-50 border border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-sm resize-y"
+                                placeholder="Describe the complaint in detail..."
+                                data-i18n-placeholder="complaint.form.description" required></textarea>
+                        </label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <label class="flex flex-col gap-1.5">
+                                <span class="text-xs font-bold uppercase tracking-wide text-gray-500 required"
+                                    data-i18n="complaint.form.notified_by">Notified
+                                    By</span>
+                                <input type="text" id="complaint-notified-by-new"
+                                    class="form-input w-full h-11 rounded-lg bg-gray-50 border border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-sm"
+                                    placeholder="How was VKS notified?"
+                                    data-i18n-placeholder="complaint.form.notified_by" required>
+                            </label>
+                            <label class="flex flex-col gap-1.5">
+                                <span class="text-xs font-bold uppercase tracking-wide text-gray-500"
+                                    data-i18n="complaint.form.recorded_by">Recorded By</span>
+                                <input type="text" id="complaint-recorded-by-new"
+                                    class="form-input w-full h-11 rounded-lg bg-gray-50 border border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-sm"
+                                    placeholder="Your name" readonly>
+                            </label>
+                        </div>
+                    </section>
+
+                    <!-- Evidence Section -->
+                    <section class="mb-6">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4"
+                            data-i18n="complaint.form.evidence">Evidence (Optional)
+                        </h3>
+                        <!-- Photo Upload Zone -->
+                        <div id="complaint-upload-zone" class="upload-drop-zone"
+                            onclick="document.getElementById('complaint-photo-input').click()">
+                            <span class="material-symbols-outlined"
+                                style="font-size: 2rem; color: #9ca3af;">cloud_upload</span>
+                            <p class="text-sm text-gray-500 mt-1" data-i18n="complaint.form.upload_prompt">Click or drag
+                                photos here</p>
+                            <p class="text-xs text-gray-400">Max 3 photos, 5MB each (JPG, PNG)</p>
+                            <input type="file" id="complaint-photo-input" multiple accept="image/*" style="display:none"
+                                onchange="handlePhotoSelect(event, 'complaint')">
+                        </div>
+                        <!-- Preview Thumbnails -->
+                        <div id="complaint-photo-preview" class="photo-preview-grid"></div>
+                    </section>
+
+                    <!-- Resolution Section -->
+                    <section>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4"
+                            data-i18n="complaint.form.resolution_tracking">Resolution Tracking
+                        </h3>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <label class="flex flex-col gap-1.5">
+                                <span class="text-xs font-bold uppercase tracking-wide text-gray-500"
+                                    data-i18n="complaint.form.status">Status</span>
+                                <input type="hidden" id="complaint-status-new" value="waiting">
+                                <div class="custom-select" id="complaint-status-dropdown" style="width: 100%;">
+                                    <!-- Populated by initComplaintFormControls() -->
+                                </div>
+                            </label>
+                            <label class="flex flex-col gap-1.5">
+                                <span class="text-xs font-bold uppercase tracking-wide text-gray-500"
+                                    data-i18n="complaint.form.followup_date">Follow-up
+                                    Date</span>
+                                <div style="position: relative;">
+                                    <input type="text" id="complaint-followup-new" readonly
+                                        class="form-input w-full cursor-pointer"
+                                        style="height: 2.75rem; padding-right: 2.5rem;"
+                                        placeholder="Select follow-up date...">
+                                    <span class="material-symbols-outlined"
+                                        style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none; font-size: 18px;">event_upcoming</span>
+                                </div>
+                            </label>
+                        </div>
+                        <label class="flex flex-col gap-1.5">
+                            <span class="text-xs font-bold uppercase tracking-wide text-gray-500"
+                                data-i18n="complaint.form.resolution_notes">Resolution
+                                Notes</span>
+                            <textarea id="complaint-resolution-notes-new" rows="3"
+                                class="form-textarea w-full rounded-lg bg-gray-50 border border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-sm resize-y"
+                                placeholder="Notes on how the complaint was resolved..."
+                                data-i18n-placeholder="complaint.form.resolution_notes"></textarea>
+                        </label>
+                    </section>
+                </div>
+
+            </form>
+        </div>
+
+        <!-- Footer -->
+        <div class="p-6 border-t border-gray-100 bg-gray-50/50 flex justify-between items-center shrink-0">
+            <div>
+                <button type="button" id="complaint-prev-btn"
+                    class="hidden px-4 py-2.5 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+                    onclick="complaintFormPrevTab()">
+                    <span class="material-symbols-outlined text-[18px] align-middle">chevron_left</span>
+                    <span data-i18n="complaint.form.btn.previous">Previous</span>
+                </button>
+            </div>
+            <div class="flex gap-3">
+                <button type="button"
+                    class="px-6 h-10 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors"
+                    onclick="closeModal()" data-i18n="complaint.form.btn.cancel">
+                    Cancel
+                </button>
+                <button type="button" id="complaint-next-btn"
+                    class="px-6 h-10 rounded-lg bg-gray-600 text-white text-sm font-bold hover:bg-gray-700 transition-colors flex items-center gap-2"
+                    onclick="complaintFormNextTab()">
+                    <span data-i18n="complaint.form.btn.next">Next</span>
+                    <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                </button>
+                <button type="button" id="complaint-save-btn"
+                    class="hidden px-6 h-10 rounded-lg bg-amber-500 text-white text-sm font-bold hover:bg-amber-600 transition-colors shadow-lg shadow-amber-500/20 flex items-center gap-2"
+                    onclick="submitComplaintFormNew()">
+                    <span data-i18n="complaint.form.btn.save">Create Case</span>
+                    <span class="material-symbols-outlined text-[18px]">check</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+    // Tab state
+    var complaintFormCurrentTab = 'customer';
+    var complaintFormTabs = ['customer', 'details'];
+
+    // Tab switching
+    function switchComplaintTab(tabName) {
+        complaintFormCurrentTab = tabName;
+
+        // Update tab buttons
+        document.querySelectorAll('.complaint-tab').forEach(function (btn) {
+            if (btn.dataset.tab === tabName) {
+                btn.classList.add('text-amber-600', 'border-amber-500', 'font-bold');
+                btn.classList.remove('text-gray-500', 'border-transparent');
+            } else {
+                btn.classList.remove('text-amber-600', 'border-amber-500', 'font-bold');
+                btn.classList.add('text-gray-500', 'border-transparent');
+            }
+        });
+
+        // Show/hide tab content
+        document.querySelectorAll('.complaint-tab-content').forEach(function (content) {
+            content.classList.add('hidden');
+        });
+        document.getElementById('complaint-tab-' + tabName).classList.remove('hidden');
+
+        // Update navigation buttons
+        var tabIndex = complaintFormTabs.indexOf(tabName);
+        document.getElementById('complaint-prev-btn').classList.toggle('hidden', tabIndex === 0);
+        document.getElementById('complaint-next-btn').classList.toggle('hidden', tabIndex === complaintFormTabs.length - 1);
+        document.getElementById('complaint-save-btn').classList.toggle('hidden', tabIndex !== complaintFormTabs.length - 1);
+    }
+
+    function complaintFormNextTab() {
+        var currentIndex = complaintFormTabs.indexOf(complaintFormCurrentTab);
+        if (currentIndex < complaintFormTabs.length - 1) {
+            switchComplaintTab(complaintFormTabs[currentIndex + 1]);
+        }
+    }
+
+    function complaintFormPrevTab() {
+        var currentIndex = complaintFormTabs.indexOf(complaintFormCurrentTab);
+        if (currentIndex > 0) {
+            switchComplaintTab(complaintFormTabs[currentIndex - 1]);
+        }
+    }
+
+    // Initialize tab click handlers
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.complaint-tab').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                switchComplaintTab(this.dataset.tab);
+            });
+        });
+    });
+
+    // Duplicate showValidationErrorModal removed — uses Modal_ValidationError.html version
+    // which highlights fields inline + shows toast (no DOM-destroying modal)
+
+    /** Auto-fill RecordedBy from logged-in session (new complaints only) */
+    function initComplaintForm() {
+        var recordedByField = document.getElementById('complaint-recorded-by-new');
+        if (recordedByField && !recordedByField.value) {
+            if (typeof SessionManager !== 'undefined' && SessionManager.isLoggedIn()) {
+                recordedByField.value = SessionManager.getDisplayName();
+            }
+        }
+    }
+
+    /** Initialize all premium form controls for Complaint modal */
+    function initComplaintFormControls() {
+        // Customer Type dropdown
+        initVKSDropdown({
+            containerId: 'complaint-type-dropdown',
+            hiddenInputId: 'complaint-customer-type-new',
+            placeholder: (typeof t === 'function' && t('complaint.form.select_type')) || 'Select type...',
+            searchable: false,
+            items: [
+                { value: 'client', label: 'Client', icon: '🏢' },
+                { value: 'tenant', label: 'Tenant', icon: '🏠' },
+                { value: 'visitor', label: 'Visitor', icon: '🚶' },
+                { value: 'guard', label: 'Guard', icon: '🛡️' },
+                { value: 'inspector', label: 'Inspector', icon: '🔍' },
+                { value: 'employee', label: 'Employee', icon: '👷' },
+                { value: 'other', label: 'Other', icon: '📋' }
+            ]
+        });
+
+        // Category dropdown
+        initVKSDropdown({
+            containerId: 'complaint-category-dropdown',
+            hiddenInputId: 'complaint-category-new',
+            placeholder: (typeof t === 'function' && t('complaint.form.select_category')) || 'Select category...',
+            searchable: false,
+            items: [
+                { value: 'service', label: 'Service Quality', icon: '📉' },
+                { value: 'behavior', label: 'Guard Behavior', icon: '👤' },
+                { value: 'billing', label: 'Billing Issue', icon: '💰' },
+                { value: 'punctuality', label: 'Punctuality', icon: '⏰' },
+                { value: 'uniform', label: 'Uniform/Appearance', icon: '👔' },
+                { value: 'communication', label: 'Communication', icon: '📞' },
+                { value: 'other', label: 'Other', icon: '📋' }
+            ]
+        });
+
+        // Site dropdown (dynamic, searchable)
+        initVKSDropdown({
+            containerId: 'complaint-site-dropdown',
+            hiddenInputId: 'complaint-site-new',
+            placeholder: (typeof t === 'function' && t('complaint.form.select_site')) || 'Select site...',
+            searchable: true,
+            items: [],
+            onSelect: function (val, label) {
+                // When site changes, load guards for that site
+                loadGuardOptionsVKS('complaint-guard-dropdown', val, null);
+            }
+        });
+
+        // Guard dropdown (dynamic, searchable)
+        initVKSDropdown({
+            containerId: 'complaint-guard-dropdown',
+            hiddenInputId: 'complaint-guard-new',
+            placeholder: (typeof t === 'function' && t('complaint.form.select_guard')) || 'Select guard...',
+            searchable: true,
+            items: []
+        });
+
+        // Status dropdown
+        initVKSDropdown({
+            containerId: 'complaint-status-dropdown',
+            hiddenInputId: 'complaint-status-new',
+            placeholder: 'New',
+            searchable: false,
+            items: [
+                { value: 'waiting', label: 'Waiting', icon: '🔵' },
+                { value: 'in_progress', label: 'In Progress', icon: '🔍' },
+                { value: 'resolved', label: 'Resolved', icon: '✅' },
+                { value: 'closed', label: 'Closed', icon: '⬜' }
+            ]
+        });
+        // Default status to 'waiting' (matches backend)
+        setVKSDropdownValue('complaint-status-dropdown', 'waiting');
+
+        // Flatpickr: Complaint Date & Time
+        initVKSFlatpickr('complaint-datetime-new', {
+            enableTime: true,
+            dateFormat: 'Y-m-dTH:i',
+            time_24hr: true
+        });
+
+        // Flatpickr: Follow-up Date (date only)
+        initVKSFlatpickr('complaint-followup-new', {
+            enableTime: false,
+            dateFormat: 'Y-m-d'
+        });
+
+        // Photo upload drag-and-drop
+        initUploadDragDrop('complaint-upload-zone', 'complaint');
+    }
+
+    // Submit function with ALL fields
+    function submitComplaintFormNew() {
+        var form = document.getElementById('form-complaint-new');
+
+        // Validate required fields
+        var customerName = document.getElementById('complaint-customer-new').value.trim();
+        var customerPhone = document.getElementById('complaint-phone-new').value.trim();
+        var customerType = document.getElementById('complaint-customer-type-new').value;
+        var siteId = document.getElementById('complaint-site-new').value;
+        var category = document.getElementById('complaint-category-new').value;
+        var priorityEl = document.querySelector('input[name="complaint-priority-new"]:checked');
+        var description = document.getElementById('complaint-description-new').value.trim();
+        var notifiedBy = document.getElementById('complaint-notified-by-new').value.trim();
+
+        if (!customerName || !customerPhone || !customerType || !siteId || !category || !priorityEl || !description || !notifiedBy) {
+            // Collect missing fields with IDs for inline highlighting
+            var missingFields = [];
+            var firstMissingTab = null;
+            if (!customerName) { missingFields.push({ label: 'Reporter Name', fieldId: 'complaint-customer-new', type: 'input' }); if (!firstMissingTab) firstMissingTab = 'customer'; }
+            if (!customerPhone) { missingFields.push({ label: 'Phone Number', fieldId: 'complaint-phone-new', type: 'input' }); if (!firstMissingTab) firstMissingTab = 'customer'; }
+            if (!customerType) { missingFields.push({ label: 'Reporter Type', fieldId: 'complaint-type-dropdown', type: 'dropdown' }); if (!firstMissingTab) firstMissingTab = 'customer'; }
+            if (!siteId) { missingFields.push({ label: 'Site Location', fieldId: 'complaint-site-dropdown', type: 'dropdown' }); if (!firstMissingTab) firstMissingTab = 'customer'; }
+            if (!category) { missingFields.push({ label: 'Category', fieldId: 'complaint-category-dropdown', type: 'dropdown' }); if (!firstMissingTab) firstMissingTab = 'customer'; }
+            if (!priorityEl) { missingFields.push({ label: 'Priority', fieldId: 'complaint-priority-new', type: 'radio' }); if (!firstMissingTab) firstMissingTab = 'customer'; }
+            if (!description) { missingFields.push({ label: 'Description', fieldId: 'complaint-description-new', type: 'input' }); if (!firstMissingTab) firstMissingTab = 'details'; }
+            if (!notifiedBy) { missingFields.push({ label: 'Notified By', fieldId: 'complaint-notified-by-new', type: 'input' }); if (!firstMissingTab) firstMissingTab = 'details'; }
+
+            // Auto-switch to tab with the first missing field
+            if (firstMissingTab && typeof switchComplaintTab === 'function') {
+                switchComplaintTab(firstMissingTab);
+            }
+
+            showValidationErrorModal(missingFields);
+            return;
+        }
+
+        var data = {
+            id: form.dataset.complaintId || null,
+            customerName: customerName,
+            customerPhone: customerPhone,
+            customerEmail: document.getElementById('complaint-email-new').value.trim(),
+            customerType: customerType,
+            siteId: siteId,
+            guardId: document.getElementById('complaint-guard-new').value,
+            category: category,
+            priority: priorityEl.value,
+            timestamp: document.getElementById('complaint-datetime-new').value
+                ? new Date(document.getElementById('complaint-datetime-new').value).toISOString()
+                : new Date().toISOString(),
+            description: description,
+            notifiedBy: notifiedBy,
+            recordedBy: document.getElementById('complaint-recorded-by-new').value.trim(),
+            status: document.getElementById('complaint-status-new').value || 'waiting',
+            evidence: getPhotoData('complaint'),
+            followUpDate: document.getElementById('complaint-followup-new').value || null,
+            resolution: document.getElementById('complaint-resolution-notes-new').value.trim()
+        };
+
+        showLoading('Creating complaint case...');
+
+        google.script.run
+            .withSuccessHandler(function (result) {
+                hideLoading();
+                if (result && result.success) {
+                    showToast('Complaint case created successfully!', 'success');
+                    clearPhotoUploads('complaint');
+                    closeModal();
+                    if (typeof loadComplaints === 'function') loadComplaints();
+                } else {
+                    showSaveErrorModal(
+                        'Complaint Save Failed',
+                        result ? result.error : 'Unknown error',
+                        'The complaint case could not be saved to the database'
+                    );
+                }
+            })
+            .withFailureHandler(function (error) {
+                hideLoading();
+                showSaveErrorModal(
+                    'Complaint Save Error',
+                    error.message || 'Connection failed',
+                    'A server error occurred while creating the complaint case'
+                );
+            })
+            .saveComplaint(data);
+    }
+</script>

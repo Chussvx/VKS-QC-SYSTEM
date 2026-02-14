@@ -1,0 +1,523 @@
+<!-- Page_GuardActivity.html - Guard Activity Scan Logs -->
+<div id="page-guard-activity" class="page-content">
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <div class="filter-group">
+      <!-- Date Picker (Flatpickr) -->
+      <div class="input-group w-44">
+        <span class="material-symbols-outlined input-icon">calendar_today</span>
+        <input type="text" id="activity-date-picker" class="form-input" data-i18n-placeholder="activity.select_date"
+          placeholder="Select Date">
+      </div>
+      <input type="hidden" id="activity-date">
+
+      <div class="divider-v h-6 mx-2"></div>
+
+      <!-- Site Filter -->
+      <div class="custom-select w-44" data-select-id="activity-site">
+        <button class="custom-select-trigger" onclick="toggleSelect('activity-site')">
+          <span class="custom-select-value" data-i18n="filter.all_sites">All Sites</span>
+          <span class="material-symbols-outlined">expand_more</span>
+        </button>
+        <div class="custom-select-menu" id="activity-site-menu">
+          <div class="custom-select-item selected" data-value=""
+            onclick="selectOption('activity-site', '', 'All Sites'); loadGuardActivity()">All Sites</div>
+        </div>
+        <input type="hidden" id="activity-site-val" value="">
+      </div>
+
+      <!-- Guard Filter -->
+      <div class="custom-select w-44" data-select-id="activity-guard">
+        <button class="custom-select-trigger" onclick="toggleSelect('activity-guard')">
+          <span class="custom-select-value" data-i18n="activity.all_guards">All Guards</span>
+          <span class="material-symbols-outlined">expand_more</span>
+        </button>
+        <div class="custom-select-menu" id="activity-guard-menu">
+          <div class="custom-select-item selected" data-value=""
+            onclick="selectOption('activity-guard', '', 'All Guards'); loadGuardActivity()">All Guards</div>
+        </div>
+        <input type="hidden" id="activity-guard-val" value="">
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3 ml-auto">
+      <div class="flex items-center gap-2 px-3 py-1 bg-surface-100 rounded-full border border-border">
+        <span class="text-xs font-semibold text-primary" id="count-scans"><span id="count-scans-num">0</span> <span
+            data-i18n="activity.scans">Scans</span></span>
+        <div class="divider-v h-3"></div>
+        <span class="text-xs font-semibold text-danger" id="count-incidents"><span id="count-incidents-num">0</span>
+          <span data-i18n="activity.incidents">Incidents</span></span>
+      </div>
+      <button class="btn btn-outlined btn-sm" onclick="loadGuardActivity()" title="Refresh">
+        <span class="material-symbols-outlined">refresh</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Activity Table / Timeline -->
+  <div class="card p-0 overflow-hidden mt-6">
+    <div class="table-container">
+      <table class="data-table" id="activity-table">
+        <thead>
+          <tr>
+            <th style="width: 100px;" data-i18n="table.time">Time</th>
+            <th data-i18n="table.guard">Guard</th>
+            <th data-i18n="table.site">Site</th>
+            <th data-i18n="table.activity">Activity</th>
+            <th data-i18n="table.status">Status</th>
+            <th class="text-right" data-i18n="table.actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="activity-tbody">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // State management
+  let activityData = [];
+  let activityDateInstance = null;
+  let gaLastScanSignal = 0;
+  let gaLastGuardSignal = 0;
+  let activityPoller = null;
+
+  // ActivityCache - In-memory cache for faster page revisits (Amazon-style)
+  const ActivityCache = {
+    data: null,
+    timestamp: 0,
+    filters: null,
+    maxAge: 60000,
+
+    get: function (filters) {
+      if (this.data && (Date.now() - this.timestamp) < this.maxAge) {
+        if (JSON.stringify(this.filters) === JSON.stringify(filters)) {
+          console.log('[ActivityCache] HIT');
+          return this.data;
+        }
+      }
+      return null;
+    },
+
+    set: function (data, filters) {
+      this.data = data;
+      this.filters = filters;
+      this.timestamp = Date.now();
+      console.log('[ActivityCache] SET');
+    },
+
+    clear: function () {
+      this.data = null;
+      this.timestamp = 0;
+    }
+  };
+
+  /**
+   * Safe getter for filter values with logging
+   */
+  function getSafeValue(id, defaultValue = '') {
+    const el = document.getElementById(id);
+    if (!el) {
+      console.warn('[Activity] Element not found:', id);
+      return defaultValue;
+    }
+    return el.value;
+  }
+
+  /**
+   * Initialize Guard Activity page
+   */
+  function init_guard_activity() {
+    console.log('[Activity] Initializing Guard Activity (Elite V2)');
+
+    // 1. Initialize Date Picker
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+
+    const dateInput = document.getElementById('activity-date');
+    if (dateInput) dateInput.value = todayStr;
+
+    if (activityDateInstance) activityDateInstance.destroy();
+    flatpickr("#activity-date-picker", {
+      defaultDate: today,
+      dateFormat: "d M Y",
+      onChange: function (selectedDates, dateStr, instance) {
+        const isoDate = selectedDates[0].toISOString().split('T')[0];
+        const syncInput = document.getElementById('activity-date');
+        if (syncInput) syncInput.value = isoDate;
+        loadGuardActivity();
+      }
+    });
+
+    // 2. Load Filters
+    loadActivityFilters();
+
+    // 3. Elite Standard: Render memory data instantly if it exists
+    if (activityData && activityData.length > 0) {
+      console.log('[Activity] Memory Entry Render');
+      renderActivityTable();
+      updateActivityCounters();
+    }
+
+    // 4. Start Signal Listener
+    startActivitySignalListener();
+
+    // If memory is empty, we MUST fetch. If not, only fetch if signal changed.
+    if (activityData.length === 0) {
+      loadGuardActivity();
+    } else {
+      checkActivityUpdate();
+    }
+  }
+
+  /**
+   * Load filter options for Sites and Guards
+   */
+  function loadActivityFilters() {
+    console.log('[Activity] Loading filters...');
+    // Load Sites
+    google.script.run
+      .withSuccessHandler(function (sites) {
+        const menu = document.getElementById('activity-site-menu');
+        if (!menu) return;
+        let html = '<div class="custom-select-item selected" data-value="" onclick="selectOption(\'activity-site\', \'\', \'All Sites\'); loadGuardActivity()">All Sites</div>';
+
+        sites.forEach(function (site) {
+          if (site.value.includes('meta')) return; // Skip meta options
+          html += '<div class="custom-select-item" data-value="' + site.value + '" onclick="selectOption(\'activity-site\', \'' + site.value + '\', this); loadGuardActivity()">' + escapeHtml(site.label) + '</div>';
+        });
+        menu.innerHTML = html;
+      })
+      .getSiteOptions();
+
+    // Load Guards
+    google.script.run
+      .withSuccessHandler(function (guards) {
+        const menu = document.getElementById('activity-guard-menu');
+        if (!menu) return;
+        let html = '<div class="custom-select-item selected" data-value="" onclick="selectOption(\'activity-guard\', \'\', \'All Guards\'); loadGuardActivity()">All Guards</div>';
+
+        guards.forEach(function (guard) {
+          html += '<div class="custom-select-item" data-value="' + guard.value + '" onclick="selectOption(\'activity-guard\', \'' + guard.value + '\', \'' + guard.label.replace(/'/g, "\\'") + '\'); loadGuardActivity()">' + guard.label + '</div>';
+        });
+        menu.innerHTML = html;
+      })
+      .getGuardOptions();
+  }
+
+  /**
+   * Fetch activity logs from backend
+   */
+  function loadGuardActivity() {
+    const filters = {
+      date: getSafeValue('activity-date'),
+      siteId: getSafeValue('activity-site-val'),
+      guardId: getSafeValue('activity-guard-val')
+    };
+
+    // Check cache first (Amazon-style instant loading)
+    const cached = ActivityCache.get(filters);
+    if (cached) {
+      activityData = cached;
+      renderActivityTable();
+      updateActivityCounters();
+      return;
+    }
+
+    // Elite Standard: Render memory data instantly if it exists
+    if (activityData && activityData.length > 0) {
+      console.log('[Activity] Memory First Render');
+      renderActivityTable();
+      showSync();
+    } else {
+      showTableLoading('activity-tbody', 6);
+    }
+
+    google.script.run
+      .withSuccessHandler(function (response) {
+        hideSync();
+
+        // V25 Wrapper Handling
+        if (!response) {
+          showTableError('activity-tbody', 6, 'Backend returned null Response');
+          return;
+        }
+
+        if (response.version) {
+          if (!response.success) {
+            showTableError('activity-tbody', 6, 'Backend Error: ' + response.error);
+            return;
+          }
+          activityData = response.data || [];
+        } else {
+          activityData = Array.isArray(response) ? response : [];
+        }
+
+        ActivityCache.set(activityData, filters);
+        renderActivityTable();
+        updateActivityCounters();
+      })
+      .withFailureHandler(function (error) {
+        hideSync();
+        // Error Persistence: Only show error if we have NO data
+        if (!activityData || activityData.length === 0) {
+          showTableError('activity-tbody', 6, 'Network Error: ' + error.message);
+        } else {
+          showToast('Sync failed: ' + error.message, 'error');
+        }
+      })
+      .getGuardActivity(filters);
+  }
+
+  /**
+   * Render the activity table using DiffRenderer
+   */
+  function renderActivityTable() {
+    // Null-safe: ensure activityData is always a valid array
+    if (!Array.isArray(activityData)) activityData = [];
+
+    try {
+      DiffRenderer.render('activity-tbody', activityData, {
+        keyFn: function (ev) { return ev.id; },
+        renderFn: function (ev, idx) {
+          // Determine icons and badges based on type
+          const isScan = ev.type === 'SCAN';
+          const typeIcon = isScan ? 'qr_code_scanner' : 'report_problem';
+          const typeClass = isScan ? 'badge-info' : 'badge-danger';
+          const avatarColor = getAvatarColor(ev.guardName);
+
+          let html = '';
+
+          // Add time divider logic if needed (can be handled by checking prev item in loop if renderFn provides idx)
+          // But for DiffRenderer, we usually want flat rows. Let's use a composite display for time.
+
+          html += '<tr class="clickable-row" onclick="openActivityDetail(\'' + ev.id + '\')">';
+
+          // 1. Time
+          html += '<td><span class="font-mono text-sm font-bold text-primary">' + ev.timeDisplay + '</span></td>';
+
+          // 2. Guard
+          html += '<td>';
+          html += '  <div class="flex items-center gap-2">';
+          html += '    <div class="avatar avatar-xs" style="background-color: ' + avatarColor + '">' + getInitials(ev.guardName) + '</div>';
+          html += '    <span class="font-medium">' + escapeHtml(ev.guardName) + '</span>';
+          html += '  </div>';
+          html += '</td>';
+
+          // 3. Site (Name + Code)
+          const displaySiteName = (ev.siteName && ev.siteName !== 'Unknown') ? ev.siteName : ev.siteCode;
+          const displaySiteCode = (ev.siteName && ev.siteName !== 'Unknown') ? ev.siteCode : '';
+
+          html += '<td>';
+          html += '  <div class="flex flex-col">';
+          html += '    <span class="text-sm font-semibold">' + escapeHtml(displaySiteName) + '</span>';
+          if (displaySiteCode) {
+            html += '    <span class="text-xs text-muted">' + escapeHtml(displaySiteCode) + '</span>';
+          }
+          html += '  </div>';
+          html += '</td>';
+
+          // 4. Activity Details
+          html += '<td>';
+          html += '  <div class="flex items-center gap-2">';
+          html += '    <span class="material-symbols-outlined text-muted text-lg">' + typeIcon + '</span>';
+          html += '    <div class="flex flex-col">';
+          html += '      <span class="text-sm">' + escapeHtml(ev.details) + '</span>';
+          if (ev.notes) {
+            html += '      <span class="text-xs text-muted italic line-clamp-1">' + escapeHtml(ev.notes) + '</span>';
+          }
+          html += '    </div>';
+          html += '  </div>';
+          html += '</td>';
+
+          // 5. Status Badge
+          html += '<td>' + getActivityStatusBadge(ev) + '</td>';
+
+          // 6. Actions
+          html += '<td class="text-right">';
+          html += '  <button class="btn-icon" onclick="event.stopPropagation(); openActivityDetail(\'' + ev.id + '\')" title="Details">';
+          html += '    <span class="material-symbols-outlined">visibility</span>';
+          html += '  </button>';
+          html += '</td>';
+
+          html += '</tr>';
+          return html;
+        },
+        onUpdate: function (el) {
+          el.classList.add('row-update-flash');
+          setTimeout(function () { el.classList.remove('row-update-flash'); }, 2000);
+        }
+      });
+
+      // Handle empty state manually if DiffRenderer results in empty container
+      const tbody = document.getElementById('activity-tbody');
+      if (activityData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-12 text-muted">' +
+          '<span class="material-symbols-outlined text-5xl mb-2 opacity-50">history</span>' +
+          '<p>' + t('activity.no_data') + '</p></td></tr>';
+      }
+    } catch (err) {
+      console.error('[Activity] DiffRenderer failed:', err);
+      const tbody = document.getElementById('activity-tbody');
+      if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-danger">Render Error: ' + err.message + '</td></tr>';
+      }
+    }
+  }
+
+  /**
+   * Get appropriate status badge for an activity event
+   */
+  function getActivityStatusBadge(ev) {
+    if (ev.type === 'INCIDENT') {
+      const priority = ev.subType || 'NORMAL';
+      const cls = priority === 'CRITICAL' ? 'badge-danger' : 'badge-warning';
+      return '<span class="badge ' + cls + '">' + t('status.' + priority.toLowerCase(), priority) + '</span>';
+    }
+
+    // For SCANS
+    const status = (ev.status || 'valid').toLowerCase();
+    const badges = {
+      'valid': '<span class="badge badge-success">✓ ' + t('scan.status.valid') + '</span>',
+      'checkin': '<span class="badge badge-primary">' + t('scan.status.login') + '</span>',
+      'checkout': '<span class="badge badge-muted">' + t('scan.status.logout') + '</span>',
+      'late': '<span class="badge badge-warning">⚠ ' + t('scan.status.late') + '</span>',
+      'invalid': '<span class="badge badge-danger">✗ ' + t('scan.status.invalid') + '</span>'
+    };
+    return badges[status] || '<span class="badge badge-info">' + status + '</span>';
+  }
+
+  /**
+   * Update stats counters in filter bar
+   */
+  function updateActivityCounters() {
+    const scans = activityData.filter(function (e) { return e.type === 'SCAN'; }).length;
+    const incidents = activityData.filter(function (e) { return e.type === 'INCIDENT'; }).length;
+
+    var scanNumEl = document.getElementById('count-scans-num');
+    var incNumEl = document.getElementById('count-incidents-num');
+    if (scanNumEl) scanNumEl.textContent = scans;
+    if (incNumEl) incNumEl.textContent = incidents;
+  }
+
+  /**
+   * Open activity detail modal
+   */
+  function openActivityDetail(id) {
+    const ev = activityData.find(function (e) { return e.id === id; });
+    if (!ev) return;
+
+    if (ev.type === 'INCIDENT') {
+      openIncidentDetail(ev);
+    } else {
+      openScanDetail(ev);
+    }
+  }
+
+  /**
+   * Open Scan Detail Modal
+   */
+  function openScanDetail(ev) {
+    openModal('scan-detail');
+
+    // Populate metadata
+    document.getElementById('scan-det-id').textContent = '#' + ev.id.split('-').pop();
+    document.getElementById('scan-det-site').textContent = ev.siteName;
+    document.getElementById('scan-det-guard').textContent = ev.guardName;
+    document.getElementById('scan-det-time').textContent = ev.timeDisplay;
+
+    // Populate content
+    const content = document.getElementById('scan-detail-content');
+    let html = '';
+
+    html += '<div class="detail-grid">';
+    html += '  <div class="detail-item">';
+    html += '    <span class="detail-label">' + t('scan.detail.checkpoint') + '</span>';
+    html += '    <span class="detail-value">' + escapeHtml(ev.details) + '</span>';
+    html += '  </div>';
+    html += '  <div class="detail-item">';
+    html += '    <span class="detail-label">' + t('scan.detail.status') + '</span>';
+    html += '    <span class="detail-value">' + getActivityStatusBadge(ev) + '</span>';
+    html += '  </div>';
+    html += '</div>';
+
+    if (ev.notes) {
+      html += '<div class="mt-4 p-4 bg-surface-50 rounded-lg border border-border">';
+      html += '  <div class="text-xs font-bold text-muted uppercase mb-1">' + t('scan.detail.notes') + '</div>';
+      html += '  <p class="text-sm">' + escapeHtml(ev.notes) + '</p>';
+      html += '</div>';
+    }
+
+    content.innerHTML = html;
+  }
+
+  /**
+   * Open Incident Detail Modal
+   */
+  function openIncidentDetail(ev) {
+    openModal('incident-detail');
+
+    // Populate Header & Meta
+    document.getElementById('inc-det-id').textContent = '#' + ev.id.split('-').pop();
+    document.getElementById('inc-det-title').textContent = ev.subType + ' INCIDENT';
+    document.getElementById('inc-det-site').textContent = ev.siteName;
+    document.getElementById('inc-det-time').textContent = ev.timeDisplay;
+
+    // Priority color/icon is handled by the template usually, but let's ensure text
+    const priorityBadge = document.querySelector('#modal-incident-detail .badge');
+    if (priorityBadge) {
+      priorityBadge.textContent = ev.subType;
+      priorityBadge.className = 'badge ' + (ev.subType === 'CRITICAL' ? 'badge-danger-solid' : 'badge-warning-solid') + ' badge-xs';
+    }
+
+    // Description
+    const desc = document.getElementById('inc-det-desc');
+    if (desc) desc.textContent = ev.details;
+  }
+
+  // REAL-TIME SIGNALING
+  function startActivitySignalListener() {
+    if (activityPoller) clearInterval(activityPoller);
+    activityPoller = setInterval(checkActivityUpdate, 10000);
+  }
+
+  /**
+   * Checks if activity data needs a refresh based on the global signal.
+   */
+  function checkActivityUpdate() {
+    if (currentPage !== 'guard-activity') return;
+
+    google.script.run
+      .withSuccessHandler(function (signals) {
+        if (!signals) return;
+
+        let needsRefresh = false;
+
+        // 1. Check Scan Signal
+        if (signals.lastScan > gaLastScanSignal) {
+          if (gaLastScanSignal !== 0) needsRefresh = true;
+          gaLastScanSignal = signals.lastScan;
+        }
+
+        // 2. Check Guard Signal
+        if (signals.lastGuard > gaLastGuardSignal) {
+          if (gaLastGuardSignal !== 0) needsRefresh = true;
+          gaLastGuardSignal = signals.lastGuard;
+        }
+
+        if (needsRefresh) {
+          console.log('[Activity] Signal-triggered refresh');
+          loadGuardActivity();
+        }
+      })
+      .getUpdateSignals();
+  }
+
+  // Register page initializer
+  if (typeof pageInitializers === 'undefined') window.pageInitializers = {};
+  pageInitializers['guard-activity'] = init_guard_activity;
+
+</script>

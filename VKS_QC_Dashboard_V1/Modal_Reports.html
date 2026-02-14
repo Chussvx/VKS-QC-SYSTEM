@@ -1,0 +1,357 @@
+<!-- Modal_Reports.html - Report Generation Modals -->
+
+<!-- Daily Summary Report Modal Template -->
+<template id="modal-report-daily">
+    <div class="modal-header-refined">
+        <div class="modal-title-group">
+            <div class="modal-icon-box success">
+                <span class="material-symbols-outlined">today</span>
+            </div>
+            <div>
+                <h3 class="modal-title" data-i18n="reports.daily.title">DAILY SUMMARY</h3>
+                <div class="modal-subtitle-flex">
+                    <span class="text-xs text-muted" data-i18n="reports.daily.subtitle">GENERATE OPERATIONAL
+                        OVERVIEW</span>
+                </div>
+            </div>
+        </div>
+        <button class="btn-close" onclick="closeModal()">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+    </div>
+
+    <div class="modal-body p-6">
+        <div class="section-title" data-i18n="reports.params">REPORT PARAMETERS</div>
+        <div class="form-group mb-6">
+            <label class="form-label required" data-i18n="reports.select_date">Select Date</label>
+            <div style="position:relative;">
+                <input type="text" id="daily-report-date" class="form-input" readonly placeholder="Select date..."
+                    style="cursor:pointer; padding-right:2.5rem;">
+                <span class="material-symbols-outlined"
+                    style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);font-size:1.1rem;color:var(--text-muted);pointer-events:none;">calendar_today</span>
+            </div>
+        </div>
+
+        <div class="section-title" data-i18n="reports.include_sections">INCLUDE SECTIONS</div>
+        <div class="grid grid-cols-2 gap-3 mb-6">
+            <label class="checkbox-card">
+                <input type="checkbox" checked>
+                <div class="checkbox-content">
+                    <span class="material-symbols-outlined text-xs">route</span>
+                    <span data-i18n="reports.section.patrol">Patrol Status</span>
+                </div>
+            </label>
+            <label class="checkbox-card">
+                <input type="checkbox" checked>
+                <div class="checkbox-content">
+                    <span class="material-symbols-outlined text-xs">warning</span>
+                    <span data-i18n="reports.section.incidents">Incidents</span>
+                </div>
+            </label>
+            <label class="checkbox-card">
+                <input type="checkbox" checked>
+                <div class="checkbox-content">
+                    <span class="material-symbols-outlined text-xs">person</span>
+                    <span data-i18n="reports.section.guard_activity">Guard Activity</span>
+                </div>
+            </label>
+            <label class="checkbox-card">
+                <input type="checkbox">
+                <div class="checkbox-content">
+                    <span class="material-symbols-outlined text-xs">more_time</span>
+                    <span data-i18n="reports.section.overtime">Overtime</span>
+                </div>
+            </label>
+        </div>
+    </div>
+
+    <div class="modal-footer-refined">
+        <button class="btn btn-ghost" onclick="closeModal()" data-i18n="common.cancel">CANCEL</button>
+        <button class="btn btn-primary" onclick="generateReport('daily')">
+            <span class="material-symbols-outlined">download</span>
+            <span data-i18n="reports.btn.generate">GENERATE REPORT</span>
+        </button>
+    </div>
+</template>
+
+<!-- Patrol Compliance Report Modal Template -->
+<template id="modal-report-patrol">
+    <div class="modal-header-refined">
+        <div class="modal-title-group">
+            <div class="modal-icon-box success">
+                <span class="material-symbols-outlined">route</span>
+            </div>
+            <div>
+                <h3 class="modal-title" data-i18n="reports.patrol.title">PATROL COMPLIANCE</h3>
+                <div class="modal-subtitle-flex">
+                    <span class="text-xs text-muted" data-i18n="reports.patrol.subtitle">ANALYZE ADHERENCE & SLAS</span>
+                </div>
+            </div>
+        </div>
+        <button class="btn-close" onclick="closeModal()">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+    </div>
+
+    <div class="modal-body p-6">
+        <div class="section-title" data-i18n="reports.time_period">TIME PERIOD</div>
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="form-group">
+                <label class="form-label required" data-i18n="reports.start_date">Start Date</label>
+                <div style="position:relative;">
+                    <input type="text" id="patrol-report-start" class="form-input" readonly placeholder="Start date..."
+                        style="cursor:pointer; padding-right:2.5rem;">
+                    <span class="material-symbols-outlined"
+                        style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);font-size:1.1rem;color:var(--text-muted);pointer-events:none;">calendar_today</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label required" data-i18n="reports.end_date">End Date</label>
+                <div style="position:relative;">
+                    <input type="text" id="patrol-report-end" class="form-input" readonly placeholder="End date..."
+                        style="cursor:pointer; padding-right:2.5rem;">
+                    <span class="material-symbols-outlined"
+                        style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);font-size:1.1rem;color:var(--text-muted);pointer-events:none;">calendar_today</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-title" data-i18n="reports.filters">FILTERS</div>
+        <div class="form-group mb-6">
+            <label class="form-label" data-i18n="reports.filter_site">Filter by Site</label>
+            <input type="hidden" id="patrol-report-site">
+            <div class="custom-select" id="patrol-report-site-dropdown"></div>
+        </div>
+    </div>
+
+    <div class="modal-footer-refined">
+        <button class="btn btn-ghost" onclick="closeModal()" data-i18n="common.cancel">CANCEL</button>
+        <button class="btn btn-primary" onclick="generateReport('patrol')">
+            <span class="material-symbols-outlined">download</span>
+            <span data-i18n="reports.btn.generate">GENERATE REPORT</span>
+        </button>
+    </div>
+</template>
+
+<!-- Guard Performance Report Modal Template -->
+<template id="modal-report-performance">
+    <div class="modal-header-refined">
+        <div class="modal-title-group">
+            <div class="modal-icon-box success">
+                <span class="material-symbols-outlined">trending_up</span>
+            </div>
+            <div>
+                <h3 class="modal-title" data-i18n="reports.perf.title">GUARD PERFORMANCE</h3>
+                <div class="modal-subtitle-flex">
+                    <span class="text-xs text-muted" data-i18n="reports.perf.subtitle">METRICS & ATTENDANCE</span>
+                </div>
+            </div>
+        </div>
+        <button class="btn-close" onclick="closeModal()">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+    </div>
+
+    <div class="modal-body p-6">
+        <div class="section-title">TIME PERIOD</div>
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="form-group">
+                <label class="form-label required">Start Date</label>
+                <div style="position:relative;">
+                    <input type="text" id="perf-report-start" class="form-input" readonly placeholder="Start date..."
+                        style="cursor:pointer; padding-right:2.5rem;">
+                    <span class="material-symbols-outlined"
+                        style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);font-size:1.1rem;color:var(--text-muted);pointer-events:none;">calendar_today</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label required">End Date</label>
+                <div style="position:relative;">
+                    <input type="text" id="perf-report-end" class="form-input" readonly placeholder="End date..."
+                        style="cursor:pointer; padding-right:2.5rem;">
+                    <span class="material-symbols-outlined"
+                        style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);font-size:1.1rem;color:var(--text-muted);pointer-events:none;">calendar_today</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-title">FILTERS</div>
+        <div class="form-group mb-6">
+            <label class="form-label" data-i18n="reports.filter_guard">Filter by Guard</label>
+            <input type="hidden" id="perf-report-guard">
+            <div class="custom-select" id="perf-report-guard-dropdown"></div>
+        </div>
+    </div>
+
+    <div class="modal-footer-refined">
+        <button class="btn btn-ghost" onclick="closeModal()" data-i18n="common.cancel">CANCEL</button>
+        <button class="btn btn-primary" onclick="generateReport('performance')">
+            <span class="material-symbols-outlined">download</span>
+            <span data-i18n="reports.btn.generate">GENERATE REPORT</span>
+        </button>
+    </div>
+</template>
+
+<!-- Incident Report Modal Template -->
+<template id="modal-report-incident">
+    <div class="modal-header-refined">
+        <div class="modal-title-group">
+            <div class="modal-icon-box success">
+                <span class="material-symbols-outlined">local_fire_department</span>
+            </div>
+            <div>
+                <h3 class="modal-title" data-i18n="reports.incident.title">INCIDENT SUMMARY</h3>
+                <div class="modal-subtitle-flex">
+                    <span class="text-xs text-muted" data-i18n="reports.incident.subtitle">SEVERITY & TREND
+                        ANALYSIS</span>
+                </div>
+            </div>
+        </div>
+        <button class="btn-close" onclick="closeModal()">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+    </div>
+
+    <div class="modal-body p-6">
+        <div class="section-title">TIME PERIOD</div>
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="form-group">
+                <label class="form-label required">Start Date</label>
+                <div style="position:relative;">
+                    <input type="text" id="incident-report-start" class="form-input" readonly
+                        placeholder="Start date..." style="cursor:pointer; padding-right:2.5rem;">
+                    <span class="material-symbols-outlined"
+                        style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);font-size:1.1rem;color:var(--text-muted);pointer-events:none;">calendar_today</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label required">End Date</label>
+                <div style="position:relative;">
+                    <input type="text" id="incident-report-end" class="form-input" readonly placeholder="End date..."
+                        style="cursor:pointer; padding-right:2.5rem;">
+                    <span class="material-symbols-outlined"
+                        style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);font-size:1.1rem;color:var(--text-muted);pointer-events:none;">calendar_today</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-title">FILTERS</div>
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="form-group">
+                <label class="form-label" data-i18n="reports.filter_category">Category</label>
+                <input type="hidden" id="incident-report-cat">
+                <div class="custom-select" id="incident-report-cat-dropdown"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label" data-i18n="reports.filter_severity">Severity</label>
+                <input type="hidden" id="incident-report-sev">
+                <div class="custom-select" id="incident-report-sev-dropdown"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-footer-refined">
+        <button class="btn btn-ghost" onclick="closeModal()" data-i18n="common.cancel">CANCEL</button>
+        <button class="btn btn-primary" onclick="generateReport('incident')">
+            <span class="material-symbols-outlined">download</span>
+            <span data-i18n="reports.btn.generate">GENERATE REPORT</span>
+        </button>
+    </div>
+</template>
+
+<script>
+    // Init functions for each report modal type
+    function initDailyReportControls() {
+        initVKSFlatpickr('daily-report-date', {
+            enableTime: false,
+            dateFormat: 'Y-m-d',
+            defaultDate: new Date()
+        });
+    }
+
+    function initPatrolReportControls() {
+        initVKSFlatpickr('patrol-report-start', {
+            enableTime: false,
+            dateFormat: 'Y-m-d'
+        });
+        initVKSFlatpickr('patrol-report-end', {
+            enableTime: false,
+            dateFormat: 'Y-m-d'
+        });
+        initVKSDropdown({
+            containerId: 'patrol-report-site-dropdown',
+            hiddenInputId: 'patrol-report-site',
+            placeholder: 'All Sites',
+            searchable: true,
+            items: []
+        });
+        // Load sites into dropdown
+        loadSiteOptionsVKS('patrol-report-site-dropdown', null);
+    }
+
+    function initPerfReportControls() {
+        initVKSFlatpickr('perf-report-start', {
+            enableTime: false,
+            dateFormat: 'Y-m-d'
+        });
+        initVKSFlatpickr('perf-report-end', {
+            enableTime: false,
+            dateFormat: 'Y-m-d'
+        });
+        initVKSDropdown({
+            containerId: 'perf-report-guard-dropdown',
+            hiddenInputId: 'perf-report-guard',
+            placeholder: 'All Guards',
+            searchable: true,
+            items: []
+        });
+        // Load guards into dropdown
+        if (typeof loadGuardOptionsVKS === 'function') {
+            loadGuardOptionsVKS('perf-report-guard-dropdown', null, null);
+        }
+    }
+
+    function initIncidentReportControls() {
+        initVKSFlatpickr('incident-report-start', {
+            enableTime: false,
+            dateFormat: 'Y-m-d'
+        });
+        initVKSFlatpickr('incident-report-end', {
+            enableTime: false,
+            dateFormat: 'Y-m-d'
+        });
+        initVKSDropdown({
+            containerId: 'incident-report-cat-dropdown',
+            hiddenInputId: 'incident-report-cat',
+            placeholder: 'All Categories',
+            searchable: false,
+            items: [
+                { value: 'theft', label: '🔓 Theft' },
+                { value: 'fire', label: '🔥 Fire' },
+                { value: 'medical', label: '🏥 Medical' },
+                { value: 'vandalism', label: '🔨 Vandalism' },
+                { value: 'access', label: '🚪 Access Control' }
+            ]
+        });
+        initVKSDropdown({
+            containerId: 'incident-report-sev-dropdown',
+            hiddenInputId: 'incident-report-sev',
+            placeholder: 'All',
+            searchable: false,
+            items: [
+                { value: 'critical', label: '🔴 Critical' },
+                { value: 'high', label: '🟠 High' },
+                { value: 'medium', label: '🟡 Medium' },
+                { value: 'low', label: '🟢 Low' }
+            ]
+        });
+    }
+
+    // Map report types to init functions
+    var reportInitFunctions = {
+        'daily': initDailyReportControls,
+        'patrol': initPatrolReportControls,
+        'performance': initPerfReportControls,
+        'incident': initIncidentReportControls
+    };
+</script>

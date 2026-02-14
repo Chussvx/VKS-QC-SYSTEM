@@ -1,0 +1,124 @@
+<!-- Modal_Checkpoints.html - Rich Detail View for Checkpoints & QR Codes -->
+
+<!-- Checkpoint Detail Modal (Elite Standard) -->
+<div id="modal-checkpoint-detail" class="modal-template">
+    <div class="modal-card-solid">
+        <div class="modal-header-solid">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-primary-10 flex items-center justify-center text-primary">
+                    <span class="material-symbols-outlined text-3xl">qr_code_2</span>
+                </div>
+                <div>
+                    <h3 class="modal-title" data-i18n="qr.detail.title">Checkpoint Info</h3>
+                    <p class="modal-subtitle">LOC-XXXXXX</p>
+                </div>
+            </div>
+            <button class="btn-close" onclick="closeModal()">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <div class="modal-body p-0">
+            <!-- Large QR Preview Card -->
+            <div class="bg-surface-50 p-8 flex flex-col items-center border-b border-border">
+                <div id="cp-qr-preview-container"
+                    class="qr-preview-card bg-white p-4 rounded-2xl shadow-sm border border-border">
+                    <!-- Loading state or Large QR image will be injected here -->
+                    <div class="w-64 h-64 flex items-center justify-center text-muted opacity-20">
+                        <span class="material-symbols-outlined text-8xl animate-pulse">qr_code_2</span>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex flex-wrap justify-center gap-3">
+                    <button id="btn-qr-generate-large" class="btn btn-primary" onclick="generateQRFromModal()">
+                        <span class="material-symbols-outlined">refresh</span>
+                        <span data-i18n="qr.detail.generate">Generate QR</span>
+                    </button>
+                    <a id="btn-qr-download-drive" href="#" target="_blank" class="btn btn-outlined hidden">
+                        <span class="material-symbols-outlined">download</span>
+                        <span data-i18n="qr.detail.drive">Get from Drive</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Metadata Grid -->
+            <div class="p-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="meta-item">
+                        <span class="meta-label" data-i18n="qr.detail.route">Route</span>
+                        <div id="cp-detail-route" class="meta-value">-</div>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label" data-i18n="qr.detail.required">Required</span>
+                        <div id="cp-detail-required" class="meta-value">-</div>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label" data-i18n="qr.detail.status">Status</span>
+                        <div id="cp-detail-status" class="meta-value">-</div>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label" data-i18n="qr.detail.generated_at">Generated At</span>
+                        <div id="cp-detail-generated" class="meta-value text-xs">-</div>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-6 border-t border-border">
+                    <span class="meta-label mb-2 block" data-i18n="qr.detail.location_desc">Location Description</span>
+                    <p id="cp-detail-desc" class="text-sm text-foreground-light leading-relaxed">-</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer justify-between bg-surface-50">
+            <button class="btn btn-ghost text-danger" onclick="deleteCheckpointFromModal()">
+                <span class="material-symbols-outlined">delete</span>
+                <span data-i18n="common.delete">Delete</span>
+            </button>
+            <div class="flex gap-2">
+                <button class="btn btn-ghost" onclick="closeModal()" data-i18n="qr.detail.dismiss">Dismiss</button>
+                <button class="btn btn-primary" onclick="editCheckpointFromDetail()">
+                    <span class="material-symbols-outlined">edit</span>
+                    <span data-i18n="qr.detail.edit">Edit Detail</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<style>
+    .modal-content-solid {
+        border-radius: 24px;
+        background: white;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    .qr-preview-card {
+        transition: all 0.3s ease;
+    }
+
+    .qr-preview-card:hover {
+        transform: scale(1.02);
+    }
+
+    .meta-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .meta-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+    }
+
+    .meta-value {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-foreground);
+    }
+</style>

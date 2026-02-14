@@ -1,0 +1,1027 @@
+<!-- Page_Dashboard.html - Main Dashboard (Simplified - Real Data Only) -->
+<div id="page-dashboard" class="page-content">
+
+    <!-- KPI Cards Row (6 cards - Restored) -->
+    <div class="kpi-grid kpi-grid-6 mb-6">
+        <!-- 1. Total Sites -->
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <div class="kpi-icon-box bg-blue">
+                    <span class="material-symbols-outlined">domain</span>
+                </div>
+                <span class="kpi-tag badge-info" data-i18n="status.active">Active</span>
+            </div>
+            <div class="kpi-label" data-i18n="nav.sites">Total Sites</div>
+            <div class="kpi-value" id="dash-total-sites">--</div>
+        </div>
+
+        <!-- 2. Active Guards -->
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <div class="kpi-icon-box bg-indigo">
+                    <span class="material-symbols-outlined">security</span>
+                </div>
+                <span class="kpi-tag badge-success" id="dash-guards-badge">On Duty</span>
+            </div>
+            <div class="kpi-label" data-i18n="nav.guards">Active Guards</div>
+            <div class="kpi-value" id="dash-active-guards">--</div>
+        </div>
+
+        <!-- 3. Current Shift / Coverage -->
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <div class="kpi-icon-box bg-cyan">
+                    <span class="material-symbols-outlined">schedule</span>
+                </div>
+                <span class="kpi-tag badge-purple" id="dash-shift-badge">--</span>
+            </div>
+            <div class="kpi-label" data-i18n="dash.current_shift">Current Shift</div>
+            <div class="kpi-value" id="dash-current-shift">--</div>
+        </div>
+
+        <!-- 4. Late Patrols -->
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <div class="kpi-icon-box bg-orange">
+                    <span class="material-symbols-outlined">timer_off</span>
+                </div>
+                <!-- <span class="kpi-tag badge-danger">-2%</span> -->
+            </div>
+            <div class="kpi-label" data-i18n="dash.late">Late Patrols</div>
+            <div class="kpi-value" id="dash-late-patrols">--</div>
+        </div>
+
+        <!-- 5. Quality Score -->
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <div class="kpi-icon-box bg-purple">
+                    <span class="material-symbols-outlined">verified</span>
+                </div>
+                <span class="kpi-tag badge-success" data-i18n="dash.target">Target 9.0</span>
+            </div>
+            <div class="kpi-label" data-i18n="dash.quality">Quality Score</div>
+            <div class="kpi-value" id="dash-quality-score">--</div>
+        </div>
+
+        <!-- 6. Live Issues -->
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <div class="kpi-icon-box bg-red">
+                    <span class="material-symbols-outlined">warning</span>
+                </div>
+                <span class="kpi-tag badge-warning" id="dash-issues-badge">--</span>
+            </div>
+            <div class="kpi-label" data-i18n="dash.issues">Live Issues</div>
+            <div class="kpi-value" id="dash-live-issues">--</div>
+        </div>
+    </div>
+
+    <!-- AI Daily Briefing Card -->
+    <div id="ai-briefing-card" class="ai-briefing-card mb-6" style="display:none;">
+        <div class="ai-card-header">
+            <div class="ai-card-title">
+                <span class="ai-sparkle">✨</span>
+                <span data-i18n="ai.daily_briefing">Today's Briefing</span>
+                <span class="ai-date" id="ai-briefing-date"></span>
+            </div>
+            <div class="ai-card-actions">
+                <button class="btn btn-ghost btn-xs" onclick="regenerateAIBriefing()" id="ai-regen-btn" title="Regenerate">
+                    <span class="material-symbols-outlined text-sm">refresh</span>
+                </button>
+                <button class="btn btn-ghost btn-xs" onclick="dismissAIBriefing()" title="Dismiss">
+                    <span class="material-symbols-outlined text-sm">close</span>
+                </button>
+            </div>
+        </div>
+        <div class="ai-card-body" id="ai-briefing-content">
+            <div class="ai-loading">
+                <span class="material-symbols-outlined spin">progress_activity</span>
+                <span data-i18n="ai.loading">Generating briefing...</span>
+            </div>
+        </div>
+        <div class="ai-card-footer">
+            <span class="ai-badge">Powered by Gemini</span>
+            <span class="ai-timestamp" id="ai-briefing-time"></span>
+        </div>
+    </div>
+
+    <!-- Middle Section: Map & Alerts -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+
+        <!-- Live Map (2/3 width) -->
+        <div class="card p-0 overflow-hidden lg:col-span-2 relative" style="height: 400px; min-height: 400px;">
+            <div id="map"></div>
+
+            <!-- Map Overlay Controls -->
+            <div
+                class="absolute top-4 right-4 z-[400] bg-white/90 backdrop-blur rounded-lg shadow-sm border border-white/20 p-2 flex flex-col gap-2">
+                <button class="btn btn-ghost btn-xs btn-square" onclick="dashMap.setView([17.9757, 102.6331], 12)"
+                    title="Reset View">
+                    <span class="material-symbols-outlined text-sm">my_location</span>
+                </button>
+                <button class="btn btn-ghost btn-xs btn-square" onclick="toggleMapHeatmap()" title="Toggle Heatmap">
+                    <span class="material-symbols-outlined text-sm">layers</span>
+                </button>
+            </div>
+
+            <!-- Map Legend -->
+            <div
+                class="absolute bottom-4 left-4 z-[400] bg-white/90 backdrop-blur rounded-lg shadow-sm px-3 py-2 text-xs flex gap-3">
+                <div class="flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                    <span data-i18n="status.active">Active</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                    <span data-i18n="status.issue">Issue</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                    <span data-i18n="status.inactive">Inactive</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts Panel (1/3 width) -->
+        <div class="card p-0 flex flex-col h-full" style="height: 400px; min-height: 400px;">
+            <div class="p-4 border-b border-border/50 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>
+                    <h3 class="card-title text-sm" data-i18n="dash.alerts">Live Alerts</h3>
+                </div>
+                <span class="badge badge-sm badge-danger" id="alert-count-badge">0 New</span>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-0 scrollbar-hide" id="dash-alerts-list">
+                <!-- Alerts injected by JS -->
+                <div class="flex flex-col items-center justify-center h-full text-muted gap-2">
+                    <span class="material-symbols-outlined text-2xl opacity-20">notifications_off</span>
+                    <span class="text-xs">No active alerts</span>
+                </div>
+            </div>
+
+            <div class="p-3 border-t border-border/50 bg-slate-50/50 backdrop-blur">
+                <button class="btn btn-ghost btn-sm w-full text-xs justify-center" onclick="navigateTo('issues')">
+                    <span data-i18n="common.view_all">View All Issues</span>
+                    <span class="material-symbols-outlined text-sm ml-1">arrow_forward</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Chart (Full Width) -->
+    <div class="card p-6 mb-6">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="card-title" data-i18n="nav.guard_activity">Activity Overview</h3>
+            <div class="flex gap-4 text-xs font-medium text-muted">
+                <div class="flex items-center gap-1.5">
+                    <span class="legend-box bg-green-400"></span> <span data-i18n="dash.patrols">Patrols</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <span class="legend-box bg-slate-200"></span> <span data-i18n="dash.issues">Incidents</span>
+                </div>
+            </div>
+        </div>
+        <div class="chart-container" style="height: 280px;">
+            <canvas id="activityChart"></canvas>
+        </div>
+        <div class="text-center text-xs text-muted mt-3" data-i18n="dash.last_12_days">Last 12 days activity</div>
+    </div>
+
+    <!-- AI Risk Intelligence Card -->
+    <div id="ai-patterns-card" class="ai-patterns-card mb-6" style="display:none;">
+        <div class="ai-patterns-header">
+            <div class="ai-patterns-title">
+                <span class="material-symbols-outlined">psychology</span>
+                <span data-i18n="ai.risk_intelligence">Weekly Risk Intelligence</span>
+            </div>
+            <span class="ai-patterns-date" id="ai-patterns-date"></span>
+        </div>
+        <div class="ai-patterns-body" id="ai-patterns-content">
+            <div class="ai-loading">
+                <span class="material-symbols-outlined spin">progress_activity</span>
+                <span data-i18n="ai.loading">Loading analysis...</span>
+            </div>
+        </div>
+        <div class="ai-patterns-footer">
+            <span class="ai-badge">Powered by Gemini</span>
+            <button class="btn btn-ghost btn-xs" onclick="navigateTo('issues')">
+                <span data-i18n="ai.view_incidents">View Incidents</span>
+                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Recent Submissions (Restored) -->
+    <div class="card p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="card-title" data-i18n="nav.reports">Recent Submissions</h3>
+            <button class="btn btn-ghost btn-sm" onclick="navigateTo('reports')">
+                <span data-i18n="common.view_all">View All</span>
+                <span class="material-symbols-outlined text-sm ml-1">arrow_forward</span>
+            </button>
+        </div>
+        <div class="space-y-3" id="recent-submissions-list">
+            <!-- Injected by JS -->
+            <div class="text-center py-8 text-muted">
+                <span class="material-symbols-outlined spin">progress_activity</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Dashboard state
+    let dashMap = null;
+    let mapMarkers = [];
+    let chartInstance = null;
+
+    // Memory Persistence (Elite V2)
+    let dashKPIsMemory = null;
+    let dashAlertsMemory = [];
+    let dashSubmissionsMemory = [];
+
+    let dashLastScanSignal = 0;
+    let dashLastMasterSignal = 0;
+    let dashPoller = null;
+
+    // DashboardCache - Unified cache with TTL for instant page revisits (Amazon-style)
+    const DashboardCache = {
+        kpis: { data: null, timestamp: 0 },
+        alerts: { data: null, timestamp: 0 },
+        submissions: { data: null, timestamp: 0 },
+        maxAge: 60000,
+
+        getKPIs: function () {
+            if (this.kpis.data && (Date.now() - this.kpis.timestamp) < this.maxAge) {
+                console.log('[DashboardCache] KPIs HIT');
+                return this.kpis.data;
+            }
+            return null;
+        },
+        setKPIs: function (data) {
+            this.kpis = { data: data, timestamp: Date.now() };
+            console.log('[DashboardCache] KPIs SET');
+        },
+
+        getAlerts: function () {
+            if (this.alerts.data && (Date.now() - this.alerts.timestamp) < this.maxAge) {
+                console.log('[DashboardCache] Alerts HIT');
+                return this.alerts.data;
+            }
+            return null;
+        },
+        setAlerts: function (data) {
+            this.alerts = { data: data, timestamp: Date.now() };
+            console.log('[DashboardCache] Alerts SET');
+        },
+
+        getSubmissions: function () {
+            if (this.submissions.data && (Date.now() - this.submissions.timestamp) < this.maxAge) {
+                console.log('[DashboardCache] Submissions HIT');
+                return this.submissions.data;
+            }
+            return null;
+        },
+        setSubmissions: function (data) {
+            this.submissions = { data: data, timestamp: Date.now() };
+            console.log('[DashboardCache] Submissions SET');
+        },
+        // P1 Optimization: Set all cache entries at once from bundled response
+        setAll: function (bundle) {
+            if (bundle.kpis) this.setKPIs(bundle.kpis);
+            if (bundle.alerts) this.setAlerts(bundle.alerts);
+            if (bundle.submissions) this.setSubmissions(bundle.submissions);
+            console.log('[DashboardCache] ALL SET from bundle');
+        }
+    };
+
+    // Initialize Dashboard (Simplified - Real Data Only)
+    function init_dashboard() {
+        console.log('Initializing Dashboard (Simplified)...');
+        initLeafletMap();
+
+        // Immediate Memory Render
+        if (dashKPIsMemory) renderKPIs(dashKPIsMemory);
+
+        // Signal-First Check
+        if (!dashKPIsMemory) {
+            loadDashboardBundle();
+        } else {
+            checkDashboardUpdate();
+        }
+
+        // Load AI widgets (non-blocking)
+        loadAIBriefing();
+        loadAIPatterns();
+
+        // Managed refresh for chart (every 10 mins)
+        RefreshManager.start('dashboard', function () {
+            loadDashboardBundle();
+        }, 600000);
+
+        // Listen for language changes
+        window.addEventListener('languageChanged', function () {
+            loadDashboardBundle();
+        });
+    }
+
+    // Helper to render KPI values (Sites + Issues only)
+    function renderKPIs(data) {
+        const sitesEl = document.getElementById('dash-total-sites');
+        const issuesEl = document.getElementById('dash-live-issues');
+        const badgeEl = document.getElementById('dash-issues-badge');
+
+        if (sitesEl) sitesEl.textContent = data.totalSites || '--';
+        if (issuesEl) issuesEl.textContent = data.liveIssues || 0;
+        if (badgeEl) {
+            const count = data.liveIssues || 0;
+            badgeEl.textContent = count > 0 ? count + ' ' + (t('dash.open') || 'open') : t('status.clear') || 'Clear';
+        }
+    }
+
+    // Initialize Leaflet Map
+    function initLeafletMap() {
+        const mapContainer = document.getElementById('dashboard-map');
+        if (!mapContainer || dashMap) return;
+
+        // Use OpenStreetMap tiles (standard view)
+        const standardLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        });
+
+        // Use Esri Satellite tiles (satellite view)
+        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+        });
+
+        dashMap = L.map('dashboard-map', {
+            center: [17.9757, 102.6331], // Vientiane, Laos
+            zoom: 13,
+            layers: [standardLayer],
+            zoomControl: false
+        });
+
+        L.control.zoom({ position: 'bottomright' }).addTo(dashMap);
+
+        // Map Toggle Logic
+        const btnSat = document.getElementById('btn-map-sat');
+        const btnView = document.getElementById('btn-map-view');
+
+        if (btnSat && btnView) {
+            btnSat.addEventListener('click', () => {
+                dashMap.addLayer(satelliteLayer);
+                dashMap.removeLayer(standardLayer);
+                btnSat.classList.add('active');
+                btnView.classList.remove('active');
+            });
+
+            btnView.addEventListener('click', () => {
+                dashMap.addLayer(standardLayer);
+                dashMap.removeLayer(satelliteLayer);
+                btnView.classList.add('active');
+                btnSat.classList.remove('active');
+            });
+        }
+
+        updateMapClock();
+        setInterval(updateMapClock, 1000);
+    }
+
+    // Update Map Clock overlay
+    function updateMapClock() {
+        const now = new Date();
+        const clockEl = document.getElementById('map-clock');
+        if (clockEl) {
+            clockEl.textContent = now.getUTCHours().toString().padStart(2, '0') + ' : ' +
+                now.getUTCMinutes().toString().padStart(2, '0') + ' : ' +
+                now.getUTCSeconds().toString().padStart(2, '0');
+        }
+    }
+
+    /**
+     * P1 Optimization: Load all dashboard data in a single API call
+     * Reduces 4 network round-trips to 1, saving ~1.5 seconds
+     */
+    function loadDashboardBundle() {
+        showSync();
+        google.script.run
+            .withSuccessHandler(function (bundle) {
+                hideSync();
+                console.log('[Dashboard] Bundle received:', Object.keys(bundle));
+
+                // Cache all data at once
+                DashboardCache.setAll(bundle);
+
+                // Update memory and render each section
+                if (bundle.kpis) {
+                    dashKPIsMemory = bundle.kpis;
+                    renderKPIs(bundle.kpis);
+                }
+
+                if (bundle.alerts) {
+                    dashAlertsMemory = bundle.alerts;
+                    renderAlerts(bundle.alerts);
+                }
+
+                if (bundle.submissions) {
+                    dashSubmissionsMemory = bundle.submissions;
+                    renderSubmissions(bundle.submissions);
+                }
+
+                if (bundle.mapMarkers) {
+                    renderMapMarkers(bundle.mapMarkers);
+                }
+
+                // Render Activity Chart with real data
+                if (bundle.activityChart) {
+                    renderActivityChart(bundle.activityChart);
+                }
+
+                // Render Recent Handover widget
+                if (bundle.recentHandover) {
+                    renderRecentHandover(bundle.recentHandover);
+                }
+            })
+            .withFailureHandler(function (err) {
+                hideSync();
+                console.error('[Dashboard] Bundle load failed:', err);
+                showToast('Dashboard sync failed. Trying individual loads...', 'warning');
+                // Fallback to individual calls if bundle fails
+                loadDashboardData();
+                setTimeout(loadDashboardAlerts, 50);
+                setTimeout(loadRecentSubmissions, 100);
+            })
+            .getDashboardBundle();
+    }
+
+    /**
+     * Render map markers from bundled data
+     */
+    function renderMapMarkers(sites) {
+        if (!dashMap) return;
+
+        // Clear existing markers
+        mapMarkers.forEach(m => dashMap.removeLayer(m));
+        mapMarkers = [];
+
+        sites.forEach(site => {
+            if (site.lat && site.lng) {
+                const color = site.status === 'alert' ? '#ef4444' : (site.status === 'idle' ? '#f59e0b' : '#10b981');
+                const marker = L.circleMarker([site.lat, site.lng], {
+                    radius: 8,
+                    fillColor: color,
+                    color: "#fff",
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.9
+                }).addTo(dashMap);
+
+                const statusLabel = t('status.' + site.status) || site.status.toUpperCase();
+                marker.bindPopup(`<b>${site.name}</b><br>Status: ${statusLabel}`);
+                mapMarkers.push(marker);
+            }
+        });
+    }
+
+    // Load KPI data
+    function loadDashboardData() {
+        // Check cache first (Amazon-style instant loading)
+        const cached = DashboardCache.getKPIs();
+        if (cached) {
+            dashKPIsMemory = cached;
+            renderKPIs(cached);
+            loadMapMarkers();
+            return;
+        }
+
+        showSync();
+        google.script.run
+            .withSuccessHandler(function (data) {
+                hideSync();
+                DashboardCache.setKPIs(data);
+                dashKPIsMemory = data;
+                renderKPIs(data);
+                loadMapMarkers();
+            })
+            .withFailureHandler(function (err) {
+                hideSync();
+                showToast('Dashboard data sync failed', 'error');
+            })
+            .getDashboardData();
+    }
+
+    // Load Map Markers (Real-time status)
+    function loadMapMarkers() {
+        if (!dashMap) return;
+        google.script.run
+            .withSuccessHandler(function (sites) {
+                renderMapMarkers(sites);
+            })
+            .getSiteStatusForMap();
+    }
+
+    // Load and render alerts
+    function loadDashboardAlerts() {
+        // Check cache first (Amazon-style instant loading)
+        const cached = DashboardCache.getAlerts();
+        if (cached) {
+            dashAlertsMemory = cached;
+            renderAlerts(cached);
+            return;
+        }
+
+        const list = document.getElementById('dash-alerts-list');
+        if (!list) return;
+
+        // Elite: show loading spinner inside container if empty
+        if (!list.children.length) {
+            list.innerHTML = `
+                <div class="text-center py-8 text-muted">
+                    <span class="material-symbols-outlined spin">progress_activity</span>
+                    <p class="mt-2 text-sm">Loading alerts...</p>
+                </div>
+            `;
+        }
+
+        google.script.run
+            .withSuccessHandler(function (alerts) {
+                DashboardCache.setAlerts(alerts || []);
+                dashAlertsMemory = alerts || [];
+                renderAlerts(dashAlertsMemory);
+            })
+            .getDashboardAlerts();
+    }
+
+    // Render 6-Card KPI Grid
+    function renderKPIs(kpis) {
+        if (!kpis) return;
+
+        // 1. Sites
+        setText('dash-total-sites', kpis.totalSites || '--');
+
+        // 2. Guards
+        setText('dash-active-guards', kpis.onDuty || '--');
+
+        // 3. Shift (Time-based calculation)
+        const hour = new Date().getHours();
+        let shiftName = 'Morning Shift';
+        let shiftTime = '06:00 - 14:00';
+        if (hour >= 14 && hour < 22) {
+            shiftName = 'Afternoon Shift';
+            shiftTime = '14:00 - 22:00';
+        } else if (hour >= 22 || hour < 6) {
+            shiftName = 'Night Shift';
+            shiftTime = '22:00 - 06:00';
+        }
+        setText('dash-current-shift', shiftName);
+        setText('dash-shift-badge', shiftTime);
+
+        // 4. Late Patrols
+        setText('dash-late-patrols', kpis.latePatrols || '0');
+
+        // 5. Quality Score
+        setText('dash-quality-score', kpis.qualityScore || '10.0');
+
+        // 6. Issues
+        setText('dash-live-issues', kpis.liveIssues || '0');
+        setText('dash-issues-badge', (kpis.newIssues || 0) + ' ' + (t('common.new') || 'New'));
+    }
+
+    // Render Map Markers
+    function renderMapMarkers(sites) {
+        if (!dashMap || !sites || !sites.length) return;
+
+        // Clear existing markers
+        mapMarkers.forEach(m => dashMap.removeLayer(m));
+        mapMarkers = [];
+
+        sites.forEach(site => {
+            if (site.lat && site.lng) {
+                const color = site.status === 'alert' ? '#ef4444' : (site.status === 'idle' ? '#f59e0b' : '#10b981');
+                const marker = L.circleMarker([site.lat, site.lng], {
+                    radius: 8,
+                    fillColor: color,
+                    color: "#fff",
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.9
+                }).addTo(dashMap);
+
+                // Translate status in popup
+                const statusLabel = t('status.' + site.status) || (site.status ? site.status.toUpperCase() : 'UNKNOWN');
+                marker.bindPopup(`<b>${escapeHtml(site.name)}</b><br>Status: ${statusLabel}`);
+                mapMarkers.push(marker);
+            }
+        });
+    }
+
+    function setText(id, val) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+    }
+
+    function renderAlerts(alerts) {
+        const list = document.getElementById('dash-alerts-list');
+        if (!list) return;
+        if (!alerts || alerts.length === 0) {
+            list.innerHTML = `<p class="text-center py-8 text-muted">${t('common.no_active_alerts') || 'No active alerts'}</p>`;
+            return;
+        }
+
+        document.getElementById('alert-count-badge').textContent = alerts.length + ' ' + (t('common.new') || 'New');
+
+        DiffRenderer.render(list, alerts, {
+            keyFn: a => a.id,
+            renderFn: alert => `
+                    <div class="alert-item-detailed">
+                        <div class="alert-item-header">
+                            <div class="alert-type-icon ${alert.type}">
+                                <span class="material-symbols-outlined">${alert.type === 'critical' ? 'dangerous' : (alert.type === 'warning' ? 'warning' : 'info')}</span>
+                            </div>
+                            <div class="alert-meta">
+                                <h4>${escapeHtml(alert.title)}</h4>
+                                <p>${alert.timeLabel || alert.timeAgo || 'Just now'} &bull; ${escapeHtml(alert.siteName || 'Unknown Site')}</p>
+                            </div>
+                        </div>
+                        <p class="alert-msg">${escapeHtml(alert.description)}</p>
+                        <div class="alert-actions-group">
+                            <button class="btn btn-ghost btn-xs" onclick="viewAlertDetail('${alert.id}')">${t('common.view')}</button>
+                            <button class="btn btn-danger btn-xs" onclick="escalateAlert('${alert.id}')">${t('common.escalate') || 'Escalate'}</button>
+                            <button class="btn btn-ghost btn-xs" onclick="contactSite('${alert.siteId || ''}')">${t('common.contact') || 'Contact'}</button>
+                        </div>
+                    </div>
+                `,
+            onUpdate: (el, item, changed) => {
+                if (changed) {
+                    el.classList.add('row-update-flash');
+                    setTimeout(() => el.classList.remove('row-update-flash'), 2000);
+                }
+            }
+        });
+    }
+
+    // Render Activity Chart (Bars) - Now uses real data from backend
+    function renderActivityChart(chartData) {
+        const chartEl = document.getElementById('activityChart');
+        if (!chartEl || typeof Chart === 'undefined') return;
+
+        const ctx = chartEl.getContext('2d');
+        if (chartInstance) chartInstance.destroy();
+
+        // Use provided data or fallback to empty
+        const labels = chartData?.labels || [];
+        const patrolData = chartData?.patrols || [];
+        const incidentData = chartData?.incidents || [];
+
+        // Show empty state if no data
+        if (labels.length === 0) {
+            chartEl.parentElement.innerHTML = `
+                <div class="text-center py-8 text-muted">
+                    <span class="material-symbols-outlined text-4xl">bar_chart</span>
+                    <p class="mt-2 text-sm">${t('common.no_data') || 'No activity data available'}</p>
+                </div>
+            `;
+            return;
+        }
+
+        const data = {
+            labels: labels,
+            datasets: [
+                {
+                    label: t('dash.patrols'),
+                    data: patrolData,
+                    backgroundColor: '#10b981',
+                    borderRadius: 4,
+                },
+                {
+                    label: t('dash.issues'),
+                    data: incidentData,
+                    backgroundColor: '#e2e8f0',
+                    borderRadius: 4,
+                }
+            ]
+        };
+
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { stacked: true, grid: { display: false }, border: { display: false } },
+                    y: { stacked: true, grid: { color: '#f1f5f9' }, border: { display: false }, ticks: { display: false } }
+                }
+            }
+        });
+    }
+
+    // Render Recent Handover widget
+    function renderRecentHandover(handover) {
+        if (!handover) return;
+
+        // Update the Recent Submissions section with handover info
+        // This adds a highlighted handover card at the top of submissions
+        const list = document.getElementById('recent-submissions-list');
+        if (!list) return;
+
+        // Add handover card if not already present
+        let handoverCard = document.getElementById('recent-handover-card');
+        if (!handoverCard) {
+            handoverCard = document.createElement('div');
+            handoverCard.id = 'recent-handover-card';
+            handoverCard.className = 'submission-item handover-highlight';
+            list.prepend(handoverCard);
+        }
+
+        handoverCard.innerHTML = `
+            <div class="submission-icon" style="background: #dbeafe; color: #3b82f6;">
+                <span class="material-symbols-outlined">swap_horiz</span>
+            </div>
+            <div class="submission-content">
+                <h5>${t('dash.recent_handover') || 'Recent Handover'}</h5>
+                <p>${escapeHtml(handover.guard)} • ${escapeHtml(handover.site)}</p>
+            </div>
+            <div class="submission-time">${handover.time || ''}</div>
+        `;
+    }
+
+    // Load Recent Submissions
+    function loadRecentSubmissions() {
+        // Check cache first (Amazon-style instant loading)
+        const cached = DashboardCache.getSubmissions();
+        if (cached) {
+            dashSubmissionsMemory = cached;
+            renderSubmissions(cached);
+            return;
+        }
+
+        const list = document.getElementById('recent-submissions-list');
+
+        // Elite: show loading spinner inside container if empty
+        if (!list.children.length) {
+            list.innerHTML = `
+                <div class="text-center py-8 text-muted">
+                    <span class="material-symbols-outlined spin">progress_activity</span>
+                </div>
+            `;
+        }
+
+        google.script.run
+            .withSuccessHandler(function (submissions) {
+                DashboardCache.setSubmissions(submissions || []);
+                dashSubmissionsMemory = submissions || [];
+                renderSubmissions(dashSubmissionsMemory);
+            })
+            .getRecentSubmissions();
+    }
+
+    function renderSubmissions(submissions) {
+        const list = document.getElementById('recent-submissions-list');
+        DiffRenderer.render(list, submissions || [], {
+            keyFn: s => s.id || (s.title + s.time),
+            renderFn: sub => `
+                    <div class="submission-item">
+                        <div class="submission-icon ${sub.success ? 'success' : ''}">
+                            <span class="material-symbols-outlined">${sub.icon}</span>
+                        </div>
+                        <div class="submission-content">
+                            <h5>${sub.title}</h5>
+                            <p>${sub.meta}</p>
+                        </div>
+                        <div class="submission-time">${sub.time}</div>
+                    </div>
+                `,
+            onUpdate: (el, item, changed) => {
+                if (changed) {
+                    el.classList.add('row-update-flash');
+                    setTimeout(() => el.classList.remove('row-update-flash'), 2000);
+                }
+            }
+        });
+    }
+
+    // Action helpers
+    function viewAlertDetail(id) {
+        openModal('issue-detail', { id: id });
+    }
+
+    function escalateAlert(id) {
+        showToast('Alert escalated to supervisor', 'warning');
+    }
+
+    function contactSite(siteId) {
+        showToast('Connecting to site radio...', 'info');
+    }
+
+    // REAL-TIME SIGNALING
+    function startDashboardSignalListener() {
+        if (dashPoller) clearInterval(dashPoller);
+        dashPoller = setInterval(checkDashboardUpdate, 20000);
+    }
+
+    function checkDashboardUpdate() {
+        if (currentPage !== 'dashboard') return;
+
+        google.script.run
+            .withSuccessHandler(function (signals) {
+                if (!signals) return;
+
+                let needsCritRefresh = false;
+                let needsSubmRefresh = false;
+
+                // 1. Check Scans (Duty Status)
+                if (signals.lastScan > dashLastScanSignal) {
+                    if (dashLastScanSignal !== 0) needsCritRefresh = true;
+                    dashLastScanSignal = signals.lastScan;
+                }
+
+                // 2. Check Master (Incidents, Inspections, Handovers)
+                if (signals.lastMaster > dashLastMasterSignal) {
+                    if (dashLastMasterSignal !== 0) {
+                        needsCritRefresh = true;
+                        needsSubmRefresh = true;
+                    }
+                    dashLastMasterSignal = signals.lastMaster;
+                }
+
+                if (needsCritRefresh) {
+                    console.log('[Dashboard] Master update received! Refreshing KPIs...');
+                    loadDashboardData();
+                    loadDashboardAlerts();
+                    showToast('Real-time update received', 'info');
+                }
+
+                if (needsSubmRefresh) {
+                    console.log('[Dashboard] New submissions! Refreshing list...');
+                    loadRecentSubmissions();
+                }
+            })
+            .getUpdateSignals();
+    }
+
+    // ===========================================
+    // AI WIDGET FUNCTIONS
+    // ===========================================
+
+    function loadAIBriefing() {
+        var card = document.getElementById('ai-briefing-card');
+        if (!card) return;
+
+        // Check if user dismissed today
+        var dismissed = sessionStorage.getItem('ai_briefing_dismissed');
+        if (dismissed === new Date().toISOString().slice(0, 10)) return;
+
+        google.script.run
+            .withSuccessHandler(function(data) {
+                if (!data || !data.content) {
+                    card.style.display = 'none';
+                    return;
+                }
+                renderAIBriefing(data);
+            })
+            .withFailureHandler(function(err) {
+                console.warn('[AI Briefing] Load failed:', err);
+                card.style.display = 'none';
+            })
+            .getAIBriefing();
+    }
+
+    function renderAIBriefing(data) {
+        var card = document.getElementById('ai-briefing-card');
+        var content = document.getElementById('ai-briefing-content');
+        var dateEl = document.getElementById('ai-briefing-date');
+        var timeEl = document.getElementById('ai-briefing-time');
+
+        if (!card || !content) return;
+
+        // Format content — split by lines, wrap in paragraphs
+        var lines = data.content.split('\n').filter(function(l) { return l.trim(); });
+        var html = lines.map(function(line) {
+            var trimmed = line.trim();
+            if (trimmed === '---' || trimmed === '──── ລາວ ────') {
+                return '<div class="ai-lang-divider">ລາວ</div>';
+            }
+            return '<p class="ai-bullet">' + trimmed + '</p>';
+        }).join('');
+
+        content.innerHTML = html;
+        if (dateEl) dateEl.textContent = data.date || '';
+        if (timeEl) timeEl.textContent = data.generatedAt ? 'Generated at ' + data.generatedAt : '';
+        card.style.display = 'block';
+    }
+
+    function dismissAIBriefing() {
+        var card = document.getElementById('ai-briefing-card');
+        if (card) {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(-10px)';
+            setTimeout(function() { card.style.display = 'none'; }, 300);
+        }
+        sessionStorage.setItem('ai_briefing_dismissed', new Date().toISOString().slice(0, 10));
+    }
+
+    function regenerateAIBriefing() {
+        var btn = document.getElementById('ai-regen-btn');
+        var content = document.getElementById('ai-briefing-content');
+        if (btn) btn.classList.add('spin-icon');
+        if (content) content.innerHTML = '<div class="ai-loading"><span class="material-symbols-outlined spin">progress_activity</span><span>Regenerating...</span></div>';
+
+        google.script.run
+            .withSuccessHandler(function(result) {
+                if (btn) btn.classList.remove('spin-icon');
+                if (result && result.success && result.briefing) {
+                    renderAIBriefing({ content: result.briefing, date: new Date().toISOString().slice(0, 10), generatedAt: 'just now' });
+                    showToast('Briefing regenerated', 'success');
+                } else {
+                    if (content) content.innerHTML = '<p class="ai-error">Could not generate briefing. Try again later.</p>';
+                    showToast('AI generation failed', 'error');
+                }
+            })
+            .withFailureHandler(function(err) {
+                if (btn) btn.classList.remove('spin-icon');
+                if (content) content.innerHTML = '<p class="ai-error">Connection error. Please try again.</p>';
+                showToast('AI connection failed', 'error');
+            })
+            .regenerateDailyBriefing();
+    }
+
+    function loadAIPatterns() {
+        var card = document.getElementById('ai-patterns-card');
+        if (!card) return;
+
+        google.script.run
+            .withSuccessHandler(function(data) {
+                if (!data || !data.content) {
+                    card.style.display = 'none';
+                    return;
+                }
+                renderAIPatterns(data);
+            })
+            .withFailureHandler(function(err) {
+                console.warn('[AI Patterns] Load failed:', err);
+                card.style.display = 'none';
+            })
+            .getAIPatternAnalysis();
+    }
+
+    function renderAIPatterns(data) {
+        var card = document.getElementById('ai-patterns-card');
+        var content = document.getElementById('ai-patterns-content');
+        var dateEl = document.getElementById('ai-patterns-date');
+
+        if (!card || !content) return;
+
+        // Try to parse JSON pattern cards from content
+        var rawContent = data.content || '';
+        var html = '';
+
+        // Check if content contains JSON array of pattern objects
+        var jsonMatch = rawContent.match(/\[\s*\{[\s\S]*?\}\s*\]/);
+        if (jsonMatch) {
+            try {
+                var patterns = JSON.parse(jsonMatch[0]);
+                html = patterns.map(function(p) {
+                    var sevClass = p.severity === 'high' ? 'ai-sev-high' : (p.severity === 'medium' ? 'ai-sev-med' : 'ai-sev-low');
+                    return '<div class="ai-pattern-item ' + sevClass + '">' +
+                        '<div class="ai-pattern-icon">' + (p.icon || '⚠️') + '</div>' +
+                        '<div class="ai-pattern-text">' +
+                            '<div class="ai-pattern-title">' + (p.title || '') + '</div>' +
+                            '<div class="ai-pattern-detail">' + (p.detail || '') + '</div>' +
+                        '</div>' +
+                    '</div>';
+                }).join('');
+            } catch(e) {
+                console.warn('[AI Patterns] JSON parse failed, falling back to text');
+            }
+        }
+
+        // Fallback: Also render narrative section
+        var narrativeMatch = rawContent.split('---NARRATIVE---');
+        if (narrativeMatch.length > 1) {
+            var narrative = narrativeMatch[1].trim();
+            var lines = narrative.split('\n').filter(function(l) { return l.trim(); });
+            html += '<div class="ai-narrative">';
+            html += lines.map(function(line) {
+                var trimmed = line.trim();
+                if (trimmed === '---') return '<div class="ai-lang-divider">ລາວ</div>';
+                return '<p class="ai-bullet">' + trimmed + '</p>';
+            }).join('');
+            html += '</div>';
+        } else if (!html) {
+            // No JSON found, render as plain text
+            var lines = rawContent.split('\n').filter(function(l) { return l.trim(); });
+            html = lines.map(function(line) {
+                var trimmed = line.trim();
+                if (trimmed === '---') return '<div class="ai-lang-divider">ລາວ</div>';
+                return '<p class="ai-bullet">' + trimmed + '</p>';
+            }).join('');
+        }
+
+        content.innerHTML = html;
+        if (dateEl) dateEl.textContent = data.generatedAt ? 'Last analyzed: ' + data.generatedAt : '';
+        card.style.display = 'block';
+    }
+</script>

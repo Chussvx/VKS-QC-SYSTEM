@@ -1,0 +1,772 @@
+<!-- Page_Incidents.html - Incidents Management -->
+<div id="page-incidents" class="page-content">
+
+    <!-- KPI Cards Row -->
+    <div class="kpi-grid mb-4">
+        <div class="kpi-card kpi-card-strip kpi-blue">
+            <div class="kpi-header">
+                <span class="kpi-label" data-i18n="incident.kpi.total">Total Incidents</span>
+                <span class="kpi-icon bg-blue"><span class="material-symbols-outlined">folder_open</span></span>
+            </div>
+            <div class="kpi-value" id="incidents-total">--</div>
+            <span class="kpi-sublabel" data-i18n="incident.kpi.lifetime">Lifetime</span>
+        </div>
+        <div class="kpi-card kpi-card-strip kpi-red">
+            <div class="kpi-header">
+                <span class="kpi-label" data-i18n="incident.kpi.critical">Critical Issues</span>
+                <span class="kpi-icon bg-red"><span class="material-symbols-outlined">dangerous</span></span>
+            </div>
+            <div class="kpi-value" id="incidents-critical">--</div>
+            <span class="kpi-sublabel text-danger" data-i18n="incident.kpi.requires_attention">Requires attention</span>
+        </div>
+        <div class="kpi-card kpi-card-strip kpi-orange">
+            <div class="kpi-header">
+                <span class="kpi-label" data-i18n="incident.kpi.overdue">Overdue SLA</span>
+                <span class="kpi-icon bg-orange"><span class="material-symbols-outlined">timer_off</span></span>
+            </div>
+            <div class="kpi-value" id="incidents-overdue">--</div>
+            <span class="kpi-sublabel" data-i18n="incident.kpi.action_required">Action required</span>
+        </div>
+        <div class="kpi-card kpi-card-strip kpi-green">
+            <div class="kpi-header">
+                <span class="kpi-label" data-i18n="incident.kpi.resolved">Resolved</span>
+                <span class="kpi-icon bg-green"><span class="material-symbols-outlined">check_circle</span></span>
+            </div>
+            <div class="kpi-value" id="incidents-resolved">--%</div>
+            <span class="kpi-sublabel text-success" data-i18n="incident.kpi.resolution_rate">Resolution rate</span>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="filter-group">
+            <div class="search-input w-44">
+                <span class="material-symbols-outlined">search</span>
+                <input type="text" id="incident-search" data-i18n-placeholder="common.search" placeholder="Search ID..."
+                    onkeyup="filterIncidents()">
+            </div>
+            <div class="custom-select w-40" data-select-id="incident-category" data-onchange="filterIncidents">
+                <button class="custom-select-trigger" onclick="toggleSelect('incident-category')">
+                    <span class="custom-select-value" data-i18n="filter.all_categories">All Categories</span>
+                    <span class="material-symbols-outlined">expand_more</span>
+                </button>
+                <div class="custom-select-menu">
+                    <div class="custom-select-item selected" data-value=""
+                        onclick="selectOption('incident-category', '', t('filter.all_categories'))"><span
+                            data-i18n="filter.all_categories">All Categories</span></div>
+                    <div class="custom-select-item" data-value="theft"
+                        onclick="selectOption('incident-category', 'theft', t('incident.cat.theft'))"><span
+                            data-i18n="incident.cat.theft">Theft</span></div>
+                    <div class="custom-select-item" data-value="fire"
+                        onclick="selectOption('incident-category', 'fire', t('incident.cat.fire'))"><span
+                            data-i18n="incident.cat.fire">Fire</span></div>
+                    <div class="custom-select-item" data-value="medical"
+                        onclick="selectOption('incident-category', 'medical', t('incident.cat.medical'))"><span
+                            data-i18n="incident.cat.medical">Medical</span></div>
+                    <div class="custom-select-item" data-value="vandalism"
+                        onclick="selectOption('incident-category', 'vandalism', t('incident.cat.vandalism'))"><span
+                            data-i18n="incident.cat.vandalism">Vandalism</span></div>
+                    <div class="custom-select-item" data-value="access"
+                        onclick="selectOption('incident-category', 'access', t('incident.cat.access'))"><span
+                            data-i18n="incident.cat.access">Access Control</span></div>
+                </div>
+                <input type="hidden" name="incident-category" value="">
+            </div>
+            <div class="custom-select w-36" data-select-id="incident-priority" data-onchange="filterIncidents">
+                <button class="custom-select-trigger" onclick="toggleSelect('incident-priority')">
+                    <span class="custom-select-value" data-i18n="incident.all_priorities">All Priorities</span>
+                    <span class="material-symbols-outlined">expand_more</span>
+                </button>
+                <div class="custom-select-menu">
+                    <div class="custom-select-item selected" data-value=""
+                        onclick="selectOption('incident-priority', '', t('incident.all_priorities'))"><span
+                            data-i18n="incident.all_priorities">All Priorities</span></div>
+                    <div class="custom-select-item" data-value="p1"
+                        onclick="selectOption('incident-priority', 'p1', t('incident.priority.p1'))"><span
+                            data-i18n="incident.priority.p1">P1 - Critical</span></div>
+                    <div class="custom-select-item" data-value="p2"
+                        onclick="selectOption('incident-priority', 'p2', t('incident.priority.p2'))"><span
+                            data-i18n="incident.priority.p2">P2 - High</span></div>
+                    <div class="custom-select-item" data-value="p3"
+                        onclick="selectOption('incident-priority', 'p3', t('incident.priority.p3'))"><span
+                            data-i18n="incident.priority.p3">P3 - Medium</span></div>
+                    <div class="custom-select-item" data-value="p4"
+                        onclick="selectOption('incident-priority', 'p4', t('incident.priority.p4'))"><span
+                            data-i18n="incident.priority.p4">P4 - Low</span></div>
+                </div>
+                <input type="hidden" name="incident-priority" value="">
+            </div>
+            <div class="custom-select w-36" data-select-id="incident-status" data-onchange="filterIncidents">
+                <button class="custom-select-trigger" onclick="toggleSelect('incident-status')">
+                    <span class="custom-select-value" data-i18n="filter.all_status">All Status</span>
+                    <span class="material-symbols-outlined">expand_more</span>
+                </button>
+                <div class="custom-select-menu">
+                    <div class="custom-select-item selected" data-value=""
+                        onclick="selectOption('incident-status', '', t('filter.all_status'))"><span
+                            data-i18n="filter.all_status">All Status</span></div>
+                    <div class="custom-select-item" data-value="waiting"
+                        onclick="selectOption('incident-status', 'waiting', t('status.waiting'))"><span
+                            data-i18n="status.waiting">Waiting</span></div>
+                    <div class="custom-select-item" data-value="in_progress"
+                        onclick="selectOption('incident-status', 'in_progress', t('status.in_progress'))"><span
+                            data-i18n="status.in_progress">In Progress</span></div>
+                    <div class="custom-select-item" data-value="resolved"
+                        onclick="selectOption('incident-status', 'resolved', t('status.resolved'))"><span
+                            data-i18n="status.resolved">Resolved</span></div>
+                    <div class="custom-select-item" data-value="closed"
+                        onclick="selectOption('incident-status', 'closed', t('status.closed'))"><span
+                            data-i18n="status.closed">Closed</span></div>
+                </div>
+                <input type="hidden" name="incident-status" value="">
+            </div>
+            <div class="custom-select w-40" data-select-id="incident-site" data-onchange="filterIncidents">
+                <button class="custom-select-trigger" onclick="toggleSelect('incident-site')">
+                    <span class="custom-select-value" data-i18n="filter.all_sites">All Sites</span>
+                    <span class="material-symbols-outlined">expand_more</span>
+                </button>
+                <div class="custom-select-menu" id="incident-site-menu">
+                    <div class="custom-select-item selected" data-value=""
+                        onclick="selectOption('incident-site', '', t('filter.all_sites'))"><span
+                            data-i18n="filter.all_sites">All Sites</span></div>
+                </div>
+                <input type="hidden" name="incident-site" value="">
+            </div>
+        </div>
+        <div class="flex items-center gap-3 ml-auto">
+            <button id="btn-new-incident" class="btn btn-primary btn-sm"
+                onclick="console.log('Inline click fired'); openIncidentForm()">
+                <span class="material-symbols-outlined">add</span>
+                <span data-i18n="incident.new">New Incident</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Incidents Table -->
+    <div class="card p-0 overflow-hidden">
+        <div class="table-container">
+            <table class="data-table" id="incidents-table">
+                <thead>
+                    <tr>
+                        <th data-i18n="table.id">ID</th>
+                        <th data-i18n="table.date_time">Date/Time</th>
+                        <th data-i18n="table.site">Site</th>
+                        <th data-i18n="table.category">Category</th>
+                        <th data-i18n="table.priority">Priority</th>
+                        <th data-i18n="table.reporter">Reporter</th>
+                        <th data-i18n="table.status">Status</th>
+                        <th data-i18n="table.sla">SLA</th>
+                        <th class="text-right" data-i18n="table.actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="incidents-tbody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex items-center justify-between mt-4">
+        <p class="text-sm text-muted">
+            <span id="incident-showing" data-i18n="pagination.showing"
+                data-i18n-params='{"start": 0, "end": 0, "total": 0}'>Showing 0 of 0 incidents</span>
+        </p>
+        <div class="flex items-center gap-2">
+            <button class="btn btn-secondary btn-sm" id="incident-prev" onclick="prevIncidentPage()" disabled
+                data-i18n="pagination.prev">Previous</button>
+            <button class="btn btn-secondary btn-sm" id="incident-next" onclick="nextIncidentPage()"
+                data-i18n="pagination.next">Next</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Incidents page state
+    let incidentsData = [];
+    let incidentsFiltered = [];
+    let incidentPage = 0;
+    const INCIDENTS_PER_PAGE = 10;
+    let lastIncidentSignal = 0;
+    let incidentPoller = null;
+
+    // IncidentCache - In-memory cache for faster page loads (Amazon-style)
+    const IncidentCache = {
+        data: null,           // Cached response
+        timestamp: 0,         // When cached
+        maxAge: 60000,        // 60 seconds TTL
+
+        get: function () {
+            if (this.data && (Date.now() - this.timestamp) < this.maxAge) {
+                console.log('[IncidentCache] HIT');
+                return this.data;
+            }
+            console.log('[IncidentCache] MISS');
+            return null;
+        },
+
+        set: function (data) {
+            this.data = data;
+            this.timestamp = Date.now();
+            console.log('[IncidentCache] SET');
+        },
+
+        clear: function () {
+            this.data = null;
+            this.timestamp = 0;
+            console.log('[IncidentCache] CLEARED');
+        }
+    };
+
+
+
+    // Initialize Incidents page
+    function init_incidents() {
+        // Robust listener attachment
+        const btnNewInc = document.getElementById('btn-new-incident');
+        if (btnNewInc) {
+            btnNewInc.onclick = function (e) {
+                e.preventDefault();
+                openIncidentForm();
+            };
+        }
+        // Elite Standard: Render memory data instantly if it exists
+        if (incidentsData && incidentsData.length > 0) {
+            console.log('[Incidents] Memory Entry Render');
+            renderIncidentsTable();
+            // Update KPIs from existing data if possible, or just wait for check
+        }
+
+        loadIncidentFilters();
+        startIncidentSignalListener();
+
+        // If memory is empty, we MUST fetch. If not, only fetch if signal changed.
+        if (incidentsData.length === 0) {
+            loadIncidents();
+        } else {
+            checkIncidentUpdate();
+        }
+    }
+
+    // Load filter options
+    function loadIncidentFilters() {
+        google.script.run
+            .withSuccessHandler(function (options) {
+                const select = document.getElementById('incident-site');
+                select.innerHTML = '<option value="">' + t('filter.all_sites') + '</option>' +
+                    options.map(opt => `<option value="${opt.value}">${escapeHtml(opt.label)}</option>`).join('');
+            })
+            .getSiteOptions();
+    }
+
+    // Load incidents
+    function loadIncidents() {
+        // Check cache first (Amazon-style instant loading)
+        const cached = IncidentCache.get();
+        if (cached) {
+            processIncidentsData(cached);
+            return;
+        }
+
+        // Elite Standard: Render memory data instantly if it exists
+        if (incidentsData && incidentsData.length > 0) {
+            console.log('[Incidents] Memory First Render');
+            renderIncidentsTable();
+            showSync();
+        } else {
+            showTableLoading('incidents-tbody', 9);
+        }
+
+        google.script.run
+            .withSuccessHandler(function (data) {
+                hideSync();
+
+                // Guard against null response
+                if (!data) {
+                    console.error('getIncidents returned null');
+                    showTableError('incidents-tbody', 9, 'No data received from server');
+                    return;
+                }
+
+                // Cache for next time
+                IncidentCache.set(data);
+                processIncidentsData(data);
+            })
+            .withFailureHandler(function (error) {
+                hideSync();
+                // Error Persistence: Only show error if we have NO data
+                if (!incidentsData || incidentsData.length === 0) {
+                    showTableError('incidents-tbody', 9, 'Failed to load: ' + error.message);
+                } else {
+                    showToast('Sync failed: ' + error.message, 'error');
+                }
+            })
+            .getIncidents({});
+    }
+
+    // Process incidents data (from cache or server)
+    function processIncidentsData(data) {
+        incidentsData = data.incidents || [];
+        incidentsFiltered = [...incidentsData];
+        incidentPage = 0;
+
+        // Update KPIs (with null-safe access)
+        var stats = data.stats || {};
+        document.getElementById('incidents-total').textContent = stats.total || 0;
+        document.getElementById('incidents-critical').textContent = stats.critical || 0;
+        document.getElementById('incidents-overdue').textContent = stats.overdue || 0;
+        document.getElementById('incidents-resolved').textContent = (stats.resolvedRate || 0) + '%';
+
+        renderIncidentsTable();
+        updateIncidentPagination();
+    }
+
+    // Filter incidents
+    function filterIncidents() {
+        const search = document.getElementById('incident-search').value.toLowerCase();
+        const category = document.getElementById('incident-category').value;
+        const priority = document.getElementById('incident-priority').value;
+        const status = document.getElementById('incident-status').value;
+        const site = document.getElementById('incident-site').value;
+
+        incidentsFiltered = incidentsData.filter(inc => {
+            const matchSearch = !search || inc.id.toLowerCase().includes(search) || inc.title.toLowerCase().includes(search);
+            const matchCategory = !category || inc.category === category;
+            // Map legacy severity to priority for filtering
+            var incPriority = inc.priority || mapSeverityToPriority(inc.severity);
+            const matchPriority = !priority || incPriority === priority;
+            const matchStatus = !status || inc.status === status;
+            const matchSite = !site || inc.siteId === site;
+
+            return matchSearch && matchCategory && matchPriority && matchStatus && matchSite;
+        });
+
+        incidentPage = 0;
+        renderIncidentsTable();
+        updateIncidentPagination();
+    }
+
+    // Pagination
+    function updateIncidentPagination() {
+        const total = incidentsFiltered.length;
+        const start = total === 0 ? 0 : incidentPage * INCIDENTS_PER_PAGE + 1;
+        const end = Math.min((incidentPage + 1) * INCIDENTS_PER_PAGE, total);
+
+        const showingEl = document.getElementById('incident-showing');
+        if (showingEl) showingEl.textContent = t('pagination.showing', { start, end, total });
+
+        document.getElementById('incident-prev').disabled = incidentPage === 0;
+        document.getElementById('incident-next').disabled = end >= total;
+    }
+
+    function prevIncidentPage() {
+        if (incidentPage > 0) { incidentPage--; renderIncidentsTable(); updateIncidentPagination(); }
+    }
+
+    function nextIncidentPage() {
+        if ((incidentPage + 1) * INCIDENTS_PER_PAGE < incidentsFiltered.length) {
+            incidentPage++; renderIncidentsTable(); updateIncidentPagination();
+        }
+    }
+
+    // Render table
+    function renderIncidentsTable() {
+        const tbody = document.getElementById('incidents-tbody');
+        const start = incidentPage * INCIDENTS_PER_PAGE;
+        const pageData = incidentsFiltered.slice(start, start + INCIDENTS_PER_PAGE);
+
+        if (pageData.length === 0) {
+            tbody.innerHTML = `
+      <tr><td colspan="9" class="text-center py-8 text-muted">
+        <span class="material-symbols-outlined text-5xl mb-2">local_fire_department</span>
+        <p>${t('incident.no_data')}</p>
+      </td></tr>`;
+            return;
+        }
+
+        DiffRenderer.render(tbody, pageData, {
+            keyFn: inc => inc.id,
+            renderFn: inc => {
+                var incPriority = inc.priority || mapSeverityToPriority(inc.severity);
+                return `
+    <tr class="clickable-row ${incPriority === 'p1' ? 'row-danger' : ''}" onclick="openIncidentDetail('${inc.id}')">
+      <td><span class="font-mono text-primary font-medium">${inc.id}</span></td>
+      <td>
+        <div><p class="font-medium">${inc.dateDisplay}</p><p class="text-xs text-muted">${inc.timeDisplay}</p></div>
+      </td>
+      <td class="font-medium">${escapeHtml(inc.siteName)}</td>
+      <td>
+        <div class="flex items-center gap-2">
+          <span class="category-icon category-${inc.category}">
+            <span class="material-symbols-outlined text-lg">${getCategoryIcon(inc.category)}</span>
+          </span>
+          <span>${formatCategory(inc.category)}</span>
+        </div>
+      </td>
+      <td>${getPriorityBadge(incPriority)}</td>
+      <td>${escapeHtml(inc.reporterName || '-')}</td>
+      <td>${getStatusBadge(inc.status)}</td>
+      <td>${getSLADisplay(inc.slaStatus, inc.slaDue)}</td>
+      <td class="text-right">
+        <button class="btn-icon" onclick="event.stopPropagation(); openIncidentDetail('${inc.id}')">
+          <span class="material-symbols-outlined">chevron_right</span>
+        </button>
+      </td>
+    </tr>
+  `;
+            },
+            onUpdate: (el, item, changed) => {
+                if (changed) {
+                    el.classList.add('row-update-flash');
+                    setTimeout(() => el.classList.remove('row-update-flash'), 2000);
+                }
+            }
+        });
+    }
+
+    // Helper functions
+    function getCategoryIcon(cat) {
+        const icons = {
+            'theft': 'security', 'fire': 'local_fire_department', 'medical': 'emergency',
+            'vandalism': 'broken_image', 'access': 'lock'
+        };
+        return icons[cat] || 'warning';
+    }
+
+    function formatCategory(cat) {
+        return t('incident.cat.' + cat, cat);
+    }
+
+    // Map legacy severity to priority
+    function mapSeverityToPriority(sev) {
+        const map = { 'critical': 'p1', 'high': 'p2', 'medium': 'p3', 'low': 'p4' };
+        return map[sev] || 'p4';
+    }
+
+    function getPriorityBadge(priority) {
+        const badges = {
+            'p1': '<span class="badge badge-danger-solid">' + t('incident.priority.p1') + '</span>',
+            'p2': '<span class="badge badge-warning-solid">' + t('incident.priority.p2') + '</span>',
+            'p3': '<span class="badge badge-info-solid">' + t('incident.priority.p3') + '</span>',
+            'p4': '<span class="badge badge-default">' + t('incident.priority.p4') + '</span>'
+        };
+        return badges[priority] || badges['p4'];
+    }
+
+    function getStatusBadge(status) {
+        const badges = {
+            'waiting': '<span class="badge badge-danger">' + t('status.waiting') + '</span>',
+            'in_progress': '<span class="badge badge-info">' + t('status.in_progress') + '</span>',
+            'resolved': '<span class="badge badge-success">' + t('status.resolved') + '</span>',
+            'closed': '<span class="badge badge-default">' + t('status.closed') + '</span>'
+        };
+        return badges[status] || badges['waiting'];
+    }
+
+    function getSLADisplay(slaStatus, slaDue) {
+        if (slaStatus === 'overdue') {
+            return `<span class="text-danger font-medium">⚠ ${t('status.overdue')}</span>`;
+        } else if (slaStatus === 'at_risk') {
+            return `<span class="text-warning font-medium">${slaDue}</span>`;
+        } else if (slaStatus === 'completed') {
+            return `<span class="text-muted">${t('status.completed')}</span>`;
+        }
+        return `<span class="text-muted">${slaDue || '-'}</span>`;
+    }
+
+    // Open incident form modal (NEW comprehensive 3-tab form)
+    function openIncidentForm(incidentId) {
+        console.log('openIncidentForm called with:', incidentId);
+
+        try {
+            // Open modal with NEW comprehensive form template
+            console.log('Calling openModal("incident-form-new")...');
+            openModal('incident-form-new');
+            console.log('openModal completed');
+
+            // Reset to first tab
+            if (typeof switchIncidentTab === 'function') {
+                switchIncidentTab('basic');
+            }
+
+            // Set title using i18n key (so it translates)
+            var titleKey = incidentId ? 'incident.form.edit_title' : 'incident.form.title';
+            var titleEl = document.querySelector('#modal-container .modal-title');
+            if (titleEl) {
+                titleEl.setAttribute('data-i18n', titleKey);
+                // Use TranslationManager as single source of truth
+                var lang = (typeof TranslationManager !== 'undefined' && TranslationManager.currentLang)
+                    ? TranslationManager.currentLang
+                    : (localStorage.getItem('vks-app-language') || 'en');
+                if (typeof I18N !== 'undefined' && I18N[lang] && I18N[lang][titleKey]) {
+                    titleEl.textContent = I18N[lang][titleKey];
+                } else {
+                    titleEl.textContent = incidentId ? 'Edit Incident' : 'New Incident Report';
+                }
+            }
+
+            var form = document.getElementById('form-incident-new');
+            console.log('Form element:', form);
+            if (form) {
+                form.reset();
+                form.dataset.incidentId = incidentId || '';
+            }
+
+            // Find incident data if editing
+            var inc = null;
+            if (incidentId) {
+                for (var i = 0; i < incidentsData.length; i++) {
+                    if (incidentsData[i].id === incidentId) {
+                        inc = incidentsData[i];
+                        break;
+                    }
+                }
+            }
+
+            // Initialize premium custom controls (dropdowns + flatpickr)
+            if (typeof initIncidentFormControls === 'function') {
+                initIncidentFormControls();
+            }
+
+            // Load site options into custom dropdown
+            var siteIdToSelect = inc ? inc.siteId : null;
+            loadSiteOptionsVKS('incident-site-dropdown', siteIdToSelect);
+
+            if (inc) {
+                console.log('Populating form with incident data:', inc);
+
+                // Tab 1: Basic Info - Use NEW form field IDs
+                var titleInput = document.getElementById('incident-title-new');
+                var catSelect = document.getElementById('incident-category-new');
+                var datetimeInput = document.getElementById('incident-datetime-new');
+                var locationInput = document.getElementById('incident-location-new');
+                var descInput = document.getElementById('incident-description-new');
+
+                if (titleInput) titleInput.value = inc.title || '';
+                // Category: use VKS dropdown
+                if (inc.category) setVKSDropdownValue('incident-category-dropdown', inc.category);
+                if (descInput) descInput.value = inc.description || '';
+                if (locationInput) locationInput.value = inc.location || '';
+
+                // Format datetime for flatpickr
+                if (inc.incidentTime) {
+                    try {
+                        var dt = new Date(inc.incidentTime);
+                        var fp = window._vksFlatpickrs && window._vksFlatpickrs['incident-datetime-new'];
+                        if (fp) { fp.setDate(dt); }
+                        else if (datetimeInput) { datetimeInput.value = dt.toISOString().slice(0, 16); }
+                    } catch (e) { console.warn('Could not parse incidentTime:', e); }
+                }
+
+                // Set priority radio (map legacy severity to priority)
+                var incPriority = inc.priority || mapSeverityToPriority(inc.severity);
+                var prioRadio = document.querySelector('input[name="incident-priority-new"][value="' + incPriority + '"]');
+                if (prioRadio) prioRadio.checked = true;
+
+                // Tab 2: Impact Assessment
+                var injuriesCheck = document.getElementById('incident-injuries-new');
+                var damageCheck = document.getElementById('incident-damage-new');
+                var lossInput = document.getElementById('incident-estimated-loss-new');
+                var cctvCheck = document.getElementById('incident-cctv-new');
+                var authCheck = document.getElementById('incident-authorities-new');
+                var policeInput = document.getElementById('incident-police-report-new');
+
+                if (injuriesCheck) injuriesCheck.checked = inc.injuries === true || inc.injuries === 'Yes';
+                if (damageCheck) damageCheck.checked = inc.propertyDamage === true || inc.propertyDamage === 'Yes';
+                if (lossInput) lossInput.value = inc.estimatedLoss || '';
+                if (cctvCheck) cctvCheck.checked = inc.cctvAvailable === true || inc.cctvAvailable === 'Yes';
+                if (authCheck) authCheck.checked = inc.authoritiesNotified === true || inc.authoritiesNotified === 'Yes';
+                if (policeInput) policeInput.value = inc.policeReportNo || '';
+
+                // Tab 3: Response & Notes
+                var reportedByInput = document.getElementById('incident-reported-by-new');
+                var reportedToInput = document.getElementById('incident-reported-to-new');
+                var witnessesInput = document.getElementById('incident-witnesses-new');
+                var actionsInput = document.getElementById('incident-actions-new');
+                var notesInput = document.getElementById('incident-notes-new');
+
+                if (reportedByInput) reportedByInput.value = inc.reportedBy || '';
+                if (reportedToInput) reportedToInput.value = inc.reportedTo || '';
+                if (witnessesInput) witnessesInput.value = inc.witnesses || '';
+                if (actionsInput) actionsInput.value = inc.immediateActions || '';
+                if (notesInput) notesInput.value = inc.notes || '';
+
+                // Responded By (was missing - caused data loss on edit)
+                var respondedByInput = document.getElementById('incident-responded-by-new');
+                if (respondedByInput) respondedByInput.value = inc.respondedBy || '';
+            }
+        } catch (err) {
+            console.error('openIncidentForm error:', err);
+            showToast('Error opening form: ' + err.message, 'error');
+        }
+    }
+
+    // Open incident detail
+
+    function openIncidentDetail(incidentId) {
+        var inc = null;
+        for (var i = 0; i < incidentsData.length; i++) {
+            if (incidentsData[i].id === incidentId) {
+                inc = incidentsData[i];
+                break;
+            }
+        }
+        if (!inc) {
+            showToast('Incident not found', 'error');
+            return;
+        }
+
+        // Store for status updates
+        window.currentIncidentId = incidentId;
+
+        // Open modal FIRST
+        openModal('incident-detail-new');
+
+        // Populate Fields
+        setText('view-inc-id', inc.id);
+        setText('view-inc-title', inc.title);
+        setText('view-inc-site', inc.siteName || 'Unknown');
+        setText('view-inc-category', inc.category || '-');
+        setText('view-inc-severity', inc.severity || '-');
+        setText('view-inc-status', inc.status || '-');
+
+        // Dates
+        setText('view-inc-time', (inc.dateDisplay || '-') + ' ' + (inc.timeDisplay || ''));
+        // Try to format reported time if it exists
+        var repTime = inc.reportedTime ? new Date(inc.reportedTime).toLocaleString() : '-';
+        setText('view-inc-reported-time', repTime);
+
+        // Location & Desc
+        setText('view-inc-location', inc.location || '-');
+        setText('view-inc-description', inc.description || 'No description.');
+
+        // People
+        setText('view-inc-reported-by', inc.reportedBy || '-');
+        setText('view-inc-reported-to', inc.reportedTo || '-');
+        setText('view-inc-witnesses', inc.witnesses || '-');
+
+        // Impact Booleans (Visual Toggles)
+        toggleStatus('view-inc-injuries', inc.injuries);
+        toggleStatus('view-inc-damage', inc.propertyDamage);
+        toggleStatus('view-inc-authorities', inc.authoritiesNotified);
+        toggleStatus('view-inc-cctv', inc.cctvAvailable);
+
+        // Impact Details
+        setText('view-inc-loss', inc.estimatedLoss || '-');
+        setText('view-inc-police-report', inc.policeReportNo || '-');
+
+        // Response
+        var respTime = inc.responseTime ? new Date(inc.responseTime).toLocaleString() : '-';
+        setText('view-inc-response-time', respTime);
+        setText('view-inc-responded-by', inc.respondedBy || '-');
+
+        // Actions & Notes
+        setText('view-inc-actions', inc.immediateActions || '-');
+        setText('view-inc-notes', inc.notes || '-');
+
+        // Setup Edit Button
+        var editBtn = document.getElementById('btn-inc-edit');
+        if (editBtn) {
+            editBtn.onclick = function () {
+                closeModal();
+                openIncidentForm(inc.id);
+            };
+        }
+
+        // Style Badges
+        udpateSeverityBadgeInView(inc.severity);
+        updateStatusBadgeInView(inc.status);
+    }
+
+    // Helper to set text content safely
+    function setText(id, text) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = text;
+    }
+
+    // Helper to toggle boolean visualization
+    function toggleStatus(id, isActive) {
+        var el = document.getElementById(id);
+        if (!el) return;
+
+        // Check if "true" string or boolean true
+        var active = isActive === true || isActive === 'true' || isActive === 'TRUE';
+
+        if (active) {
+            el.classList.remove('opacity-50', 'bg-gray-50');
+            el.classList.add('bg-white', 'shadow-sm', 'border-opacity-100');
+            // Make icon pop?
+            // Already colored in template
+        } else {
+            el.classList.add('opacity-50', 'bg-gray-50');
+            el.classList.remove('bg-white', 'shadow-sm');
+        }
+    }
+
+    function udpateSeverityBadgeInView(severity) {
+        var el = document.getElementById('view-inc-severity');
+        if (!el) return;
+        var sev = (severity || '').toLowerCase();
+        el.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide ';
+        if (sev === 'critical') el.className += 'bg-red-100 text-red-800';
+        else if (sev === 'high') el.className += 'bg-orange-100 text-orange-800';
+        else if (sev === 'medium') el.className += 'bg-yellow-100 text-yellow-800';
+        else el.className += 'bg-green-100 text-green-800';
+        el.textContent = severity || 'LOW';
+    }
+
+    function updateStatusBadgeInView(status) {
+        var el = document.getElementById('view-inc-status');
+        if (!el) return;
+        var st = (status || '').toLowerCase();
+        el.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold capitalize ';
+        if (st === 'waiting') el.className += 'bg-gray-100 text-gray-800';
+        else if (st === 'in_progress') el.className += 'bg-blue-100 text-blue-800';
+        else if (st === 'resolved') el.className += 'bg-green-100 text-green-800';
+        else if (st === 'closed') el.className += 'bg-gray-800 text-white';
+        el.textContent = status || 'Waiting';
+    }
+
+    // Export incidents
+    function exportIncidents() {
+        showToast('Exporting incidents...', 'info');
+        google.script.run
+            .withSuccessHandler(function (url) { window.open(url, '_blank'); })
+            .exportIncidents({});
+    }
+
+    // REAL-TIME SIGNALING
+    function startIncidentSignalListener() {
+        if (incidentPoller) clearInterval(incidentPoller);
+        incidentPoller = setInterval(checkIncidentUpdate, 10000);
+    }
+
+    function checkIncidentUpdate() {
+        if (currentPage !== 'incidents') return;
+
+        google.script.run
+            .withSuccessHandler(function (signals) {
+                if (!signals) return;
+
+                // Check Master signal (Consolidated incidents)
+                if (signals.lastMaster > lastIncidentSignal) {
+                    if (lastIncidentSignal !== 0) {
+                        console.log('[Incidents] Signal update! Refreshing...');
+                        loadIncidents();
+                        showToast('Incidents updated', 'info');
+                    } else {
+                        loadIncidents();
+                    }
+                    lastIncidentSignal = signals.lastMaster;
+                } else if (lastIncidentSignal === 0) {
+                    loadIncidents();
+                }
+            })
+            .getUpdateSignals();
+    }
+
+    // Expose functions globally for onclick handlers
+    window.openIncidentForm = openIncidentForm;
+    window.openIncidentDetail = openIncidentDetail;
+    window.init_incidents = init_incidents;
+</script>
